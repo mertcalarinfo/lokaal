@@ -1,0 +1,350 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import { getOfferings, purchasePackage, restorePurchases } from '../../services/revenuecat';
+import Button from '../../components/Button';
+
+const COLORS = {
+  background: '#0A0A0F',
+  surface: '#13131A',
+  surfaceElevated: '#1C1C26',
+  primary: '#6C63FF',
+  primaryLight: '#8B84FF',
+  accent: '#FF6B6B',
+  success: '#4ECDC4',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#8E8EA0',
+  textMuted: '#4A4A5E',
+  border: '#2A2A3A',
+};
+
+const PaywallScreen: React.FC = () => {
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+
+  const [loading, setLoading] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [offering, setOffering] = useState<any>(null);
+
+  useEffect(() => {
+    const loadOffering = async () => {
+      try {
+        const data = await getOfferings();
+        setOffering(data);
+      } catch {
+        // use default price
+      }
+    };
+    loadOffering();
+  }, []);
+
+  const handleSubscribe = async () => {
+    setLoading(true);
+    try {
+      const pkg = offering?.monthly || offering?.availablePackages?.[0];
+
+      if (!pkg) {
+        // RevenueCat not configured / Expo Go - show informational alert
+        Alert.alert(
+          'In-App Purchases',
+          'In-app purchases require a production build. RevenueCat integration is ready to configure.',
+          [{ text: t('common.ok') }]
+        );
+        setLoading(false);
+        return;
+      }
+
+      const success = await purchasePackage(pkg);
+      if (success) {
+        Alert.alert(t('common.ok'), 'Welcome to Premium! 🎉', [
+          { text: t('common.ok'), onPress: () => navigation.goBack() },
+        ]);
+      }
+    } catch (error: any) {
+      if (!error?.message?.includes('cancelled')) {
+        Alert.alert(t('common.error'), t('paywall.errors.purchaseFailed'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        Alert.alert(t('common.ok'), 'Purchases restored successfully!', [
+          { text: t('common.ok'), onPress: () => navigation.goBack() },
+        ]);
+      } else {
+        Alert.alert(t('common.error'), t('paywall.errors.restoreFailed'));
+      }
+    } catch (error) {
+      Alert.alert(t('common.error'), t('paywall.errors.restoreFailed'));
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const features: { key: keyof typeof featureIcons; icon: string; color: string }[] = [
+    { key: 'unlimited', icon: 'infinite', color: COLORS.primary },
+    { key: 'detailed', icon: 'sparkles', color: COLORS.primaryLight },
+    { key: 'progress', icon: 'trending-up', color: COLORS.success },
+    { key: 'exercises', icon: 'barbell', color: '#FFD93D' },
+    { key: 'compare', icon: 'git-compare', color: COLORS.accent },
+  ];
+
+  const featureIcons = {
+    unlimited: true,
+    detailed: true,
+    progress: true,
+    exercises: true,
+    compare: true,
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      {/* Background gradient */}
+      <LinearGradient
+        colors={['rgba(108,99,255,0.2)', 'rgba(10,10,15,0)', 'rgba(10,10,15,0)']}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 0.4 }}
+      />
+
+      {/* Close button */}
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={() => navigation.goBack()}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="close" size={22} color={COLORS.textSecondary} />
+      </TouchableOpacity>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <LinearGradient
+            colors={[COLORS.primary, COLORS.primaryLight]}
+            style={styles.premiumIcon}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name="star" size={28} color="#fff" />
+          </LinearGradient>
+          <Text style={styles.title}>{t('paywall.title')}</Text>
+          <Text style={styles.subtitle}>{t('paywall.subtitle')}</Text>
+        </View>
+
+        {/* Features */}
+        <View style={styles.featuresCard}>
+          {features.map((feature) => (
+            <View key={feature.key} style={styles.featureRow}>
+              <View style={[styles.featureIcon, { backgroundColor: `${feature.color}20` }]}>
+                <Ionicons name={feature.icon as any} size={18} color={feature.color} />
+              </View>
+              <Text style={styles.featureText}>
+                {t(`paywall.features.${feature.key}`)}
+              </Text>
+              <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
+            </View>
+          ))}
+        </View>
+
+        {/* Pricing card */}
+        <View style={styles.pricingCard}>
+          <LinearGradient
+            colors={['rgba(108,99,255,0.2)', 'rgba(108,99,255,0.05)']}
+            style={StyleSheet.absoluteFillObject}
+            borderRadius={16}
+          />
+          <View style={styles.pricingHeader}>
+            <Text style={styles.pricingBadge}>MOST POPULAR</Text>
+          </View>
+          <Text style={styles.priceText}>{t('paywall.price')}</Text>
+          <Text style={styles.priceSubtext}>per month, billed monthly</Text>
+        </View>
+
+        {/* CTA */}
+        <View style={styles.ctaSection}>
+          <Button
+            label={t('paywall.trialButton')}
+            onPress={handleSubscribe}
+            loading={loading}
+            fullWidth
+            size="lg"
+            style={styles.ctaButton}
+          />
+
+          <Text style={styles.disclaimerText}>{t('paywall.disclaimer')}</Text>
+
+          <TouchableOpacity
+            style={styles.restoreButton}
+            onPress={handleRestore}
+            disabled={restoring}
+          >
+            <Text style={styles.restoreText}>
+              {restoring ? t('common.loading') : t('paywall.restore')}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.termsText}>{t('paywall.termsNotice')}</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 56,
+    right: 20,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 48,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 36,
+  },
+  premiumIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 16,
+  },
+  featuresCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  featureIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  featureText: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  pricingCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 28,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  pricingHeader: {
+    marginBottom: 8,
+  },
+  pricingBadge: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.primary,
+    letterSpacing: 2,
+  },
+  priceText: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  priceSubtext: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
+  ctaSection: {
+    alignItems: 'center',
+  },
+  ctaButton: {
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  disclaimerText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  restoreButton: {
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  restoreText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textDecorationLine: 'underline',
+  },
+  termsText: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: 16,
+    paddingHorizontal: 16,
+  },
+});
+
+export default PaywallScreen;

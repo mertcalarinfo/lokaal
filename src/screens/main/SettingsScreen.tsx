@@ -1,0 +1,391 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Switch,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import { useAuth } from '../../hooks/useAuth';
+import { useSubscription } from '../../hooks/useSubscription';
+import { changeLanguage } from '../../i18n';
+
+const COLORS = {
+  background: '#0A0A0F',
+  surface: '#13131A',
+  surfaceElevated: '#1C1C26',
+  primary: '#6C63FF',
+  primaryLight: '#8B84FF',
+  accent: '#FF6B6B',
+  success: '#4ECDC4',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#8E8EA0',
+  textMuted: '#4A4A5E',
+  border: '#2A2A3A',
+};
+
+const APP_VERSION = '1.0.0';
+
+const SettingsScreen: React.FC = () => {
+  const { t } = useTranslation();
+  const { user, signOut, updateLanguage } = useAuth();
+  const { subscription, isSubscribed, presentPaywall } = useSubscription(user?.uid || null);
+
+  const [signingOut, setSigningOut] = useState(false);
+  const [languageLoading, setLanguageLoading] = useState(false);
+
+  const currentLanguage = user?.language || 'en';
+
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleLanguageToggle = async () => {
+    const newLang = currentLanguage === 'en' ? 'de' : 'en';
+    setLanguageLoading(true);
+    try {
+      await changeLanguage(newLang);
+      await updateLanguage(newLang);
+    } catch (error) {
+      Alert.alert(t('common.error'), t('common.error'));
+    } finally {
+      setLanguageLoading(false);
+    }
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      t('settings.signOut'),
+      t('settings.signOutConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.signOut'),
+          style: 'destructive',
+          onPress: async () => {
+            setSigningOut(true);
+            try {
+              await signOut();
+            } catch (error) {
+              Alert.alert(t('common.error'), t('common.error'));
+            } finally {
+              setSigningOut(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleManageSubscription = async () => {
+    if (!isSubscribed) {
+      await presentPaywall();
+    } else {
+      // On iOS, deep link to subscription management
+      Alert.alert(
+        t('settings.subscription'),
+        t('settings.subscriptionPremium'),
+        [{ text: t('common.ok') }]
+      );
+    }
+  };
+
+  const renderSection = (title: string, children: React.ReactNode) => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionCard}>{children}</View>
+    </View>
+  );
+
+  const renderRow = (
+    icon: string,
+    iconColor: string,
+    label: string,
+    right?: React.ReactNode,
+    onPress?: () => void
+  ) => (
+    <TouchableOpacity
+      style={styles.row}
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      <View style={[styles.rowIcon, { backgroundColor: `${iconColor}20` }]}>
+        <Ionicons name={icon as any} size={18} color={iconColor} />
+      </View>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <View style={styles.rowRight}>
+        {right}
+        {onPress && !right && (
+          <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
+
+        {/* Profile section */}
+        <View style={styles.profileCard}>
+          <LinearGradient
+            colors={[COLORS.primary, COLORS.primaryLight]}
+            style={styles.avatarCircle}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={styles.avatarText}>
+              {user?.displayName ? getInitials(user.displayName) : '?'}
+            </Text>
+          </LinearGradient>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{user?.displayName || '—'}</Text>
+            <Text style={styles.profileEmail}>{user?.email || '—'}</Text>
+          </View>
+          <View
+            style={[
+              styles.tierBadge,
+              { backgroundColor: isSubscribed ? 'rgba(78,205,196,0.15)' : 'rgba(108,99,255,0.15)' },
+            ]}
+          >
+            <Ionicons
+              name={isSubscribed ? 'star' : 'star-outline'}
+              size={12}
+              color={isSubscribed ? COLORS.success : COLORS.primary}
+            />
+            <Text
+              style={[
+                styles.tierBadgeText,
+                { color: isSubscribed ? COLORS.success : COLORS.primary },
+              ]}
+            >
+              {isSubscribed ? 'Premium' : 'Free'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Language */}
+        {renderSection(
+          t('settings.language'),
+          renderRow(
+            'language-outline',
+            COLORS.primary,
+            currentLanguage === 'en' ? t('settings.languageEn') : t('settings.languageDe'),
+            <Switch
+              value={currentLanguage === 'de'}
+              onValueChange={handleLanguageToggle}
+              trackColor={{ false: COLORS.border, true: COLORS.primary }}
+              thumbColor="#fff"
+              disabled={languageLoading}
+            />
+          )
+        )}
+
+        {/* Subscription */}
+        {renderSection(
+          t('settings.subscription'),
+          <>
+            {renderRow(
+              isSubscribed ? 'star' : 'star-outline',
+              isSubscribed ? COLORS.success : COLORS.textMuted,
+              isSubscribed ? t('settings.subscriptionPremium') : t('settings.subscriptionFree'),
+              <Text style={[styles.rowValue, { color: isSubscribed ? COLORS.success : COLORS.textMuted }]}>
+                {isSubscribed ? 'Active' : 'Free tier'}
+              </Text>
+            )}
+            <View style={styles.rowDivider} />
+            {renderRow(
+              'card-outline',
+              COLORS.primary,
+              t('settings.manageSubscription'),
+              undefined,
+              handleManageSubscription
+            )}
+          </>
+        )}
+
+        {/* Account */}
+        {renderSection(
+          t('settings.appVersion'),
+          <>
+            {renderRow(
+              'information-circle-outline',
+              COLORS.textMuted,
+              t('settings.version', { version: APP_VERSION }),
+              undefined
+            )}
+          </>
+        )}
+
+        {/* Sign out */}
+        <TouchableOpacity
+          style={styles.signOutButton}
+          onPress={handleSignOut}
+          disabled={signingOut}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="log-out-outline" size={20} color={COLORS.accent} />
+          <Text style={styles.signOutText}>
+            {signingOut ? t('common.loading') : t('settings.signOut')}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingBottom: 48,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 24,
+  },
+  profileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  avatarCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 3,
+  },
+  profileEmail: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
+  tierBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    gap: 4,
+  },
+  tierBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  sectionCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  rowIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  rowLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rowValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginRight: 4,
+  },
+  rowDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginLeft: 62,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,107,107,0.1)',
+    borderRadius: 14,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,0.2)',
+    gap: 10,
+    marginTop: 8,
+  },
+  signOutText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.accent,
+  },
+});
+
+export default SettingsScreen;
