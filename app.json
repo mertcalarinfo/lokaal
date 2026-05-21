@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "PREZENCE",
+    "slug": "prezence",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0F"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.prezence.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "PREZENCE needs camera access to record your speaking videos.",
+        "NSMicrophoneUsageDescription": "PREZENCE needs microphone access to record your speaking videos.",
+        "NSPhotoLibraryUsageDescription": "PREZENCE needs photo library access to upload your speaking videos."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0F"
+      },
+      "package": "com.prezence.app",
+      "permissions": ["CAMERA", "RECORD_AUDIO", "READ_EXTERNAL_STORAGE"]
+    },
+    "plugins": [
+      ["expo-camera", {"cameraPermission": "Allow PREZENCE to access your camera."}],
+      "expo-av"
+    ]
+  }
+}

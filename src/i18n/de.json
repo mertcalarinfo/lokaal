@@ -1,0 +1,242 @@
+{
+  "common": {
+    "appName": "PREZENCE",
+    "loading": "Wird geladen...",
+    "error": "Etwas ist schiefgelaufen",
+    "retry": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "next": "Weiter",
+    "back": "Zurück",
+    "save": "Speichern",
+    "close": "Schließen",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nein",
+    "skip": "Überspringen",
+    "done": "Fertig",
+    "continue": "Weiter",
+    "orText": "oder"
+  },
+  "auth": {
+    "login": {
+      "title": "Willkommen zurück",
+      "subtitle": "Melde dich an, um weiterzumachen",
+      "emailLabel": "E-Mail",
+      "emailPlaceholder": "du@beispiel.de",
+      "passwordLabel": "Passwort",
+      "passwordPlaceholder": "Dein Passwort",
+      "signInButton": "Anmelden",
+      "googleButton": "Mit Google fortfahren",
+      "noAccount": "Noch kein Konto?",
+      "register": "Registrieren",
+      "forgotPassword": "Passwort vergessen?",
+      "errors": {
+        "invalidEmail": "Bitte eine gültige E-Mail-Adresse eingeben",
+        "wrongPassword": "Falsches Passwort. Bitte erneut versuchen.",
+        "userNotFound": "Kein Konto mit dieser E-Mail-Adresse gefunden.",
+        "tooManyRequests": "Zu viele fehlgeschlagene Versuche. Bitte später erneut versuchen.",
+        "generic": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
+      }
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "subtitle": "Starte deine Kommunikationsreise",
+      "nameLabel": "Vollständiger Name",
+      "namePlaceholder": "Dein Name",
+      "emailLabel": "E-Mail",
+      "emailPlaceholder": "du@beispiel.de",
+      "passwordLabel": "Passwort",
+      "passwordPlaceholder": "Mind. 8 Zeichen",
+      "confirmPasswordLabel": "Passwort bestätigen",
+      "confirmPasswordPlaceholder": "Passwort wiederholen",
+      "signUpButton": "Konto erstellen",
+      "googleButton": "Mit Google fortfahren",
+      "hasAccount": "Bereits ein Konto?",
+      "signIn": "Anmelden",
+      "errors": {
+        "nameRequired": "Bitte Namen eingeben",
+        "invalidEmail": "Bitte eine gültige E-Mail-Adresse eingeben",
+        "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen lang sein",
+        "passwordsNoMatch": "Die Passwörter stimmen nicht überein",
+        "emailInUse": "Diese E-Mail-Adresse ist bereits registriert.",
+        "generic": "Registrierung fehlgeschlagen. Bitte erneut versuchen."
+      }
+    }
+  },
+  "onboarding": {
+    "languageSelect": {
+      "title": "Wähle deine Sprache",
+      "subtitle": "Du kannst dies später in den Einstellungen ändern",
+      "english": "English",
+      "deutsch": "Deutsch",
+      "continueButton": "Weiter"
+    },
+    "steps": {
+      "stepOf": "{{current}} von {{total}}",
+      "step1": {
+        "title": "Was ist dein Ziel?",
+        "subtitle": "Das hilft uns, dein Coaching anzupassen",
+        "options": {
+          "job_interview": "Vorstellungsgespräch",
+          "business_presentation": "Business-Präsentation",
+          "content_creation": "Content Creation",
+          "public_speaking": "Öffentliches Sprechen",
+          "personal_improvement": "Persönliche Weiterentwicklung",
+          "other": "Sonstiges"
+        }
+      },
+      "step2": {
+        "title": "In welcher Sprache sprichst du?",
+        "subtitle": "Die KI analysiert dich in dieser Sprache",
+        "options": {
+          "english": "English",
+          "deutsch": "Deutsch",
+          "other": "Andere"
+        }
+      },
+      "step3": {
+        "title": "Was ist dein Schwerpunkt?",
+        "subtitle": "Darauf legen wir besonders viel Wert",
+        "options": {
+          "filler_words": "Füllwörter",
+          "body_language": "Körpersprache",
+          "confidence": "Selbstsicherheit",
+          "speaking_pace": "Sprechtempo",
+          "everything": "Alles — KI entscheidet"
+        }
+      }
+    }
+  },
+  "home": {
+    "title": "PREZENCE",
+    "analyzeTitle": "Analysiere dein Sprechen",
+    "analyzeSubtitle": "Lade ein Video hoch oder nimm eines auf und erhalte persönliches KI-Coaching",
+    "uploadVideo": "Video hochladen",
+    "uploadVideoSub": "Aus Bibliothek wählen",
+    "recordNow": "Jetzt aufnehmen",
+    "recordNowSub": "Kamera verwenden",
+    "analyzeButton": "Analysieren",
+    "videoSelected": "Video ausgewählt",
+    "videoInfo": "{{duration}} · Bereit zur Analyse",
+    "usageFree": "{{used}}/{{total}} kostenlose Analyse diesen Monat genutzt",
+    "usageUnlimited": "Unbegrenzte Analysen",
+    "upgradePrompt": "Upgrade auf Premium für unbegrenzte Analysen",
+    "upgradeButton": "Auf Premium upgraden",
+    "maxDuration": "Videos sind auf 10 Minuten begrenzt",
+    "pickError": "Video konnte nicht geladen werden. Bitte erneut versuchen.",
+    "recordError": "Kamera konnte nicht geöffnet werden. Bitte Berechtigungen prüfen.",
+    "noVideoSelected": "Bitte zuerst ein Video auswählen oder aufnehmen"
+  },
+  "analysis": {
+    "loading": {
+      "title": "Dein Video wird analysiert",
+      "subtitle": "Das dauert normalerweise 30–60 Sekunden",
+      "estimatedTime": "Geschätzte Zeit: noch {{seconds}} Sekunden",
+      "cancelButton": "Abbrechen",
+      "tips": [
+        "Füllwörter werden analysiert...",
+        "Sprechtempo wird geprüft...",
+        "Körpersprache wird bewertet...",
+        "Blickkontakt wird ausgewertet...",
+        "Mimik wird überprüft...",
+        "Stimmmodulation wird gemessen...",
+        "Inhaltsstruktur wird analysiert...",
+        "Gesamtausstrahlung wird bewertet...",
+        "Persönliche Tipps werden erstellt...",
+        "Dein Coaching-Bericht wird vorbereitet..."
+      ]
+    },
+    "errors": {
+      "uploadFailed": "Video-Upload fehlgeschlagen. Bitte Verbindung prüfen.",
+      "analysisFailed": "Analyse fehlgeschlagen. Bitte erneut versuchen.",
+      "timeout": "Analyse hat zu lange gedauert. Bitte kürzeres Video verwenden.",
+      "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+    }
+  },
+  "report": {
+    "title": "Deine Analyse",
+    "overallScore": "Gesamtbewertung",
+    "categories": "Kategorien",
+    "summary": "Zusammenfassung des Coaches",
+    "exercises": "Übungen für diese Woche",
+    "exercise": "Übung {{number}}",
+    "saveReport": "Bericht speichern",
+    "saved": "Bericht gespeichert!",
+    "share": "Teilen",
+    "shareText": "PREZENCE Analyse — {{date}}\nGesamtbewertung: {{score}}/10\n\n{{summary}}",
+    "newAnalysis": "Neue Analyse",
+    "categoryNames": {
+      "Filler Words": "Füllwörter",
+      "Speaking Pace": "Sprechtempo",
+      "Use of Pauses": "Pausen-Einsatz",
+      "Eye Contact": "Blickkontakt",
+      "Body Language & Gestures": "Körpersprache & Gestik",
+      "Facial Expression": "Mimik",
+      "Voice Modulation": "Stimmmodulation",
+      "Content Structure": "Inhaltsstruktur",
+      "Overall Confidence & Presence": "Selbstsicherheit & Ausstrahlung"
+    },
+    "observations": "Beobachtungen",
+    "tips": "Tipps"
+  },
+  "progress": {
+    "title": "Fortschritt",
+    "noData": "Noch keine Analysen",
+    "noDataSub": "Lade dein erstes Video hoch, um deinen Fortschritt zu verfolgen",
+    "startButton": "Erstes Video analysieren",
+    "chartTitle": "Bewertungsverlauf",
+    "compareButton": "Vergleichen",
+    "compareTitle": "Analysen vergleichen",
+    "selectTwo": "Wähle zwei Analysen zum Vergleichen aus",
+    "compareClose": "Vergleich schließen",
+    "analysisItem": {
+      "score": "Bewertung: {{score}}/10",
+      "purpose": "Ziel: {{purpose}}"
+    },
+    "purposes": {
+      "job_interview": "Vorstellungsgespräch",
+      "business_presentation": "Business-Präsentation",
+      "content_creation": "Content Creation",
+      "public_speaking": "Öffentliches Sprechen",
+      "personal_improvement": "Persönliche Weiterentwicklung",
+      "other": "Sonstiges"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "profile": "Profil",
+    "language": "Sprache",
+    "languageEn": "English",
+    "languageDe": "Deutsch",
+    "subscription": "Abonnement",
+    "subscriptionFree": "Kostenlos",
+    "subscriptionPremium": "Premium — Aktiv",
+    "manageSubscription": "Abonnement verwalten",
+    "signOut": "Abmelden",
+    "signOutConfirm": "Möchtest du dich wirklich abmelden?",
+    "version": "Version {{version}}",
+    "appVersion": "App-Version"
+  },
+  "paywall": {
+    "title": "Premium werden",
+    "subtitle": "Entfalte dein volles Potenzial als Kommunikator",
+    "features": {
+      "unlimited": "Unbegrenzte Video-Analysen",
+      "detailed": "Detaillierte KI-Coaching-Berichte",
+      "progress": "Fortschrittsverfolgung & Verlauf",
+      "exercises": "Wöchentliche Übungen & Drills",
+      "compare": "Frühere Auftritte vergleichen"
+    },
+    "price": "9,99 € / Monat",
+    "trialButton": "Gratis testen",
+    "subscribeButton": "Jetzt abonnieren",
+    "restore": "Käufe wiederherstellen",
+    "disclaimer": "Jederzeit kündbar. Keine Bindung.",
+    "termsNotice": "Mit dem Abonnement stimmst du unseren Nutzungsbedingungen und Datenschutzrichtlinien zu.",
+    "errors": {
+      "purchaseFailed": "Kauf konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
+      "restoreFailed": "Keine Käufe zum Wiederherstellen gefunden.",
+      "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+    }
+  }
+}

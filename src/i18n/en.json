@@ -1,0 +1,242 @@
+{
+  "common": {
+    "appName": "PREZENCE",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try Again",
+    "cancel": "Cancel",
+    "next": "Next",
+    "back": "Back",
+    "save": "Save",
+    "close": "Close",
+    "ok": "OK",
+    "yes": "Yes",
+    "no": "No",
+    "skip": "Skip",
+    "done": "Done",
+    "continue": "Continue",
+    "orText": "or"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to continue your journey",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Your password",
+      "signInButton": "Sign In",
+      "googleButton": "Continue with Google",
+      "noAccount": "Don't have an account?",
+      "register": "Register",
+      "forgotPassword": "Forgot password?",
+      "errors": {
+        "invalidEmail": "Please enter a valid email address",
+        "wrongPassword": "Incorrect password. Please try again.",
+        "userNotFound": "No account found with this email.",
+        "tooManyRequests": "Too many failed attempts. Please try again later.",
+        "generic": "Sign in failed. Please try again."
+      }
+    },
+    "register": {
+      "title": "Create account",
+      "subtitle": "Start your communication journey",
+      "nameLabel": "Full Name",
+      "namePlaceholder": "Your name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Min. 8 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Repeat your password",
+      "signUpButton": "Create Account",
+      "googleButton": "Continue with Google",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign In",
+      "errors": {
+        "nameRequired": "Please enter your name",
+        "invalidEmail": "Please enter a valid email address",
+        "passwordTooShort": "Password must be at least 8 characters",
+        "passwordsNoMatch": "Passwords do not match",
+        "emailInUse": "This email is already registered.",
+        "generic": "Registration failed. Please try again."
+      }
+    }
+  },
+  "onboarding": {
+    "languageSelect": {
+      "title": "Choose your language",
+      "subtitle": "You can change this later in settings",
+      "english": "English",
+      "deutsch": "Deutsch",
+      "continueButton": "Continue"
+    },
+    "steps": {
+      "stepOf": "{{current}} of {{total}}",
+      "step1": {
+        "title": "What's your goal?",
+        "subtitle": "This helps us tailor your coaching",
+        "options": {
+          "job_interview": "Job Interview",
+          "business_presentation": "Business Presentation",
+          "content_creation": "Content Creation",
+          "public_speaking": "Public Speaking",
+          "personal_improvement": "Personal Improvement",
+          "other": "Other"
+        }
+      },
+      "step2": {
+        "title": "What language will you speak?",
+        "subtitle": "AI will analyze you in this language",
+        "options": {
+          "english": "English",
+          "deutsch": "Deutsch",
+          "other": "Other"
+        }
+      },
+      "step3": {
+        "title": "What's your focus area?",
+        "subtitle": "We'll pay extra attention to this",
+        "options": {
+          "filler_words": "Filler Words",
+          "body_language": "Body Language",
+          "confidence": "Confidence",
+          "speaking_pace": "Speaking Pace",
+          "everything": "Everything — let AI decide"
+        }
+      }
+    }
+  },
+  "home": {
+    "title": "PREZENCE",
+    "analyzeTitle": "Analyze Your Speaking",
+    "analyzeSubtitle": "Upload or record a video and get personalized coaching from AI",
+    "uploadVideo": "Upload Video",
+    "uploadVideoSub": "Choose from library",
+    "recordNow": "Record Now",
+    "recordNowSub": "Use your camera",
+    "analyzeButton": "Analyze",
+    "videoSelected": "Video selected",
+    "videoInfo": "{{duration}} · Ready to analyze",
+    "usageFree": "{{used}}/{{total}} free analysis used this month",
+    "usageUnlimited": "Unlimited analyses",
+    "upgradePrompt": "Upgrade to Premium for unlimited analyses",
+    "upgradeButton": "Upgrade to Premium",
+    "maxDuration": "Videos are limited to 10 minutes",
+    "pickError": "Could not load video. Please try again.",
+    "recordError": "Could not open camera. Please check permissions.",
+    "noVideoSelected": "Please select or record a video first"
+  },
+  "analysis": {
+    "loading": {
+      "title": "Analyzing your video",
+      "subtitle": "This usually takes 30–60 seconds",
+      "estimatedTime": "Estimated time: {{seconds}}s remaining",
+      "cancelButton": "Cancel",
+      "tips": [
+        "Analyzing your filler words...",
+        "Checking your speaking pace...",
+        "Evaluating body language...",
+        "Assessing eye contact...",
+        "Reviewing facial expressions...",
+        "Measuring voice modulation...",
+        "Analyzing content structure...",
+        "Evaluating overall confidence...",
+        "Generating personalized tips...",
+        "Preparing your coaching report..."
+      ]
+    },
+    "errors": {
+      "uploadFailed": "Video upload failed. Please check your connection.",
+      "analysisFailed": "Analysis failed. Please try again.",
+      "timeout": "Analysis timed out. Please try with a shorter video.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "report": {
+    "title": "Your Analysis",
+    "overallScore": "Overall Score",
+    "categories": "Categories",
+    "summary": "Coach's Summary",
+    "exercises": "This Week's Exercises",
+    "exercise": "Exercise {{number}}",
+    "saveReport": "Save Report",
+    "saved": "Report saved!",
+    "share": "Share",
+    "shareText": "PREZENCE Analysis — {{date}}\nOverall Score: {{score}}/10\n\n{{summary}}",
+    "newAnalysis": "New Analysis",
+    "categoryNames": {
+      "Filler Words": "Filler Words",
+      "Speaking Pace": "Speaking Pace",
+      "Use of Pauses": "Use of Pauses",
+      "Eye Contact": "Eye Contact",
+      "Body Language & Gestures": "Body Language & Gestures",
+      "Facial Expression": "Facial Expression",
+      "Voice Modulation": "Voice Modulation",
+      "Content Structure": "Content Structure",
+      "Overall Confidence & Presence": "Overall Confidence & Presence"
+    },
+    "observations": "Observations",
+    "tips": "Tips"
+  },
+  "progress": {
+    "title": "Progress",
+    "noData": "No analyses yet",
+    "noDataSub": "Upload your first video to start tracking your progress",
+    "startButton": "Analyze Your First Video",
+    "chartTitle": "Score Trends",
+    "compareButton": "Compare",
+    "compareTitle": "Compare Analyses",
+    "selectTwo": "Select two analyses to compare",
+    "compareClose": "Close Comparison",
+    "analysisItem": {
+      "score": "Score: {{score}}/10",
+      "purpose": "Goal: {{purpose}}"
+    },
+    "purposes": {
+      "job_interview": "Job Interview",
+      "business_presentation": "Business Presentation",
+      "content_creation": "Content Creation",
+      "public_speaking": "Public Speaking",
+      "personal_improvement": "Personal Improvement",
+      "other": "Other"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "language": "Language",
+    "languageEn": "English",
+    "languageDe": "Deutsch",
+    "subscription": "Subscription",
+    "subscriptionFree": "Free",
+    "subscriptionPremium": "Premium — Active",
+    "manageSubscription": "Manage Subscription",
+    "signOut": "Sign Out",
+    "signOutConfirm": "Are you sure you want to sign out?",
+    "version": "Version {{version}}",
+    "appVersion": "App Version"
+  },
+  "paywall": {
+    "title": "Go Premium",
+    "subtitle": "Unlock your full potential as a communicator",
+    "features": {
+      "unlimited": "Unlimited video analyses",
+      "detailed": "Detailed AI coaching reports",
+      "progress": "Progress tracking & history",
+      "exercises": "Weekly exercises & drills",
+      "compare": "Compare past performances"
+    },
+    "price": "$9.99 / month",
+    "trialButton": "Start Free Trial",
+    "subscribeButton": "Subscribe Now",
+    "restore": "Restore Purchases",
+    "disclaimer": "Cancel anytime. No commitment.",
+    "termsNotice": "By subscribing you agree to our Terms of Service and Privacy Policy.",
+    "errors": {
+      "purchaseFailed": "Purchase could not be completed. Please try again.",
+      "restoreFailed": "No purchases found to restore.",
+      "generic": "Something went wrong. Please try again."
+    }
+  }
+}
