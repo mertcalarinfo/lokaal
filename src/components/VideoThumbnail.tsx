@@ -9,13 +9,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 const COLORS = {
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 interface VideoThumbnailProps {
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(108, 99, 255, 0.8)',
+    backgroundColor: 'rgba(59, 127, 232, 0.8)',
     alignItems: 'center',
     justifyContent: 'center',
   },

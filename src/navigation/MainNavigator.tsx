@@ -17,11 +17,11 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  primary: '#6C63FF',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  background: '#000000',
+  surface: '#0a0f1e',
+  primary: '#3B7FE8',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 const HomeStackNavigator: React.FC = () => {

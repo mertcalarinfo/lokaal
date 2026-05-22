@@ -12,7 +12,7 @@ interface ScoreRingProps {
 }
 
 const getScoreColor = (score: number): { start: string; end: string } => {
-  if (score >= 9) return { start: '#6C63FF', end: '#8B84FF' };
+  if (score >= 9) return { start: '#3B7FE8', end: '#5B9AFF' };
   if (score >= 7) return { start: '#4ECDC4', end: '#45B7AA' };
   if (score >= 4) return { start: '#FFD93D', end: '#FFC107' };
   return { start: '#FF6B6B', end: '#FF4444' };
@@ -69,7 +69,7 @@ const ScoreRing: React.FC<ScoreRingProps> = ({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#2A2A3A"
+          stroke="#1a2235"
           strokeWidth={strokeWidth}
         />
         {/* Score arc */}

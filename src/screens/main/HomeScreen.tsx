@@ -13,7 +13,6 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { HomeStackParamList, OnboardingAnswers } from '../../types';
@@ -21,19 +20,20 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
 import Button from '../../components/Button';
 import VideoThumbnail from '../../components/VideoThumbnail';
+import PrezenceLogo from '../../components/PrezenceLogo';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
+  background: '#000000',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
+  primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -180,15 +180,7 @@ const HomeScreen: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <LinearGradient
-              colors={[COLORS.primary, COLORS.primaryLight]}
-              style={styles.logoIcon}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="mic" size={18} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.logoText}>{t('home.title')}</Text>
+            <PrezenceLogo size="sm" layout="horizontal" />
           </View>
           <TouchableOpacity
             style={styles.settingsButton}
@@ -202,12 +194,6 @@ const HomeScreen: React.FC = () => {
 
         {/* Hero section */}
         <View style={styles.hero}>
-          <LinearGradient
-            colors={['rgba(108,99,255,0.15)', 'rgba(108,99,255,0.03)', 'transparent']}
-            style={styles.heroBg}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-          />
           <Text style={styles.heroTitle}>{t('home.analyzeTitle')}</Text>
           <Text style={styles.heroSubtitle}>{t('home.analyzeSubtitle')}</Text>
         </View>
@@ -245,11 +231,6 @@ const HomeScreen: React.FC = () => {
                 onPress={handlePickVideo}
                 activeOpacity={0.8}
               >
-                <LinearGradient
-                  colors={['rgba(108,99,255,0.12)', 'rgba(108,99,255,0.04)']}
-                  style={StyleSheet.absoluteFillObject}
-                  borderRadius={16}
-                />
                 <View style={styles.uploadIconContainer}>
                   <Ionicons name="cloud-upload-outline" size={30} color={COLORS.primary} />
                 </View>
@@ -262,12 +243,7 @@ const HomeScreen: React.FC = () => {
                 onPress={handleRecordVideo}
                 activeOpacity={0.8}
               >
-                <LinearGradient
-                  colors={['rgba(78,205,196,0.12)', 'rgba(78,205,196,0.04)']}
-                  style={StyleSheet.absoluteFillObject}
-                  borderRadius={16}
-                />
-                <View style={[styles.uploadIconContainer, { backgroundColor: 'rgba(78,205,196,0.15)' }]}>
+                <View style={[styles.uploadIconContainer, { backgroundColor: 'rgba(78,205,196,0.12)' }]}>
                   <Ionicons name="videocam-outline" size={30} color={COLORS.success} />
                 </View>
                 <Text style={styles.uploadCardTitle}>{t('home.recordNow')}</Text>
@@ -280,11 +256,6 @@ const HomeScreen: React.FC = () => {
         {/* Paywall notice if limit reached */}
         {!isSubscribed && subscription.analysesThisMonth >= 1 && (
           <View style={styles.upgradeCard}>
-            <LinearGradient
-              colors={['rgba(255,107,107,0.15)', 'rgba(255,107,107,0.05)']}
-              style={StyleSheet.absoluteFillObject}
-              borderRadius={14}
-            />
             <Ionicons name="star" size={20} color={COLORS.accent} style={{ marginBottom: 8 }} />
             <Text style={styles.upgradeTitle}>{t('home.upgradePrompt')}</Text>
             <Button
@@ -333,20 +304,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  logoIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  logoText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    letterSpacing: 3,
-  },
   settingsButton: {
     padding: 4,
   },
@@ -367,16 +324,11 @@ const styles = StyleSheet.create({
   },
   hero: {
     marginVertical: 24,
-    position: 'relative',
     borderRadius: 20,
-    overflow: 'hidden',
     padding: 24,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-  },
-  heroBg: {
-    ...StyleSheet.absoluteFillObject,
   },
   heroTitle: {
     fontSize: 26,
@@ -413,7 +365,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: 'rgba(108,99,255,0.15)',
+    backgroundColor: 'rgba(59,127,232,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,

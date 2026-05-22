@@ -13,7 +13,7 @@ const AuthNavigator: React.FC = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#0A0A0F' },
+        contentStyle: { backgroundColor: '#000000' },
         animation: 'slide_from_right',
       }}
     >

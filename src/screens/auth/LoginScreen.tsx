@@ -13,26 +13,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import PrezenceLogo from '../../components/PrezenceLogo';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
+  background: '#000000',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
+  primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -128,16 +126,7 @@ const LoginScreen: React.FC = () => {
         >
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <LinearGradient
-              colors={[COLORS.primary, COLORS.primaryLight]}
-              style={styles.logoIcon}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="mic" size={28} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.logoText}>PREZENCE</Text>
-            <Text style={styles.logoTagline}>Your AI Communication Coach</Text>
+            <PrezenceLogo size="lg" showTagline />
           </View>
 
           {/* Card */}
@@ -232,26 +221,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
-  },
-  logoIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  logoText: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    letterSpacing: 4,
-  },
-  logoTagline: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    marginTop: 6,
-    letterSpacing: 0.5,
   },
   card: {
     backgroundColor: COLORS.surface,

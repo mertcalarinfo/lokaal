@@ -10,26 +10,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-
+import { Image } from 'react-native';
 import { HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import Button from '../../components/Button';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
+  background: '#000000',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
+  primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 type AnalysisLoadingRouteProp = RouteProp<HomeStackParamList, 'AnalysisLoading'>;
@@ -193,14 +191,11 @@ const AnalysisLoadingScreen: React.FC = () => {
         {/* Animated logo */}
         <View style={styles.logoSection}>
           <Animated.View style={[styles.logoOuter, { transform: [{ scale: pulseAnim }] }]}>
-            <LinearGradient
-              colors={[COLORS.primary, COLORS.primaryLight]}
-              style={styles.logoGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="mic" size={40} color="#fff" />
-            </LinearGradient>
+            <Image
+              source={require('../../../assets/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </Animated.View>
           <Text style={styles.logoText}>PREZENCE</Text>
         </View>
@@ -284,12 +279,9 @@ const styles = StyleSheet.create({
   logoOuter: {
     marginBottom: 16,
   },
-  logoGradient: {
+  logoImage: {
     width: 88,
     height: 88,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   logoText: {
     fontSize: 22,

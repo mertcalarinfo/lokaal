@@ -16,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 import { AnalysisReport, HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -25,17 +25,17 @@ import ScoreRing from '../../components/ScoreRing';
 import Button from '../../components/Button';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
+  background: '#000000',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
+  primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -218,13 +218,9 @@ const ProgressScreen: React.FC = () => {
         {reports.length === 0 ? (
           // Empty state
           <View style={styles.emptyState}>
-            <LinearGradient
-              colors={['rgba(108,99,255,0.15)', 'rgba(108,99,255,0.03)']}
-              style={styles.emptyIcon}
-              borderRadius={40}
-            >
+            <View style={styles.emptyIcon}>
               <Ionicons name="analytics-outline" size={40} color={COLORS.primary} />
-            </LinearGradient>
+            </View>
             <Text style={styles.emptyTitle}>{t('progress.noData')}</Text>
             <Text style={styles.emptySubtitle}>{t('progress.noDataSub')}</Text>
             <Button
@@ -260,7 +256,7 @@ const ProgressScreen: React.FC = () => {
                     backgroundGradientFrom: COLORS.surface,
                     backgroundGradientTo: COLORS.surface,
                     decimalPlaces: 1,
-                    color: (opacity = 1) => `rgba(108, 99, 255, ${opacity})`,
+                    color: (opacity = 1) => `rgba(59, 127, 232, ${opacity})`,
                     labelColor: () => COLORS.textMuted,
                     style: { borderRadius: 16 },
                     propsForDots: {
@@ -447,9 +443,13 @@ const styles = StyleSheet.create({
   emptyIcon: {
     width: 80,
     height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(59,127,232,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(59,127,232,0.2)',
   },
   emptyTitle: {
     fontSize: 20,

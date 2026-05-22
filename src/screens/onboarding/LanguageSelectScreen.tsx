@@ -8,25 +8,22 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../../hooks/useAuth';
 import { changeLanguage } from '../../i18n';
 import Button from '../../components/Button';
+import PrezenceLogo from '../../components/PrezenceLogo';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
-  accent: '#FF6B6B',
-  success: '#4ECDC4',
+  background: '#000000',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 type Language = 'en' | 'de';
@@ -45,9 +42,7 @@ const LanguageSelectScreen: React.FC = () => {
       if (user) {
         await updateLanguage(selectedLanguage);
       }
-      // Navigation is handled by AppNavigator based on auth state
-      // Just navigating back will trigger AppNavigator to show the main app
-    } catch (error: any) {
+    } catch {
       Alert.alert('Error', 'Failed to save language preference. Please try again.');
     } finally {
       setLoading(false);
@@ -64,15 +59,7 @@ const LanguageSelectScreen: React.FC = () => {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.primaryLight]}
-            style={styles.logoIcon}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="mic" size={24} color="#fff" />
-          </LinearGradient>
-          <Text style={styles.appName}>PREZENCE</Text>
+          <PrezenceLogo size="sm" layout="horizontal" />
         </View>
 
         {/* Title */}
@@ -98,13 +85,6 @@ const LanguageSelectScreen: React.FC = () => {
                 onPress={() => setSelectedLanguage(lang.code)}
                 activeOpacity={0.8}
               >
-                {isSelected && (
-                  <LinearGradient
-                    colors={['rgba(108,99,255,0.15)', 'rgba(108,99,255,0.05)']}
-                    style={StyleSheet.absoluteFillObject}
-                    borderRadius={16}
-                  />
-                )}
                 <Text style={styles.languageFlag}>{lang.flag}</Text>
                 <Text style={[styles.languageLabel, isSelected && styles.languageLabelSelected]}>
                   {lang.label}
@@ -146,23 +126,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 48,
-  },
-  logoIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  appName: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    letterSpacing: 3,
   },
   titleContainer: {
     marginBottom: 40,
@@ -195,10 +159,10 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     minHeight: 160,
     justifyContent: 'center',
-    overflow: 'hidden',
   },
   languageCardSelected: {
     borderColor: COLORS.primary,
+    backgroundColor: '#0d1a35',
   },
   languageFlag: {
     fontSize: 40,

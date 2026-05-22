@@ -13,7 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 import { HomeStackParamList } from '../../types';
 import { useAnalysis } from '../../hooks/useAnalysis';
@@ -22,17 +22,17 @@ import CategoryCard from '../../components/CategoryCard';
 import Button from '../../components/Button';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
+  background: '#000000',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
+  primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 type ReportRouteProp = RouteProp<HomeStackParamList, 'Report'>;
@@ -109,11 +109,6 @@ const ReportScreen: React.FC = () => {
       >
         {/* Overall score */}
         <View style={styles.scoreCard}>
-          <LinearGradient
-            colors={['rgba(108,99,255,0.2)', 'rgba(108,99,255,0.05)']}
-            style={StyleSheet.absoluteFillObject}
-            borderRadius={20}
-          />
           <Text style={styles.scoreLabel}>{t('report.overallScore')}</Text>
           <ScoreRing score={report.averageScore} size={140} strokeWidth={12} animate />
           <Text style={styles.reportDate}>{formatDate(report.createdAt)}</Text>
@@ -141,11 +136,6 @@ const ReportScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>{t('report.exercises')}</Text>
           {report.exercises.map((exercise, index) => (
             <View key={index} style={styles.exerciseCard}>
-              <LinearGradient
-                colors={['rgba(78,205,196,0.12)', 'rgba(78,205,196,0.04)']}
-                style={StyleSheet.absoluteFillObject}
-                borderRadius={14}
-              />
               <View style={styles.exerciseBadge}>
                 <Text style={styles.exerciseBadgeText}>{index + 1}</Text>
               </View>

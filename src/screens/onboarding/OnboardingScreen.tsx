@@ -13,23 +13,23 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 import { HomeStackParamList, OnboardingAnswers } from '../../types';
 import Button from '../../components/Button';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
+  background: '#000000',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
+  primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 type OnboardingNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Onboarding'>;
@@ -152,13 +152,7 @@ const OnboardingScreen: React.FC = () => {
       onPress={onSelect}
       activeOpacity={0.8}
     >
-      {isSelected && (
-        <LinearGradient
-          colors={['rgba(108,99,255,0.15)', 'rgba(108,99,255,0.05)']}
-          style={StyleSheet.absoluteFillObject}
-          borderRadius={12}
-        />
-      )}
+
       <Ionicons
         name={icon as any}
         size={22}
@@ -368,6 +362,7 @@ const styles = StyleSheet.create({
   },
   optionCardSelected: {
     borderColor: COLORS.primary,
+    backgroundColor: '#0d1a35',
   },
   optionIcon: {
     marginRight: 14,

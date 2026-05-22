@@ -8,9 +8,9 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  primary: '#6C63FF',
+  background: '#000000',
+  surface: '#0a0f1e',
+  primary: '#3B7FE8',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
 };

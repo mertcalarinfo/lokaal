@@ -9,11 +9,11 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  border: '#2A2A3A',
+  primary: '#3B7FE8',
+  primaryLight: '#5B9AFF',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  border: '#1a2235',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
   accent: '#FF6B6B',
@@ -62,7 +62,7 @@ const Button: React.FC<ButtonProps> = ({
 
     const variantStyles: Record<ButtonVariant, ViewStyle> = {
       primary: {
-        backgroundColor: isDisabled ? '#3D3A66' : COLORS.primary,
+        backgroundColor: isDisabled ? '#1e3a6e' : COLORS.primary,
       },
       secondary: {
         backgroundColor: isDisabled ? '#1a1a24' : COLORS.surfaceElevated,

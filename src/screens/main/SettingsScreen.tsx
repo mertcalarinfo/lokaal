@@ -11,24 +11,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
 import { changeLanguage } from '../../i18n';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
+  background: '#000000',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
+  primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 const APP_VERSION = '1.0.0';
@@ -146,16 +146,11 @@ const SettingsScreen: React.FC = () => {
 
         {/* Profile section */}
         <View style={styles.profileCard}>
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.primaryLight]}
-            style={styles.avatarCircle}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
+          <View style={styles.avatarCircle}>
             <Text style={styles.avatarText}>
               {user?.displayName ? getInitials(user.displayName) : '?'}
             </Text>
-          </LinearGradient>
+          </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{user?.displayName || '—'}</Text>
             <Text style={styles.profileEmail}>{user?.email || '—'}</Text>
@@ -163,7 +158,7 @@ const SettingsScreen: React.FC = () => {
           <View
             style={[
               styles.tierBadge,
-              { backgroundColor: isSubscribed ? 'rgba(78,205,196,0.15)' : 'rgba(108,99,255,0.15)' },
+              { backgroundColor: isSubscribed ? 'rgba(78,205,196,0.15)' : 'rgba(59,127,232,0.15)' },
             ]}
           >
             <Ionicons
@@ -285,6 +280,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
+    backgroundColor: '#3B7FE8',
   },
   avatarText: {
     fontSize: 18,

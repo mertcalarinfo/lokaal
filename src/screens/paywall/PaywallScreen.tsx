@@ -11,23 +11,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { getOfferings, purchasePackage, restorePurchases } from '../../services/revenuecat';
 import Button from '../../components/Button';
+import PrezenceLogo from '../../components/PrezenceLogo';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  surfaceElevated: '#1C1C26',
-  primary: '#6C63FF',
-  primaryLight: '#8B84FF',
+  background: '#000000',
+  surface: '#0a0f1e',
+  surfaceElevated: '#111827',
+  primary: '#3B7FE8',
+  primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  textMuted: '#4A4A5E',
-  border: '#2A2A3A',
+  textMuted: '#4a5568',
+  border: '#1a2235',
 };
 
 const PaywallScreen: React.FC = () => {
@@ -117,13 +117,6 @@ const PaywallScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Background gradient */}
-      <LinearGradient
-        colors={['rgba(108,99,255,0.2)', 'rgba(10,10,15,0)', 'rgba(10,10,15,0)']}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 0.4 }}
-      />
 
       {/* Close button */}
       <TouchableOpacity
@@ -140,14 +133,11 @@ const PaywallScreen: React.FC = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.primaryLight]}
-            style={styles.premiumIcon}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="star" size={28} color="#fff" />
-          </LinearGradient>
+          <PrezenceLogo size="md" showTagline={false} style={styles.payLogo} />
+          <View style={styles.premiumBadge}>
+            <Ionicons name="star" size={14} color={COLORS.primary} />
+            <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+          </View>
           <Text style={styles.title}>{t('paywall.title')}</Text>
           <Text style={styles.subtitle}>{t('paywall.subtitle')}</Text>
         </View>
@@ -169,11 +159,6 @@ const PaywallScreen: React.FC = () => {
 
         {/* Pricing card */}
         <View style={styles.pricingCard}>
-          <LinearGradient
-            colors={['rgba(108,99,255,0.2)', 'rgba(108,99,255,0.05)']}
-            style={StyleSheet.absoluteFillObject}
-            borderRadius={16}
-          />
           <View style={styles.pricingHeader}>
             <Text style={styles.pricingBadge}>MOST POPULAR</Text>
           </View>
@@ -239,13 +224,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 36,
   },
-  premiumIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
+  payLogo: {
+    marginBottom: 16,
+  },
+  premiumBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
+    backgroundColor: 'rgba(59,127,232,0.12)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(59,127,232,0.3)',
+    gap: 5,
+    marginBottom: 16,
+  },
+  premiumBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.primary,
+    letterSpacing: 2,
   },
   title: {
     fontSize: 30,
