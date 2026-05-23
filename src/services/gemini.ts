@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import { OnboardingAnswers, AnalysisReport, CategoryResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
-const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
+const GEMINI_API_KEY = 'AIzaSyA-RQoFKjc5-kazKZrjLPK34JxyWdkziEY';
 const GEMINI_MODEL = 'gemini-1.5-pro';
 const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
 const GEMINI_GENERATE_API = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;

@@ -2,12 +2,13 @@ import { Platform } from 'react-native';
 
 // Firebase configuration - replace with your actual config
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_PROJECT.firebaseapp.com',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_PROJECT.appspot.com',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId: 'YOUR_APP_ID',
+  apiKey: 'AIzaSyAPdYymYqKSY7l7Jhevpif3kfJbhMgQCDU',
+  authDomain: 'prezence-app-1.firebaseapp.com',
+  projectId: 'prezence-app-1',
+  storageBucket: 'prezence-app-1.firebasestorage.app',
+  messagingSenderId: '870921496071',
+  appId: '1:870921496071:web:d8212af82cf5b2554daca2',
+  measurementId: 'G-2S0G9945X6',
 };
 
 let firebaseApp: any = null;
@@ -16,17 +17,8 @@ let dbInstance: any = null;
 let storageInstance: any = null;
 let isConfigured = false;
 
-const UNCONFIGURED_KEYS = [
-  'YOUR_API_KEY',
-  'YOUR_PROJECT.firebaseapp.com',
-  'YOUR_PROJECT_ID',
-  'YOUR_PROJECT.appspot.com',
-  'YOUR_SENDER_ID',
-  'YOUR_APP_ID',
-];
-
 export const checkFirebaseConfigured = (): boolean => {
-  return !UNCONFIGURED_KEYS.includes(firebaseConfig.apiKey);
+  return firebaseConfig.apiKey !== '' && !firebaseConfig.apiKey.startsWith('YOUR_');
 };
 
 const initializeFirebase = () => {
