@@ -14,6 +14,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.prezence.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "PREZENCE needs camera access to record your speaking videos.",
         "NSMicrophoneUsageDescription": "PREZENCE needs microphone access to record your speaking videos.",
@@ -26,11 +27,32 @@
         "backgroundColor": "#000000"
       },
       "package": "com.prezence.app",
-      "permissions": ["CAMERA", "RECORD_AUDIO", "READ_EXTERNAL_STORAGE"]
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "plugins": [
-      ["expo-camera", {"cameraPermission": "Allow PREZENCE to access your camera."}],
+      "expo-dev-client",
+      "@react-native-firebase/app",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow PREZENCE to access your camera."
+        }
+      ],
       "expo-av"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8e79576a-7a76-44e3-8795-db633e727752"
+      }
+    },
+    "owner": "mertcalar"
   }
 }

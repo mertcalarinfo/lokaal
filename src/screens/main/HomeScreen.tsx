@@ -60,7 +60,7 @@ const HomeScreen: React.FC = () => {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        mediaTypes: ImagePicker.MediaType.videos,
         allowsEditing: false,
         quality: 1,
         videoMaxDuration: MAX_VIDEO_DURATION_SECONDS,
@@ -94,10 +94,10 @@ const HomeScreen: React.FC = () => {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        mediaTypes: ImagePicker.MediaType.videos,
         allowsEditing: false,
         videoMaxDuration: MAX_VIDEO_DURATION_SECONDS,
-        quality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+        quality: 0.5,
       });
 
       if (!result.canceled && result.assets[0]) {
