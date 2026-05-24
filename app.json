@@ -14,8 +14,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.prezence.app",
-      "googleServicesFile": "./GoogleService-Info.plist",
-      "infoPlist": {
+"infoPlist": {
         "NSCameraUsageDescription": "PREZENCE needs camera access to record your speaking videos.",
         "NSMicrophoneUsageDescription": "PREZENCE needs microphone access to record your speaking videos.",
         "NSPhotoLibraryUsageDescription": "PREZENCE needs photo library access to upload your speaking videos."
