@@ -1,7 +1,7 @@
 import { Subscription } from '../types';
 
 const REVENUECAT_API_KEY_IOS = 'YOUR_REVENUECAT_IOS_API_KEY';
-const REVENUECAT_API_KEY_ANDROID = 'YOUR_REVENUECAT_ANDROID_API_KEY';
+const REVENUECAT_API_KEY_ANDROID = 'test_oEswHVrjJiDqyaBlKNFltnENDne';
 const PREMIUM_ENTITLEMENT_ID = 'premium';
 
 let isInitialized = false;
