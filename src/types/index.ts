@@ -2,7 +2,8 @@ export interface User {
   uid: string;
   email: string;
   displayName: string;
-  language: 'en' | 'de';
+  language?: 'en' | 'de';
+  onboardingCompleted?: boolean;
   createdAt: Date;
 }
 
@@ -53,12 +54,18 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   LanguageSelect: undefined;
+  OnboardingIntro: undefined;
 };
 
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   LanguageSelect: undefined;
+};
+
+export type MainStackParamList = {
+  Tabs: undefined;
+  Paywall: undefined;
 };
 
 export type MainTabParamList = {
@@ -69,7 +76,7 @@ export type MainTabParamList = {
 
 export type HomeStackParamList = {
   Home: undefined;
-  Onboarding: undefined;
+  Onboarding: { videoUri: string };
   AnalysisLoading: { videoUri: string; answers: OnboardingAnswers };
   Report: { report: AnalysisReport };
   Paywall: undefined;

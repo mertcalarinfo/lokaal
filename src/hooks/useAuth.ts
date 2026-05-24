@@ -16,6 +16,7 @@ interface AuthActions {
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   updateLanguage: (language: 'en' | 'de') => Promise<void>;
+  markOnboardingCompleted: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -42,17 +43,20 @@ export const useAuth = (): AuthState & AuthActions => {
             uid: fbUser.uid,
             email: fbUser.email || '',
             displayName: fbUser.displayName || profile?.displayName || '',
-            language: profile?.language || 'en',
+            // Only set language if explicitly saved — undefined triggers LanguageSelect
+            language: profile?.language || undefined,
+            onboardingCompleted: profile?.onboardingCompleted ?? false,
             createdAt: profile?.createdAt?.toDate?.() || new Date(),
           };
           setUser(appUser);
         } catch {
-          // Create minimal user if profile fetch fails
+          // Profile fetch failed — treat as new user with no language set
           setUser({
             uid: fbUser.uid,
             email: fbUser.email || '',
             displayName: fbUser.displayName || '',
-            language: 'en',
+            language: undefined,
+            onboardingCompleted: false,
             createdAt: new Date(),
           });
         }
@@ -88,15 +92,14 @@ export const useAuth = (): AuthState & AuthActions => {
       const credential = await auth.createUserWithEmailAndPassword(email, password);
       const fbUser = credential.user;
 
-      // Update display name
       await fbUser.updateProfile({ displayName: name });
 
-      // Save user profile to Firestore
+      // Save profile WITHOUT language — forces LanguageSelect to appear
       await saveUserProfile(fbUser.uid, {
         uid: fbUser.uid,
         email,
         displayName: name,
-        language: 'en',
+        onboardingCompleted: false,
         createdAt: new Date(),
       });
     } catch (err: any) {
@@ -111,7 +114,6 @@ export const useAuth = (): AuthState & AuthActions => {
     if (!auth) return;
 
     try {
-      // Reset RevenueCat user
       try {
         const { resetUser } = await import('../services/revenuecat');
         await resetUser();
@@ -147,13 +149,13 @@ export const useAuth = (): AuthState & AuthActions => {
       const credential = await auth.signInWithCredential(googleCredential);
       const fbUser = credential.user;
 
-      // Check if new user and save profile
+      // New Google users: save profile WITHOUT language to trigger LanguageSelect
       if (credential.additionalUserInfo?.isNewUser) {
         await saveUserProfile(fbUser.uid, {
           uid: fbUser.uid,
           email: fbUser.email || '',
           displayName: fbUser.displayName || '',
-          language: 'en',
+          onboardingCompleted: false,
           createdAt: new Date(),
         });
       }
@@ -180,6 +182,17 @@ export const useAuth = (): AuthState & AuthActions => {
     [user]
   );
 
+  const markOnboardingCompleted = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      await saveUserProfile(user.uid, { onboardingCompleted: true });
+      setUser((prev) => (prev ? { ...prev, onboardingCompleted: true } : null));
+    } catch (err: any) {
+      console.warn('Failed to mark onboarding completed:', err);
+    }
+  }, [user]);
+
   const clearError = useCallback(() => setError(null), []);
 
   return {
@@ -192,6 +205,7 @@ export const useAuth = (): AuthState & AuthActions => {
     signOut,
     signInWithGoogle,
     updateLanguage,
+    markOnboardingCompleted,
     clearError,
   };
 };

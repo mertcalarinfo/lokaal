@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
+import { Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { HomeStackParamList, OnboardingAnswers } from '../../types';
@@ -53,9 +54,20 @@ const HomeScreen: React.FC = () => {
 
   const handlePickVideo = useCallback(async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('common.error'), t('home.pickError'));
+        if (!canAskAgain) {
+          Alert.alert(
+            t('common.error'),
+            'Media library access is required. Please enable it in your device Settings.',
+            [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+        } else {
+          Alert.alert(t('common.error'), t('home.pickError'));
+        }
         return;
       }
 
@@ -87,9 +99,20 @@ const HomeScreen: React.FC = () => {
 
   const handleRecordVideo = useCallback(async () => {
     try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('common.error'), t('home.recordError'));
+        if (!canAskAgain) {
+          Alert.alert(
+            t('common.error'),
+            'Camera access is required. Please enable it in your device Settings.',
+            [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+        } else {
+          Alert.alert(t('common.error'), t('home.recordError'));
+        }
         return;
       }
 
@@ -123,8 +146,8 @@ const HomeScreen: React.FC = () => {
       return;
     }
 
-    // Navigate to onboarding to gather context
-    navigation.navigate('Onboarding');
+    // Navigate to onboarding with the video URI so answers + video reach AnalysisLoading
+    navigation.navigate('Onboarding', { videoUri: selectedVideo.uri });
   }, [selectedVideo, canAnalyze, navigation, t]);
 
   const handleUpgradePress = () => {

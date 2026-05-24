@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import LanguageSelectScreen from '../screens/onboarding/LanguageSelectScreen';
+import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -63,10 +64,20 @@ const AppNavigator: React.FC = () => {
     return <AuthNavigator />;
   }
 
+  // Step 1: New user must choose app language
   if (!user.language) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} />
+      </Stack.Navigator>
+    );
+  }
+
+  // Step 2: Must complete the 3-step onboarding (purpose / video language / focus area)
+  if (!user.onboardingCompleted) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="OnboardingIntro" component={OnboardingScreen} />
       </Stack.Navigator>
     );
   }

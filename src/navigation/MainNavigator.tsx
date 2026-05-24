@@ -3,8 +3,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MainTabParamList, HomeStackParamList } from '../types';
+import { MainTabParamList, MainStackParamList, HomeStackParamList } from '../types';
 import HomeScreen from '../screens/main/HomeScreen';
 import AnalysisLoadingScreen from '../screens/main/AnalysisLoadingScreen';
 import ReportScreen from '../screens/main/ReportScreen';
@@ -15,6 +16,7 @@ import PaywallScreen from '../screens/paywall/PaywallScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const MainStack = createNativeStackNavigator<MainStackParamList>();
 
 const COLORS = {
   background: '#000000',
@@ -50,8 +52,10 @@ const HomeStackNavigator: React.FC = () => {
   );
 };
 
-const MainNavigator: React.FC = () => {
+// Inner tab navigator — separated so useSafeAreaInsets can be called as a hook
+const TabNavigator: React.FC = () => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -61,8 +65,9 @@ const MainNavigator: React.FC = () => {
           backgroundColor: COLORS.surface,
           borderTopColor: COLORS.border,
           borderTopWidth: 1,
-          height: 80,
-          paddingBottom: 20,
+          // Extend height by the system navigation bar inset so nothing is hidden
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom + 8,
           paddingTop: 10,
         },
         tabBarActiveTintColor: COLORS.primary,
@@ -103,6 +108,20 @@ const MainNavigator: React.FC = () => {
         options={{ tabBarLabel: t('settings.title') }}
       />
     </Tab.Navigator>
+  );
+};
+
+// Outer stack — exposes Paywall as a root-level modal accessible from any tab
+const MainNavigator: React.FC = () => {
+  return (
+    <MainStack.Navigator screenOptions={{ headerShown: false }}>
+      <MainStack.Screen name="Tabs" component={TabNavigator} />
+      <MainStack.Screen
+        name="Paywall"
+        component={PaywallScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+    </MainStack.Navigator>
   );
 };
 

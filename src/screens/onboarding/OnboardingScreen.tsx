@@ -9,13 +9,13 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
-
 import { HomeStackParamList, OnboardingAnswers } from '../../types';
+import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/Button';
 
 const COLORS = {
@@ -59,7 +59,15 @@ const step3Icons: Record<Step3Option, string> = {
 
 const OnboardingScreen: React.FC = () => {
   const { t } = useTranslation();
-  const navigation = useNavigation<OnboardingNavigationProp>();
+  // Use `any` navigation so this screen works in both HomeStack and AppNavigator's intro stack
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { markOnboardingCompleted } = useAuth();
+
+  // videoUri is present when coming from HomeScreen pre-analysis flow
+  // undefined/absent means we're in the new-user intro flow
+  const videoUri: string | undefined = route.params?.videoUri;
+  const isIntroMode = !videoUri;
 
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Partial<OnboardingAnswers>>({});
@@ -113,13 +121,22 @@ const OnboardingScreen: React.FC = () => {
       animateTransition('forward');
       setTimeout(() => setCurrentStep((s) => s + 1), 200);
     } else {
-      // Navigate to home with answers
-      const homeAnswers: OnboardingAnswers = {
+      const finalAnswers: OnboardingAnswers = {
         purpose: answers.purpose || 'personal_improvement',
         videoLanguage: answers.videoLanguage || 'english',
         focusArea: answers.focusArea || 'everything',
       };
-      navigation.navigate('Home');
+
+      if (isIntroMode) {
+        // New-user intro: mark complete — AppNavigator auto-transitions to MainNavigator
+        markOnboardingCompleted();
+      } else {
+        // Pre-analysis flow: hand off answers + video to the loading screen
+        navigation.navigate('AnalysisLoading', {
+          videoUri,
+          answers: finalAnswers,
+        });
+      }
     }
   };
 
@@ -127,9 +144,10 @@ const OnboardingScreen: React.FC = () => {
     if (currentStep > 0) {
       animateTransition('back');
       setTimeout(() => setCurrentStep((s) => s - 1), 200);
-    } else {
+    } else if (navigation.canGoBack()) {
       navigation.goBack();
     }
+    // If at step 0 in intro mode (no parent screen), do nothing
   };
 
   const canProceed = (): boolean => {
@@ -152,7 +170,6 @@ const OnboardingScreen: React.FC = () => {
       onPress={onSelect}
       activeOpacity={0.8}
     >
-
       <Ionicons
         name={icon as any}
         size={22}

@@ -76,7 +76,7 @@ export default function App() {
             },
           }}
         >
-          <StatusBar style="light" />
+          <StatusBar style="light" backgroundColor="#000000" />
           {!firebaseConfigured && <FirebaseNotConfiguredBanner />}
           <AppNavigator />
         </NavigationContainer>

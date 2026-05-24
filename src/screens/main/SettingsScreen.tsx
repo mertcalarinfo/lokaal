@@ -7,11 +7,13 @@ import {
   ScrollView,
   Alert,
   Switch,
+  Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-
 
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
@@ -35,8 +37,9 @@ const APP_VERSION = '1.0.0';
 
 const SettingsScreen: React.FC = () => {
   const { t } = useTranslation();
+  const navigation = useNavigation<any>();
   const { user, signOut, updateLanguage } = useAuth();
-  const { subscription, isSubscribed, presentPaywall } = useSubscription(user?.uid || null);
+  const { subscription, isSubscribed } = useSubscription(user?.uid || null);
 
   const [signingOut, setSigningOut] = useState(false);
   const [languageLoading, setLanguageLoading] = useState(false);
@@ -89,16 +92,17 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
-  const handleManageSubscription = async () => {
+  const handleManageSubscription = () => {
     if (!isSubscribed) {
-      await presentPaywall();
+      navigation.navigate('Paywall');
     } else {
-      // On iOS, deep link to subscription management
-      Alert.alert(
-        t('settings.subscription'),
-        t('settings.subscriptionPremium'),
-        [{ text: t('common.ok') }]
-      );
+      const url =
+        Platform.OS === 'ios'
+          ? 'https://apps.apple.com/account/subscriptions'
+          : 'https://play.google.com/store/account/subscriptions';
+      Linking.openURL(url).catch(() => {
+        Alert.alert(t('common.error'), t('common.error'));
+      });
     }
   };
 
