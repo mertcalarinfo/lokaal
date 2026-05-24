@@ -11,6 +11,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useAnalysis } from '../../hooks/useAnalysis';
