@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "870921496071",
+    "project_id": "prezence-app-1",
+    "storage_bucket": "prezence-app-1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:870921496071:android:cfe63bb775c43f104daca2",
+        "android_client_info": {
+          "package_name": "com.prezence.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "870921496071-c39cqnb9mhh693bdf3rviutshs2km1tj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADE9biVaDxVHhBo9k8Sr0rSKuQi7zQCFc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "870921496071-c39cqnb9mhh693bdf3rviutshs2km1tj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
