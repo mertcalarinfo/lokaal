@@ -16,6 +16,7 @@ import { isConfigured } from './src/services/firebase';
 import { initRevenueCat } from './src/services/revenuecat';
 
 import AppNavigator from './src/navigation/AppNavigator';
+import { AuthProvider } from './src/contexts/AuthContext';
 
 const COLORS = {
   background: '#0a1628',
@@ -75,23 +76,29 @@ export default function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <NavigationContainer
-          theme={{
-            dark: true,
-            colors: {
-              primary: COLORS.primary,
-              background: COLORS.background,
-              card: COLORS.surface,
-              text: COLORS.textPrimary,
-              border: COLORS.border,
-              notification: COLORS.accent,
-            },
-          }}
-        >
-          <StatusBar style="light" backgroundColor="#0a1628" />
-          {!firebaseConfigured && <FirebaseNotConfiguredBanner />}
-          <AppNavigator />
-        </NavigationContainer>
+        {/* AuthProvider wraps NavigationContainer so every screen — including
+            AppNavigator — shares one auth state instance. This is what fixes
+            the onboarding loop: markOnboardingCompleted() now updates the same
+            user object that AppNavigator reads, triggering an immediate re-render. */}
+        <AuthProvider>
+          <NavigationContainer
+            theme={{
+              dark: true,
+              colors: {
+                primary: COLORS.primary,
+                background: COLORS.background,
+                card: COLORS.surface,
+                text: COLORS.textPrimary,
+                border: COLORS.border,
+                notification: COLORS.accent,
+              },
+            }}
+          >
+            <StatusBar style="light" backgroundColor="#0a1628" />
+            {!firebaseConfigured && <FirebaseNotConfiguredBanner />}
+            <AppNavigator />
+          </NavigationContainer>
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
