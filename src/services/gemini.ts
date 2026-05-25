@@ -9,6 +9,15 @@ import { v4 as uuidv4 } from 'uuid';
 const GEMINI_API_KEY: string =
   (Constants.expoConfig?.extra?.geminiApiKey as string) || '';
 
+// Diagnostic: confirm the key reached the bundle correctly.
+// Logs only the first 10 characters so the full key is never exposed in logs.
+console.log(
+  '[Gemini] Key injection check —',
+  GEMINI_API_KEY
+    ? `key loaded ✓ (starts with: ${GEMINI_API_KEY.slice(0, 10)}…, length: ${GEMINI_API_KEY.length})`
+    : 'KEY IS EMPTY ✗ — check EAS secret and app.config.js'
+);
+
 const GEMINI_MODEL = 'gemini-2.0-flash';
 const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1/files';
 const GEMINI_GENERATE_API = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
