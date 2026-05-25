@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Text } from 'react-native';
+import { useFonts, DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 
 // Initialize i18n before anything else
 import './src/i18n';
@@ -17,13 +18,13 @@ import { initRevenueCat } from './src/services/revenuecat';
 import AppNavigator from './src/navigation/AppNavigator';
 
 const COLORS = {
-  background: '#0A0A0F',
-  surface: '#13131A',
-  primary: '#6C63FF',
+  background: '#0a1628',
+  surface: '#0d1b2e',
+  primary: '#3B7FE8',
   accent: '#FF6B6B',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
-  border: '#2A2A3A',
+  border: 'rgba(59,127,232,0.25)',
 };
 
 const FirebaseNotConfiguredBanner: React.FC = () => (
@@ -47,16 +48,27 @@ const bannerStyles = StyleSheet.create({
     color: COLORS.accent,
     textAlign: 'center',
     lineHeight: 16,
+    fontFamily: 'DMSans_400Regular',
   },
 });
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    DMSans_400Regular,
+    DMSans_700Bold,
+  });
+
   useEffect(() => {
     // Initialize RevenueCat on app start
     initRevenueCat().catch((err) => {
       console.warn('RevenueCat init failed:', err);
     });
   }, []);
+
+  // Keep native splash visible until fonts are ready
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const firebaseConfigured = isConfigured;
 
@@ -76,7 +88,7 @@ export default function App() {
             },
           }}
         >
-          <StatusBar style="light" backgroundColor="#000000" />
+          <StatusBar style="light" backgroundColor="#0a1628" />
           {!firebaseConfigured && <FirebaseNotConfiguredBanner />}
           <AppNavigator />
         </NavigationContainer>

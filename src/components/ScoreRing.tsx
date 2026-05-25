@@ -69,7 +69,7 @@ const ScoreRing: React.FC<ScoreRingProps> = ({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#1a2235"
+          stroke="rgba(59,127,232,0.18)"
           strokeWidth={strokeWidth}
         />
         {/* Score arc */}
@@ -116,6 +116,7 @@ const styles = StyleSheet.create({
   scoreText: {
     fontWeight: '700',
     letterSpacing: -1,
+    fontFamily: 'DMSans_700Bold',
   },
   outOf: {
     color: '#8E8EA0',

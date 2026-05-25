@@ -19,11 +19,11 @@ const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const MainStack = createNativeStackNavigator<MainStackParamList>();
 
 const COLORS = {
-  background: '#000000',
-  surface: '#0a0f1e',
+  background: '#0a1628',
+  surface: '#0d1b2e',
   primary: '#3B7FE8',
   textMuted: '#4a5568',
-  border: '#1a2235',
+  border: 'rgba(59,127,232,0.25)',
 };
 
 const HomeStackNavigator: React.FC = () => {
@@ -76,6 +76,7 @@ const TabNavigator: React.FC = () => {
           fontSize: 11,
           fontWeight: '600',
           marginTop: 2,
+          fontFamily: 'DMSans_700Bold',
         },
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: string;

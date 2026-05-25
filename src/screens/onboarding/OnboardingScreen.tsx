@@ -19,9 +19,9 @@ import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/Button';
 
 const COLORS = {
-  background: '#000000',
-  surface: '#0a0f1e',
-  surfaceElevated: '#111827',
+  background: '#0a1628',
+  surface: '#0d1b2e',
+  surfaceElevated: '#111d30',
   primary: '#3B7FE8',
   primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
@@ -29,7 +29,7 @@ const COLORS = {
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
   textMuted: '#4a5568',
-  border: '#1a2235',
+  border: 'rgba(59,127,232,0.25)',
 };
 
 type OnboardingNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Onboarding'>;
@@ -356,12 +356,14 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: 8,
     lineHeight: 34,
+    fontFamily: 'DMSans_700Bold',
   },
   stepSubtitle: {
     fontSize: 15,
     color: COLORS.textSecondary,
     marginBottom: 28,
     lineHeight: 22,
+    fontFamily: 'DMSans_400Regular',
   },
   optionsScroll: {
     flex: 1,
@@ -379,7 +381,7 @@ const styles = StyleSheet.create({
   },
   optionCardSelected: {
     borderColor: COLORS.primary,
-    backgroundColor: '#0d1a35',
+    backgroundColor: 'rgba(59,127,232,0.08)',
   },
   optionIcon: {
     marginRight: 14,

@@ -25,9 +25,9 @@ import ScoreRing from '../../components/ScoreRing';
 import Button from '../../components/Button';
 
 const COLORS = {
-  background: '#000000',
-  surface: '#0a0f1e',
-  surfaceElevated: '#111827',
+  background: '#0a1628',
+  surface: '#0d1b2e',
+  surfaceElevated: '#111d30',
   primary: '#3B7FE8',
   primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
@@ -35,7 +35,7 @@ const COLORS = {
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
   textMuted: '#4a5568',
-  border: '#1a2235',
+  border: 'rgba(59,127,232,0.25)',
 };
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -253,8 +253,8 @@ const ProgressScreen: React.FC = () => {
                   fromZero={false}
                   chartConfig={{
                     backgroundColor: COLORS.surface,
-                    backgroundGradientFrom: COLORS.surface,
-                    backgroundGradientTo: COLORS.surface,
+                    backgroundGradientFrom: '#0d1b2e',
+                    backgroundGradientTo: '#0d1b2e',
                     decimalPlaces: 1,
                     color: (opacity = 1) => `rgba(59, 127, 232, ${opacity})`,
                     labelColor: () => COLORS.textMuted,
@@ -417,6 +417,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: COLORS.textPrimary,
+    fontFamily: 'DMSans_700Bold',
   },
   compareButton: {
     flexDirection: 'row',

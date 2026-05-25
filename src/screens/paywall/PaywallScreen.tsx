@@ -17,9 +17,9 @@ import Button from '../../components/Button';
 import PrezenceLogo from '../../components/PrezenceLogo';
 
 const COLORS = {
-  background: '#000000',
-  surface: '#0a0f1e',
-  surfaceElevated: '#111827',
+  background: '#0a1628',
+  surface: '#0d1b2e',
+  surfaceElevated: '#111d30',
   primary: '#3B7FE8',
   primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
@@ -27,7 +27,7 @@ const COLORS = {
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
   textMuted: '#4a5568',
-  border: '#1a2235',
+  border: 'rgba(59,127,232,0.25)',
 };
 
 const PaywallScreen: React.FC = () => {
@@ -251,6 +251,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: 10,
     textAlign: 'center',
+    fontFamily: 'DMSans_700Bold',
   },
   subtitle: {
     fontSize: 15,
@@ -258,6 +259,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 16,
+    fontFamily: 'DMSans_400Regular',
   },
   featuresCard: {
     backgroundColor: COLORS.surface,

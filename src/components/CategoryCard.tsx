@@ -18,8 +18,8 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const COLORS = {
-  surface: '#0a0f1e',
-  surfaceElevated: '#111827',
+  surface: '#0d1b2e',
+  surfaceElevated: '#111d30',
   primary: '#3B7FE8',
   accent: '#FF6B6B',
   success: '#4ECDC4',
@@ -27,7 +27,7 @@ const COLORS = {
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
   textMuted: '#4a5568',
-  border: '#1a2235',
+  border: 'rgba(59,127,232,0.25)',
 };
 
 const getScoreColor = (score: number): string => {
@@ -168,6 +168,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textPrimary,
     flex: 1,
+    fontFamily: 'DMSans_700Bold',
   },
   headerRight: {
     flexDirection: 'row',
@@ -224,6 +225,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     lineHeight: 20,
+    fontFamily: 'DMSans_400Regular',
   },
 });
 

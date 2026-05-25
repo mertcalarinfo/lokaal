@@ -22,9 +22,9 @@ import CategoryCard from '../../components/CategoryCard';
 import Button from '../../components/Button';
 
 const COLORS = {
-  background: '#000000',
-  surface: '#0a0f1e',
-  surfaceElevated: '#111827',
+  background: '#0a1628',
+  surface: '#0d1b2e',
+  surfaceElevated: '#111d30',
   primary: '#3B7FE8',
   primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
@@ -32,7 +32,7 @@ const COLORS = {
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
   textMuted: '#4a5568',
-  border: '#1a2235',
+  border: 'rgba(59,127,232,0.25)',
 };
 
 type ReportRouteProp = RouteProp<HomeStackParamList, 'Report'>;
@@ -205,6 +205,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
     letterSpacing: 0.5,
+    fontFamily: 'DMSans_700Bold',
   },
   shareButton: {
     width: 40,
@@ -274,6 +275,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textSecondary,
     lineHeight: 24,
+    fontFamily: 'DMSans_400Regular',
   },
   exerciseCard: {
     flexDirection: 'row',

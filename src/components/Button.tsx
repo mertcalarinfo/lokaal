@@ -11,9 +11,10 @@ import {
 const COLORS = {
   primary: '#3B7FE8',
   primaryLight: '#5B9AFF',
-  surface: '#0a0f1e',
-  surfaceElevated: '#111827',
-  border: '#1a2235',
+  background: '#0a1628',
+  surface: '#0d1b2e',
+  surfaceElevated: '#111d30',
+  border: 'rgba(59,127,232,0.25)',
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
   accent: '#FF6B6B',
@@ -65,11 +66,13 @@ const Button: React.FC<ButtonProps> = ({
         backgroundColor: isDisabled ? '#1e3a6e' : COLORS.primary,
       },
       secondary: {
-        backgroundColor: isDisabled ? '#1a1a24' : COLORS.surfaceElevated,
+        backgroundColor: isDisabled ? '#0a1628' : COLORS.background,
+        borderWidth: 1.5,
+        borderColor: isDisabled ? 'rgba(59,127,232,0.15)' : COLORS.primary,
       },
       outline: {
         backgroundColor: 'transparent',
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderColor: isDisabled ? COLORS.border : COLORS.primary,
       },
       ghost: {
@@ -93,6 +96,7 @@ const Button: React.FC<ButtonProps> = ({
     const base: TextStyle = {
       fontWeight: '600',
       letterSpacing: 0.3,
+      fontFamily: 'DMSans_700Bold',
     };
 
     const sizeTextStyles: Record<string, TextStyle> = {
@@ -103,7 +107,7 @@ const Button: React.FC<ButtonProps> = ({
 
     const variantTextStyles: Record<ButtonVariant, TextStyle> = {
       primary: { color: COLORS.textPrimary },
-      secondary: { color: COLORS.textPrimary },
+      secondary: { color: isDisabled ? COLORS.textSecondary : COLORS.primary },
       outline: { color: isDisabled ? COLORS.textSecondary : COLORS.primary },
       ghost: { color: isDisabled ? COLORS.textSecondary : COLORS.primary },
       danger: { color: COLORS.textPrimary },
@@ -126,7 +130,7 @@ const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'outline' || variant === 'ghost' ? COLORS.primary : COLORS.textPrimary}
+          color={variant === 'primary' || variant === 'danger' ? COLORS.textPrimary : COLORS.primary}
           style={{ marginRight: 8 }}
         />
       ) : null}

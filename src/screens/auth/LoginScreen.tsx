@@ -20,9 +20,9 @@ import Button from '../../components/Button';
 import PrezenceLogo from '../../components/PrezenceLogo';
 
 const COLORS = {
-  background: '#000000',
-  surface: '#0a0f1e',
-  surfaceElevated: '#111827',
+  background: '#0a1628',
+  surface: '#0d1b2e',
+  surfaceElevated: '#111d30',
   primary: '#3B7FE8',
   primaryLight: '#5B9AFF',
   accent: '#FF6B6B',
@@ -30,7 +30,7 @@ const COLORS = {
   textPrimary: '#FFFFFF',
   textSecondary: '#8E8EA0',
   textMuted: '#4a5568',
-  border: '#1a2235',
+  border: 'rgba(59,127,232,0.25)',
 };
 
 type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -234,11 +234,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: 6,
+    fontFamily: 'DMSans_700Bold',
   },
   subtitle: {
     fontSize: 14,
     color: COLORS.textSecondary,
     marginBottom: 28,
+    fontFamily: 'DMSans_400Regular',
   },
   signInButton: {
     marginTop: 8,
@@ -279,6 +281,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: COLORS.textPrimary,
+    fontFamily: 'DMSans_700Bold',
   },
   footer: {
     flexDirection: 'row',
