@@ -16,6 +16,8 @@ interface AnalysisHookState {
   uploadProgress: number;
   report: AnalysisReport | null;
   error: string | null;
+  /** Raw error message from the thrown exception — shown directly in debug alerts */
+  rawError: string | null;
 }
 
 interface AnalysisHookActions {
@@ -35,12 +37,14 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rawError, setRawError] = useState<string | null>(null);
   const cancelledRef = useRef(false);
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;
     setState('cancelled');
     setError(null);
+    setRawError(null);
   }, []);
 
   const reset = useCallback(() => {
@@ -49,6 +53,7 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
     setUploadProgress(0);
     setReport(null);
     setError(null);
+    setRawError(null);
   }, []);
 
   const startAnalysis = useCallback(
@@ -114,6 +119,10 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
         // Always log the real error so it's visible in the dev console
         console.error('[useAnalysis] Analysis failed:', err?.message, err);
 
+        // Store the full raw message for display in the UI
+        const fullMessage: string = err?.message || String(err) || 'Unknown error';
+        setRawError(fullMessage);
+
         let errorMessage = 'generic';
         if (err.message?.includes('TIMEOUT')) {
           errorMessage = 'timeout';
@@ -146,6 +155,7 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
     uploadProgress,
     report,
     error,
+    rawError,
     startAnalysis,
     cancel,
     reset,

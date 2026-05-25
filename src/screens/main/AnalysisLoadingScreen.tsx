@@ -45,7 +45,7 @@ const AnalysisLoadingScreen: React.FC = () => {
 
   const { videoUri, answers } = route.params;
 
-  const { state, uploadProgress, report, error, startAnalysis, cancel } = useAnalysis();
+  const { state, uploadProgress, report, error, rawError, startAnalysis, cancel } = useAnalysis();
 
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -146,15 +146,22 @@ const AnalysisLoadingScreen: React.FC = () => {
     run();
   }, []);
 
-  // Handle errors
+  // Handle errors — show the exact raw error so failures are diagnosable
+  // even without a dev console (e.g. preview / TestFlight builds).
   useEffect(() => {
     if (state === 'error' && error) {
       const errorKey = `analysis.errors.${error}`;
-      const message = t(errorKey, { defaultValue: t('analysis.errors.generic') });
+      const friendlyMessage = t(errorKey, { defaultValue: t('analysis.errors.generic') });
+
+      // Always append the raw technical error so you can see exactly what went
+      // wrong from the app itself — no Expo logs / Metro needed.
+      const fullMessage = rawError
+        ? `${friendlyMessage}\n\n— Debug —\n${rawError}`
+        : friendlyMessage;
 
       Alert.alert(
         t('common.error'),
-        message,
+        fullMessage,
         [
           {
             text: t('common.ok'),
