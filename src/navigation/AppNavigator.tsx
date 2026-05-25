@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Image, Platform } from 'react-native';
 
 import { RootStackParamList } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -12,7 +12,7 @@ import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const COLORS = {
-  background: '#000000',
+  background: '#0a1628',
   primary: '#3B7FE8',
   textPrimary: '#FFFFFF',
 };
@@ -54,7 +54,14 @@ const splashStyles = StyleSheet.create({
 });
 
 const AppNavigator: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, skipLogin } = useAuth();
+
+  // DEV ONLY — bypass entire auth flow on web for design/UI testing
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      skipLogin();
+    }
+  }, []);
 
   // Block ALL rendering until Firebase auth resolves.
   // Also guard against the undefined case (user === undefined can occur if the

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAuth } from '../services/firebase';
 import { saveUserProfile, getUserProfile } from '../services/storage';
 import { User } from '../types';
@@ -27,6 +27,8 @@ export const useAuth = (): AuthState & AuthActions => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // DEV ONLY — prevents onAuthStateChanged from overwriting the mock user
+  const devSkipped = useRef(false);
 
   useEffect(() => {
     const auth = getAuth();
@@ -36,6 +38,8 @@ export const useAuth = (): AuthState & AuthActions => {
     }
 
     const unsubscribe = auth.onAuthStateChanged(async (fbUser: any) => {
+      // DEV ONLY — skip if web bypass is active
+      if (devSkipped.current) return;
       setFirebaseUser(fbUser);
 
       if (fbUser) {
@@ -221,6 +225,7 @@ export const useAuth = (): AuthState & AuthActions => {
 
   // DEV ONLY — bypasses Firebase and lands directly on MainNavigator
   const skipLogin = useCallback(() => {
+    devSkipped.current = true;
     setUser({
       uid: 'dev-test-user',
       email: 'test@prezence.dev',
