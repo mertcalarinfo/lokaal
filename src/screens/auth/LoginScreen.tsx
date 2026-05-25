@@ -38,7 +38,7 @@ type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'
 const LoginScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<LoginNavigationProp>();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, skipLogin } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -198,6 +198,11 @@ const LoginScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* DEV ONLY — remove before release */}
+          <TouchableOpacity style={styles.devSkipButton} onPress={skipLogin} activeOpacity={0.7}>
+            <Text style={styles.devSkipText}>⚡ Skip Login (Dev)</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -297,6 +302,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.primary,
     fontWeight: '600',
+  },
+  // DEV ONLY — remove before release
+  devSkipButton: {
+    marginTop: 24,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,0.35)',
+    backgroundColor: 'rgba(255,107,107,0.08)',
+  },
+  devSkipText: {
+    fontSize: 12,
+    color: 'rgba(255,107,107,0.7)',
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
 });
 

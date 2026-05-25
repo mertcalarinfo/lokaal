@@ -18,6 +18,8 @@ interface AuthActions {
   updateLanguage: (language: 'en' | 'de') => Promise<void>;
   markOnboardingCompleted: () => Promise<void>;
   clearError: () => void;
+  // DEV ONLY — remove before release
+  skipLogin: () => void;
 }
 
 export const useAuth = (): AuthState & AuthActions => {
@@ -217,6 +219,19 @@ export const useAuth = (): AuthState & AuthActions => {
 
   const clearError = useCallback(() => setError(null), []);
 
+  // DEV ONLY — bypasses Firebase and lands directly on MainNavigator
+  const skipLogin = useCallback(() => {
+    setUser({
+      uid: 'dev-test-user',
+      email: 'test@prezence.dev',
+      displayName: 'Test User',
+      language: 'en',
+      onboardingCompleted: true,
+      createdAt: new Date(),
+    });
+    setLoading(false);
+  }, []);
+
   return {
     user,
     firebaseUser,
@@ -229,5 +244,6 @@ export const useAuth = (): AuthState & AuthActions => {
     updateLanguage,
     markOnboardingCompleted,
     clearError,
+    skipLogin,
   };
 };
