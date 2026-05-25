@@ -7,6 +7,7 @@ import {
   Animated,
   Dimensions,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -71,6 +72,7 @@ const OnboardingScreen: React.FC = () => {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Partial<OnboardingAnswers>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
 
   const totalSteps = 3;
@@ -116,6 +118,32 @@ const OnboardingScreen: React.FC = () => {
     ]).start();
   };
 
+  const handleFinishOnboarding = async (finalAnswers: OnboardingAnswers) => {
+    if (isIntroMode) {
+      // New-user intro flow: persist onboarding completion then let
+      // AppNavigator auto-transition to MainNavigator.
+      setIsLoading(true);
+      try {
+        await markOnboardingCompleted();
+      } catch {
+        // markOnboardingCompleted already warns and reverts state on failure;
+        // surface a user-facing alert so they can retry.
+        Alert.alert(
+          t('common.error'),
+          'Could not save your progress. Please check your connection and try again.'
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Pre-analysis flow: hand off answers + video to the loading screen.
+      navigation.navigate('AnalysisLoading', {
+        videoUri,
+        answers: finalAnswers,
+      });
+    }
+  };
+
   const handleNext = () => {
     if (currentStep < totalSteps - 1) {
       animateTransition('forward');
@@ -126,17 +154,7 @@ const OnboardingScreen: React.FC = () => {
         videoLanguage: answers.videoLanguage || 'english',
         focusArea: answers.focusArea || 'everything',
       };
-
-      if (isIntroMode) {
-        // New-user intro: mark complete — AppNavigator auto-transitions to MainNavigator
-        markOnboardingCompleted();
-      } else {
-        // Pre-analysis flow: hand off answers + video to the loading screen
-        navigation.navigate('AnalysisLoading', {
-          videoUri,
-          answers: finalAnswers,
-        });
-      }
+      handleFinishOnboarding(finalAnswers);
     }
   };
 
@@ -294,7 +312,8 @@ const OnboardingScreen: React.FC = () => {
                 : t('common.next')
             }
             onPress={handleNext}
-            disabled={!canProceed()}
+            disabled={!canProceed() || isLoading}
+            loading={isLoading}
             fullWidth
             size="lg"
           />

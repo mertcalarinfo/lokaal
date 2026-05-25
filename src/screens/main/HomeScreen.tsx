@@ -78,7 +78,7 @@ const HomeScreen: React.FC = () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 300));
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.videos,
+        mediaTypes: 'videos',
         allowsEditing: false,
         quality: 1,
         videoMaxDuration: MAX_VIDEO_DURATION_SECONDS,
@@ -127,7 +127,7 @@ const HomeScreen: React.FC = () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 300));
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaType.videos,
+        mediaTypes: 'videos',
         allowsEditing: false,
         videoMaxDuration: MAX_VIDEO_DURATION_SECONDS,
         quality: 0.5,

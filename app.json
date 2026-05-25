@@ -51,7 +51,8 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow PREZENCE to access your video library.",
-          "cameraPermission": "Allow PREZENCE to access your camera to record videos."
+          "cameraPermission": "Allow PREZENCE to access your camera to record videos.",
+          "microphonePermission": "Allow PREZENCE to access your microphone to record audio."
         }
       ],
       "expo-font"

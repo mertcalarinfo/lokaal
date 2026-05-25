@@ -213,11 +213,19 @@ export const useAuth = (): AuthState & AuthActions => {
   const markOnboardingCompleted = useCallback(async () => {
     if (!user) return;
 
+    // Optimistic update first — AppNavigator re-renders immediately, no
+    // waiting for the Firestore round-trip. Mirror the same pattern used by
+    // updateLanguage so there is no flicker or race with onAuthStateChanged.
+    setUser((prev) => (prev ? { ...prev, onboardingCompleted: true } : null));
+
     try {
       await saveUserProfile(user.uid, { onboardingCompleted: true });
-      setUser((prev) => (prev ? { ...prev, onboardingCompleted: true } : null));
     } catch (err: any) {
+      // Revert if the write fails so the user doesn't get stuck past onboarding
+      // without the flag persisted.
+      setUser((prev) => (prev ? { ...prev, onboardingCompleted: false } : null));
       console.warn('Failed to mark onboarding completed:', err);
+      throw err;
     }
   }, [user]);
 
