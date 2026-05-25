@@ -42,7 +42,9 @@
       "@react-native-firebase/app",
       [
         "expo-camera",
-        { "cameraPermission": "Allow PREZENCE to access your camera." }
+        {
+          "cameraPermission": "Allow PREZENCE to access your camera."
+        }
       ],
       "expo-av",
       [
@@ -51,7 +53,8 @@
           "photosPermission": "Allow PREZENCE to access your video library.",
           "cameraPermission": "Allow PREZENCE to access your camera to record videos."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {
