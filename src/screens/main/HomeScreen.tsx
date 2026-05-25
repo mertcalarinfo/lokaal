@@ -71,6 +71,12 @@ const HomeScreen: React.FC = () => {
         return;
       }
 
+      // Android needs a short yield after resolving the permission dialog
+      // before the media library is ready to open. Launching immediately
+      // can crash because the system hasn't finished updating its permission
+      // database and the picker receives a security exception.
+      await new Promise<void>((resolve) => setTimeout(resolve, 300));
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaType.videos,
         allowsEditing: false,
@@ -115,6 +121,10 @@ const HomeScreen: React.FC = () => {
         }
         return;
       }
+
+      // Same yield as in handlePickVideo — Android requires the permission
+      // dialog to fully dismiss before the camera intent can be launched.
+      await new Promise<void>((resolve) => setTimeout(resolve, 300));
 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaType.videos,

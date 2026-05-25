@@ -59,6 +59,10 @@ const SettingsScreen: React.FC = () => {
     const newLang = currentLanguage === 'en' ? 'de' : 'en';
     setLanguageLoading(true);
     try {
+      // Update i18n first so all t() calls immediately return strings in the
+      // new language. updateLanguage is now optimistic — it calls setUser()
+      // synchronously before the Firestore write — so both i18n and React
+      // state change in the same render cycle, eliminating the flicker.
       await changeLanguage(newLang);
       await updateLanguage(newLang);
     } catch (error) {
@@ -176,7 +180,7 @@ const SettingsScreen: React.FC = () => {
                 { color: isSubscribed ? COLORS.success : COLORS.primary },
               ]}
             >
-              {isSubscribed ? 'Premium' : 'Free'}
+              {isSubscribed ? t('settings.tierPremium') : t('settings.tierFree')}
             </Text>
           </View>
         </View>
@@ -207,7 +211,7 @@ const SettingsScreen: React.FC = () => {
               isSubscribed ? COLORS.success : COLORS.textMuted,
               isSubscribed ? t('settings.subscriptionPremium') : t('settings.subscriptionFree'),
               <Text style={[styles.rowValue, { color: isSubscribed ? COLORS.success : COLORS.textMuted }]}>
-                {isSubscribed ? 'Active' : 'Free tier'}
+                {isSubscribed ? t('settings.statusActive') : t('settings.statusFree')}
               </Text>
             )}
             <View style={styles.rowDivider} />

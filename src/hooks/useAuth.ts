@@ -102,6 +102,21 @@ export const useAuth = (): AuthState & AuthActions => {
         onboardingCompleted: false,
         createdAt: new Date(),
       });
+
+      // Explicitly update React state so the app navigates immediately.
+      // On Android, onAuthStateChanged fires asynchronously and the app
+      // would freeze on the splash screen if we rely on it alone.
+      // onAuthStateChanged will fire again later and overwrite this — that
+      // is fine because the resulting state is identical.
+      setUser({
+        uid: fbUser.uid,
+        email,
+        displayName: name,
+        language: undefined,        // No language yet → triggers LanguageSelect
+        onboardingCompleted: false,
+        createdAt: new Date(),
+      });
+      setLoading(false);
     } catch (err: any) {
       setError(err.code || 'generic');
       throw err;
@@ -170,11 +185,18 @@ export const useAuth = (): AuthState & AuthActions => {
   const updateLanguage = useCallback(
     async (language: 'en' | 'de') => {
       if (!user) return;
+      const prevLanguage = user.language;
+
+      // Optimistic update: reflect the new language in React state immediately
+      // so the UI re-renders cleanly in one pass alongside the i18n change,
+      // without waiting for the Firestore round-trip to complete.
+      setUser((prev) => (prev ? { ...prev, language } : null));
 
       try {
         await saveUserProfile(user.uid, { language });
-        setUser((prev) => (prev ? { ...prev, language } : null));
       } catch (err: any) {
+        // Revert to the previous language if the Firestore write fails
+        setUser((prev) => (prev ? { ...prev, language: prevLanguage } : null));
         setError(err.message);
         throw err;
       }
