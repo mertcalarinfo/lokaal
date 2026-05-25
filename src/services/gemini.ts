@@ -311,6 +311,33 @@ async function doAnalyzeVideo(
   userLanguage: string,
   userId: string
 ): Promise<AnalysisReport> {
+  // Step 0: Connectivity probe — send a simple text prompt to verify the API
+  // key is valid and the network can reach Gemini before we bother uploading.
+  console.log('[Gemini] Probing API key with text-only request...');
+  try {
+    const probeBody = {
+      contents: [{ parts: [{ text: 'Hello' }] }],
+      generation_config: { max_output_tokens: 8 },
+    };
+    const probeRes = await fetch(`${GEMINI_GENERATE_API}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(probeBody),
+    });
+    const probeJson = await probeRes.json().catch(() => null);
+    if (!probeRes.ok) {
+      console.error('[Gemini] API key probe FAILED — status:', probeRes.status, '| body:', JSON.stringify(probeJson));
+      throw new Error(`GEMINI_API_ERROR: probe failed ${probeRes.status} — ${JSON.stringify(probeJson)}`);
+    }
+    const probeText = probeJson?.candidates?.[0]?.content?.parts?.[0]?.text ?? '(no text)';
+    console.log('[Gemini] API key probe OK — response:', probeText);
+  } catch (error: any) {
+    // Re-throw only real API errors; network errors surface as-is
+    if (error.message?.startsWith('GEMINI_API_ERROR')) throw error;
+    console.error('[Gemini] API key probe network error:', error.message, error);
+    throw new Error(`GEMINI_API_ERROR: probe network error — ${error.message}`);
+  }
+
   // Step 1: Upload video to Gemini Files API
   let geminiFileUri: string;
   try {

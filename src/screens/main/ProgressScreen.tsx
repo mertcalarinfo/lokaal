@@ -57,7 +57,10 @@ const ProgressScreen: React.FC = () => {
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
 
   const fetchReports = useCallback(async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
     try {
       const data = await getUserReports(user.uid);
       setReports(data);

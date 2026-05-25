@@ -43,11 +43,6 @@ const HomeStackNavigator: React.FC = () => {
         options={{ gestureEnabled: false }}
       />
       <HomeStack.Screen name="Report" component={ReportScreen} />
-      <HomeStack.Screen
-        name="Paywall"
-        component={PaywallScreen}
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-      />
     </HomeStack.Navigator>
   );
 };
