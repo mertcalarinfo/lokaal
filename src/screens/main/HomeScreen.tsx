@@ -32,9 +32,9 @@ const COLORS = {
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
-  textMuted: '#4a5568',
-  border: 'rgba(59,127,232,0.25)',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  textMuted: 'rgba(255,255,255,0.35)',
+  border: 'rgba(59,127,232,0.3)',
 };
 
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -369,11 +369,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   heroTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: 10,
-    lineHeight: 34,
+    lineHeight: 36,
     fontFamily: 'DMSans_700Bold',
   },
   heroSubtitle: {
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.primary,
     overflow: 'hidden',
     minHeight: 140,
     justifyContent: 'center',
@@ -416,11 +416,13 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: 4,
     textAlign: 'center',
+    fontFamily: 'DMSans_700Bold',
   },
   uploadCardSub: {
     fontSize: 12,
     color: COLORS.textMuted,
     textAlign: 'center',
+    fontFamily: 'DMSans_400Regular',
   },
   videoPreviewCard: {
     backgroundColor: COLORS.surface,

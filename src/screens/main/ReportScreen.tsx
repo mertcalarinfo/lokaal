@@ -30,9 +30,9 @@ const COLORS = {
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
-  textMuted: '#4a5568',
-  border: 'rgba(59,127,232,0.25)',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  textMuted: 'rgba(255,255,255,0.35)',
+  border: 'rgba(59,127,232,0.3)',
 };
 
 type ReportRouteProp = RouteProp<HomeStackParamList, 'Report'>;
@@ -270,6 +270,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: COLORS.textPrimary,
+    fontFamily: 'DMSans_700Bold',
   },
   summaryText: {
     fontSize: 15,
@@ -319,6 +320,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textSecondary,
     lineHeight: 21,
+    fontFamily: 'DMSans_400Regular',
   },
   actionsSection: {
     marginTop: 8,

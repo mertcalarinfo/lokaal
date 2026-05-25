@@ -12,7 +12,7 @@ const COLORS = {
   surface: '#0a0f1e',
   primary: '#3B7FE8',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
+  textSecondary: 'rgba(255,255,255,0.7)',
 };
 
 interface LoadingOverlayProps {

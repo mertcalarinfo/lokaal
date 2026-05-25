@@ -28,9 +28,9 @@ const COLORS = {
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
-  textMuted: '#4a5568',
-  border: 'rgba(59,127,232,0.25)',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  textMuted: 'rgba(255,255,255,0.35)',
+  border: 'rgba(59,127,232,0.3)',
 };
 
 const APP_VERSION = '1.0.0';
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: 24,
@@ -359,6 +359,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textPrimary,
     fontWeight: '500',
+    fontFamily: 'DMSans_400Regular',
   },
   rowRight: {
     flexDirection: 'row',

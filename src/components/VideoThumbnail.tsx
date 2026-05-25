@@ -13,8 +13,8 @@ const COLORS = {
   surfaceElevated: '#111827',
   primary: '#3B7FE8',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
-  textMuted: '#4a5568',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  textMuted: 'rgba(255,255,255,0.35)',
   border: '#1a2235',
 };
 

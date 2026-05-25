@@ -25,9 +25,9 @@ const COLORS = {
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
-  textMuted: '#4a5568',
-  border: 'rgba(59,127,232,0.25)',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  textMuted: 'rgba(255,255,255,0.35)',
+  border: 'rgba(59,127,232,0.3)',
 };
 
 const PaywallScreen: React.FC = () => {
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   title: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '800',
     color: COLORS.textPrimary,
     marginBottom: 10,
@@ -287,6 +287,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textPrimary,
     fontWeight: '500',
+    fontFamily: 'DMSans_400Regular',
   },
   pricingCard: {
     borderRadius: 16,

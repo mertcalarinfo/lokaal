@@ -22,8 +22,8 @@ const COLORS = {
   background: '#0a1628',
   surface: '#0d1b2e',
   primary: '#3B7FE8',
-  textMuted: '#4a5568',
-  border: 'rgba(59,127,232,0.25)',
+  textMuted: 'rgba(255,255,255,0.35)',
+  border: 'rgba(59,127,232,0.3)',
 };
 
 const HomeStackNavigator: React.FC = () => {
@@ -62,7 +62,7 @@ const TabNavigator: React.FC = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: COLORS.surface,
+          backgroundColor: COLORS.background,
           borderTopColor: COLORS.border,
           borderTopWidth: 1,
           // Extend height by the system navigation bar inset so nothing is hidden

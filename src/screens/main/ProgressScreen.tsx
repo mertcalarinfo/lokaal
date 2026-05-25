@@ -33,9 +33,9 @@ const COLORS = {
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
-  textMuted: '#4a5568',
-  border: 'rgba(59,127,232,0.25)',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  textMuted: 'rgba(255,255,255,0.35)',
+  border: 'rgba(59,127,232,0.3)',
 };
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: COLORS.textPrimary,
     fontFamily: 'DMSans_700Bold',
@@ -458,6 +458,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: 10,
     textAlign: 'center',
+    fontFamily: 'DMSans_700Bold',
   },
   emptySubtitle: {
     fontSize: 14,
@@ -465,6 +466,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 20,
+    fontFamily: 'DMSans_400Regular',
   },
   chartCard: {
     backgroundColor: COLORS.surface,
@@ -517,11 +519,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginBottom: 3,
+    fontFamily: 'DMSans_700Bold',
   },
   reportPurpose: {
     fontSize: 12,
     color: COLORS.textMuted,
     marginBottom: 8,
+    fontFamily: 'DMSans_400Regular',
   },
   categoryScores: {
     flexDirection: 'row',

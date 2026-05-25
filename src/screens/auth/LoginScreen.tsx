@@ -28,9 +28,9 @@ const COLORS = {
   accent: '#FF6B6B',
   success: '#4ECDC4',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
-  textMuted: '#4a5568',
-  border: 'rgba(59,127,232,0.25)',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  textMuted: 'rgba(255,255,255,0.35)',
+  border: 'rgba(59,127,232,0.3)',
 };
 
 type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -297,11 +297,13 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 14,
     color: COLORS.textSecondary,
+    fontFamily: 'DMSans_400Regular',
   },
   footerLink: {
     fontSize: 14,
     color: COLORS.primary,
     fontWeight: '600',
+    fontFamily: 'DMSans_700Bold',
   },
   // DEV ONLY — remove before release
   devSkipButton: {

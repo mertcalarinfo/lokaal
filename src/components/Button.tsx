@@ -14,9 +14,9 @@ const COLORS = {
   background: '#0a1628',
   surface: '#0d1b2e',
   surfaceElevated: '#111d30',
-  border: 'rgba(59,127,232,0.25)',
+  border: 'rgba(59,127,232,0.3)',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
+  textSecondary: 'rgba(255,255,255,0.7)',
   accent: '#FF6B6B',
 };
 

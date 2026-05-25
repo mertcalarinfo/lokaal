@@ -17,9 +17,9 @@ const COLORS = {
   primary: '#3B7FE8',
   accent: '#FF6B6B',
   textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
-  textMuted: '#4a5568',
-  border: 'rgba(59,127,232,0.25)',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  textMuted: 'rgba(255,255,255,0.35)',
+  border: 'rgba(59,127,232,0.3)',
 };
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
