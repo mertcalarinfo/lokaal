@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '../services/firebase';
 import { saveUserProfile, getUserProfile } from '../services/storage';
 import { User } from '../types';
+
+// AsyncStorage key — scoped per user so switching accounts doesn't bleed
+const onboardingKey = (uid: string) => `@prezence:onboarding_${uid}`;
 
 interface AuthState {
   user: User | null;
@@ -44,27 +48,49 @@ export const useAuth = (): AuthState & AuthActions => {
 
       if (fbUser) {
         try {
-          const profile = await getUserProfile(fbUser.uid);
+          // Check AsyncStorage FIRST — it is our local source of truth for
+          // onboarding. We write there synchronously during markOnboardingCompleted,
+          // so this can never be behind Firestore in a way that would cause a reset.
+          const [profile, localOnboarding] = await Promise.all([
+            getUserProfile(fbUser.uid),
+            AsyncStorage.getItem(onboardingKey(fbUser.uid)),
+          ]);
+
+          const onboardingCompleted =
+            localOnboarding === 'true' || (profile?.onboardingCompleted ?? false);
+
           const appUser: User = {
             uid: fbUser.uid,
             email: fbUser.email || '',
             displayName: fbUser.displayName || profile?.displayName || '',
-            // Only set language if explicitly saved — undefined triggers LanguageSelect
             language: profile?.language || undefined,
-            onboardingCompleted: profile?.onboardingCompleted ?? false,
+            onboardingCompleted,
             createdAt: profile?.createdAt?.toDate?.() || new Date(),
           };
           setUser(appUser);
         } catch {
-          // Profile fetch failed — treat as new user with no language set
-          setUser({
-            uid: fbUser.uid,
-            email: fbUser.email || '',
-            displayName: fbUser.displayName || '',
-            language: undefined,
-            onboardingCompleted: false,
-            createdAt: new Date(),
-          });
+          // Profile fetch failed — treat as new user with no language set.
+          // Do NOT override onboardingCompleted if AsyncStorage says true.
+          try {
+            const localOnboarding = await AsyncStorage.getItem(onboardingKey(fbUser.uid));
+            setUser({
+              uid: fbUser.uid,
+              email: fbUser.email || '',
+              displayName: fbUser.displayName || '',
+              language: undefined,
+              onboardingCompleted: localOnboarding === 'true',
+              createdAt: new Date(),
+            });
+          } catch {
+            setUser({
+              uid: fbUser.uid,
+              email: fbUser.email || '',
+              displayName: fbUser.displayName || '',
+              language: undefined,
+              onboardingCompleted: false,
+              createdAt: new Date(),
+            });
+          }
         }
       } else {
         setUser(null);
@@ -213,20 +239,19 @@ export const useAuth = (): AuthState & AuthActions => {
   const markOnboardingCompleted = useCallback(async () => {
     if (!user) return;
 
-    // Optimistic update first — AppNavigator re-renders immediately, no
-    // waiting for the Firestore round-trip. Mirror the same pattern used by
-    // updateLanguage so there is no flicker or race with onAuthStateChanged.
+    // 1. Write to AsyncStorage FIRST — this is synchronous local storage and
+    //    is the source of truth. Even if Firestore fails or onAuthStateChanged
+    //    fires again, this value will prevent the state from being reset to false.
+    await AsyncStorage.setItem(onboardingKey(user.uid), 'true');
+
+    // 2. Update React state — AppNavigator re-renders immediately.
     setUser((prev) => (prev ? { ...prev, onboardingCompleted: true } : null));
 
-    try {
-      await saveUserProfile(user.uid, { onboardingCompleted: true });
-    } catch (err: any) {
-      // Revert if the write fails so the user doesn't get stuck past onboarding
-      // without the flag persisted.
-      setUser((prev) => (prev ? { ...prev, onboardingCompleted: false } : null));
-      console.warn('Failed to mark onboarding completed:', err);
-      throw err;
-    }
+    // 3. Persist to Firestore in the background. We do NOT await this and we
+    //    do NOT revert state on failure — AsyncStorage already holds the truth.
+    saveUserProfile(user.uid, { onboardingCompleted: true }).catch((err: any) => {
+      console.warn('[useAuth] Firestore onboarding write failed (AsyncStorage is still set):', err?.message);
+    });
   }, [user]);
 
   const clearError = useCallback(() => setError(null), []);

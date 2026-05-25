@@ -65,6 +65,16 @@ export const useSubscription = (
     }
   }, [userId]);
 
+  // When a real user ID becomes available, identify them with RevenueCat so
+  // their purchase history is correctly associated. This must happen before
+  // getOfferings / checkSubscription so entitlements are scoped to the user.
+  useEffect(() => {
+    if (!userId) return;
+    identifyUser(userId).catch((err) => {
+      console.warn('[useSubscription] identifyUser failed:', err);
+    });
+  }, [userId]);
+
   useEffect(() => {
     fetchSubscriptionData();
   }, [fetchSubscriptionData]);

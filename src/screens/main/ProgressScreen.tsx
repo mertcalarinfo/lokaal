@@ -40,6 +40,8 @@ const COLORS = {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// ProgressScreen is a tab-level screen; cast to any so we can navigate to
+// sibling tabs without fighting the HomeStack type param.
 type ProgressNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
 const ProgressScreen: React.FC = () => {
@@ -225,7 +227,7 @@ const ProgressScreen: React.FC = () => {
             <Text style={styles.emptySubtitle}>{t('progress.noDataSub')}</Text>
             <Button
               label={t('progress.startButton')}
-              onPress={() => {}}
+              onPress={() => (navigation as any).navigate('HomeTab')}
               style={{ marginTop: 24 }}
             />
           </View>

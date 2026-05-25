@@ -18,10 +18,12 @@ const initializeRevenueCat = async (): Promise<void> => {
     const apiKey =
       Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
 
-    await Purchases.configure({ apiKey });
+    console.log('[RevenueCat] Initializing for platform:', Platform.OS, '— key prefix:', apiKey.slice(0, 8));
+    Purchases.configure({ apiKey });
     isInitialized = true;
+    console.log('[RevenueCat] Initialized successfully');
   } catch (error: any) {
-    console.warn('RevenueCat initialization failed (expected in Expo Go):', error?.message);
+    console.error('[RevenueCat] Initialization failed:', error?.message, error);
     isInitialized = false;
   }
 };
@@ -89,17 +91,23 @@ export const getOfferings = async (): Promise<any | null> => {
 
 export const purchasePackage = async (pkg: any): Promise<boolean> => {
   if (!isInitialized || !Purchases) {
+    console.error('[RevenueCat] purchasePackage called but SDK is not initialized. isInitialized:', isInitialized, 'Purchases:', !!Purchases);
     throw new Error('RevenueCat not available');
   }
 
+  console.log('[RevenueCat] Purchasing package:', pkg?.product?.identifier ?? pkg?.identifier ?? '(unknown)');
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
-    return customerInfo?.entitlements?.active?.[PREMIUM_ENTITLEMENT_ID] !== undefined;
+    const active = customerInfo?.entitlements?.active?.[PREMIUM_ENTITLEMENT_ID] !== undefined;
+    console.log('[RevenueCat] Purchase complete — premium active:', active);
+    return active;
   } catch (error: any) {
-    if (error?.code === '1') {
-      // User cancelled
+    // Code '1' is user-cancelled — not an error, just a dismissal
+    if (error?.code === '1' || error?.userCancelled === true) {
+      console.log('[RevenueCat] Purchase cancelled by user');
       return false;
     }
+    console.error('[RevenueCat] Purchase failed:', error?.message, 'code:', error?.code, error);
     throw error;
   }
 };

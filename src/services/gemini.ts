@@ -77,20 +77,27 @@ Respond in the same language the user spoke in the video.`;
 }
 
 async function uploadVideoToGeminiFiles(videoUri: string): Promise<string> {
-  // Read file info
-  const fileInfo = await FileSystem.getInfoAsync(videoUri);
-  if (!fileInfo.exists) {
-    throw new Error('Video file not found');
-  }
-
-  // Read file as base64
-  const base64Data = await FileSystem.readAsStringAsync(videoUri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-
   const mimeType = 'video/mp4';
 
-  // Initiate resumable upload
+  // Step 0: On Android, content:// URIs cannot be read directly by the Gemini
+  // HTTP client — copy them to a local file:// path in the cache directory first.
+  let localUri = videoUri;
+  if (videoUri.startsWith('content://')) {
+    const dest = `${FileSystem.cacheDirectory}prezence_${Date.now()}.mp4`;
+    console.log('[Gemini] Copying content:// URI to cache:', dest);
+    await FileSystem.copyAsync({ from: videoUri, to: dest });
+    localUri = dest;
+  }
+
+  // Step 1: Get file info to obtain size
+  const fileInfo = await FileSystem.getInfoAsync(localUri);
+  if (!fileInfo.exists) {
+    throw new Error(`Video file not found at: ${localUri}`);
+  }
+  const fileSize: number = (fileInfo as any).size ?? 0;
+  console.log('[Gemini] Uploading video:', localUri, '— size:', fileSize, 'bytes');
+
+  // Step 2: Initiate resumable upload to get the upload URL
   const initiateResponse = await fetch(
     `${GEMINI_FILES_API}?key=${GEMINI_API_KEY}`,
     {
@@ -98,7 +105,7 @@ async function uploadVideoToGeminiFiles(videoUri: string): Promise<string> {
       headers: {
         'X-Goog-Upload-Protocol': 'resumable',
         'X-Goog-Upload-Command': 'start',
-        'X-Goog-Upload-Header-Content-Length': String((fileInfo as any).size || base64Data.length),
+        'X-Goog-Upload-Header-Content-Length': String(fileSize),
         'X-Goog-Upload-Header-Content-Type': mimeType,
         'Content-Type': 'application/json',
       },
@@ -110,41 +117,51 @@ async function uploadVideoToGeminiFiles(videoUri: string): Promise<string> {
 
   if (!initiateResponse.ok) {
     const errText = await initiateResponse.text();
-    throw new Error(`Failed to initiate upload: ${errText}`);
+    console.error('[Gemini] Initiate upload failed:', initiateResponse.status, errText);
+    throw new Error(`Failed to initiate upload: ${initiateResponse.status} ${errText}`);
   }
 
   const uploadUrl = initiateResponse.headers.get('x-goog-upload-url');
   if (!uploadUrl) {
     throw new Error('No upload URL received from Gemini Files API');
   }
+  console.log('[Gemini] Got upload URL, streaming file bytes natively...');
 
-  // Convert base64 to binary for upload
-  const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-
-  // Upload file bytes
-  const uploadResponse = await fetch(uploadUrl, {
-    method: 'POST',
+  // Step 3: Upload the file bytes using FileSystem.uploadAsync — this streams
+  // the file at the native layer and avoids reading the entire video into the
+  // JavaScript heap (which would OOM for any file larger than ~20MB).
+  const uploadResult = await FileSystem.uploadAsync(uploadUrl, localUri, {
+    httpMethod: 'POST',
     headers: {
       'Content-Type': mimeType,
       'X-Goog-Upload-Command': 'upload, finalize',
       'X-Goog-Upload-Offset': '0',
     },
-    body: binaryData,
+    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
   });
 
-  if (!uploadResponse.ok) {
-    const errText = await uploadResponse.text();
-    throw new Error(`Failed to upload video: ${errText}`);
+  if (uploadResult.status < 200 || uploadResult.status >= 300) {
+    console.error('[Gemini] Upload failed:', uploadResult.status, uploadResult.body);
+    throw new Error(`Failed to upload video: ${uploadResult.status} ${uploadResult.body}`);
   }
 
-  const uploadResult = await uploadResponse.json();
-  const fileUri = uploadResult?.file?.uri;
+  let uploadResultJson: any;
+  try {
+    uploadResultJson = JSON.parse(uploadResult.body);
+  } catch {
+    console.error('[Gemini] Could not parse upload response:', uploadResult.body);
+    throw new Error('Could not parse upload response from Gemini');
+  }
 
+  const fileUri = uploadResultJson?.file?.uri;
   if (!fileUri) {
+    console.error('[Gemini] No file URI in upload response:', uploadResultJson);
     throw new Error('No file URI returned after upload');
   }
 
-  // Poll for file to become ACTIVE
+  console.log('[Gemini] Upload complete, file URI:', fileUri);
+
+  // Step 4: Poll until the file is ACTIVE (Gemini processes it server-side)
   await waitForFileActive(fileUri);
 
   return fileUri;
@@ -299,6 +316,7 @@ async function doAnalyzeVideo(
   try {
     geminiFileUri = await uploadVideoToGeminiFiles(videoUri);
   } catch (error: any) {
+    console.error('[Gemini] Video upload failed:', error);
     throw new Error(`UPLOAD_FAILED: ${error.message}`);
   }
 
@@ -340,16 +358,19 @@ async function doAnalyzeVideo(
 
   if (!response.ok) {
     const errText = await response.text();
+    console.error('[Gemini] generateContent failed:', response.status, errText);
     throw new Error(`GEMINI_API_ERROR: ${response.status} ${errText}`);
   }
 
   const geminiResponse = await response.json();
+  console.log('[Gemini] Raw response candidates:', JSON.stringify(geminiResponse?.candidates?.length));
 
   // Extract text from response
   const textContent =
     geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!textContent) {
+    console.error('[Gemini] Empty/unexpected response structure:', JSON.stringify(geminiResponse));
     throw new Error('Empty response from Gemini API');
   }
 
@@ -358,6 +379,7 @@ async function doAnalyzeVideo(
   try {
     rawData = extractJsonFromText(textContent);
   } catch (parseError) {
+    console.error('[Gemini] JSON parse failed. Raw text:', textContent.slice(0, 500));
     throw new Error(`PARSE_ERROR: Could not parse Gemini response as JSON`);
   }
 

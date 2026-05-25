@@ -111,6 +111,9 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
           return null;
         }
 
+        // Always log the real error so it's visible in the dev console
+        console.error('[useAnalysis] Analysis failed:', err?.message, err);
+
         let errorMessage = 'generic';
         if (err.message?.includes('TIMEOUT')) {
           errorMessage = 'timeout';

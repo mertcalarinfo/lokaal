@@ -120,18 +120,12 @@ const OnboardingScreen: React.FC = () => {
 
   const handleFinishOnboarding = async (finalAnswers: OnboardingAnswers) => {
     if (isIntroMode) {
-      // New-user intro flow: persist onboarding completion then let
-      // AppNavigator auto-transition to MainNavigator.
+      // New-user intro flow: write AsyncStorage + update state, then AppNavigator
+      // auto-transitions. markOnboardingCompleted never throws — AsyncStorage is
+      // the source of truth so navigation is always safe after this call.
       setIsLoading(true);
       try {
         await markOnboardingCompleted();
-      } catch {
-        // markOnboardingCompleted already warns and reverts state on failure;
-        // surface a user-facing alert so they can retry.
-        Alert.alert(
-          t('common.error'),
-          'Could not save your progress. Please check your connection and try again.'
-        );
       } finally {
         setIsLoading(false);
       }
