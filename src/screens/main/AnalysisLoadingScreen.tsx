@@ -57,7 +57,13 @@ const AnalysisLoadingScreen: React.FC = () => {
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasStarted = useRef(false);
 
-  const tips = t('analysis.loading.tips', { returnObjects: true }) as string[];
+  // `returnObjects: true` can return undefined when i18n hasn't loaded the
+  // namespace yet (common on Android before the first render cycle completes).
+  // Fall back to a non-empty array so `tips.length` never throws.
+  const rawTips = t('analysis.loading.tips', { returnObjects: true });
+  const tips: string[] = Array.isArray(rawTips) && rawTips.length > 0
+    ? rawTips
+    : ['Analyzing your presentation...', 'Processing video frames...', 'Generating insights...'];
 
   // Pulse animation
   useEffect(() => {

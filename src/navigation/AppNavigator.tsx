@@ -56,15 +56,21 @@ const splashStyles = StyleSheet.create({
 const AppNavigator: React.FC = () => {
   const { user, loading } = useAuth();
 
-  if (loading) {
+  // Block ALL rendering until Firebase auth resolves.
+  // Also guard against the undefined case (user === undefined can occur if the
+  // auth state hook is in a transient state between renders on Android).
+  if (loading || user === undefined) {
     return <SplashScreen />;
   }
 
-  if (!user) {
+  // Auth resolved but no authenticated user — show sign-in / register flow.
+  if (user === null || !user) {
     return <AuthNavigator />;
   }
 
-  // Step 1: New user must choose app language
+  // Step 1: New user must choose app language.
+  // user.language is optional; accessing it is safe because we've confirmed
+  // user is a non-null object above.
   if (!user.language) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -73,7 +79,7 @@ const AppNavigator: React.FC = () => {
     );
   }
 
-  // Step 2: Must complete the 3-step onboarding (purpose / video language / focus area)
+  // Step 2: Must complete the 3-step onboarding (purpose / video language / focus area).
   if (!user.onboardingCompleted) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
