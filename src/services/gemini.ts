@@ -3,9 +3,9 @@ import { OnboardingAnswers, AnalysisReport, CategoryResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 const GEMINI_API_KEY = 'AIzaSyA-RQoFKjc5-kazKZrjLPK34JxyWdkziEY';
-const GEMINI_MODEL = 'gemini-1.5-pro';
-const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
-const GEMINI_GENERATE_API = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1/files';
+const GEMINI_GENERATE_API = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
 const ANALYSIS_TIMEOUT_MS = 120000; // 2 minutes
 
 function buildSystemPrompt(answers: OnboardingAnswers, userLanguage: string): string {
@@ -174,7 +174,7 @@ async function waitForFileActive(fileUri: string): Promise<void> {
 
   for (let i = 0; i < maxAttempts; i++) {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/files/${fileName}?key=${GEMINI_API_KEY}`
+      `https://generativelanguage.googleapis.com/v1/files/${fileName}?key=${GEMINI_API_KEY}`
     );
 
     if (!response.ok) {
