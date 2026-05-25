@@ -1,8 +1,14 @@
 import * as FileSystem from 'expo-file-system';
+import Constants from 'expo-constants';
 import { OnboardingAnswers, AnalysisReport, CategoryResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
-const GEMINI_API_KEY = 'AIzaSyA-RQoFKjc5-kazKZrjLPK34JxyWdkziEY';
+// Read the API key injected at build time via app.config.js → extra.geminiApiKey.
+// Never hardcode this value here — use the .env file locally and an EAS secret
+// for production / preview builds.
+const GEMINI_API_KEY: string =
+  (Constants.expoConfig?.extra?.geminiApiKey as string) || '';
+
 const GEMINI_MODEL = 'gemini-2.0-flash';
 const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1/files';
 const GEMINI_GENERATE_API = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;

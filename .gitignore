@@ -1,1 +1,16 @@
 node_modules/
+
+# Environment variables — never commit these
+.env
+.env.local
+.env.*.local
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# EAS
+*.ipa
+*.apk
+*.aab
