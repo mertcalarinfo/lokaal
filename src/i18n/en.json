@@ -118,7 +118,7 @@
     "analyzeButton": "Analyze",
     "videoSelected": "Video selected",
     "videoInfo": "{{duration}} · Ready to analyze",
-    "usageFree": "{{used}}/{{total}} free analysis used this month",
+    "usageFree": "{{used}}/{{total}} free",
     "usageUnlimited": "Unlimited analyses",
     "upgradePrompt": "Upgrade to Premium for unlimited analyses",
     "upgradeButton": "Upgrade to Premium",

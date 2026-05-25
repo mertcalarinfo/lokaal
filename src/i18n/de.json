@@ -118,7 +118,7 @@
     "analyzeButton": "Analysieren",
     "videoSelected": "Video ausgewählt",
     "videoInfo": "{{duration}} · Bereit zur Analyse",
-    "usageFree": "{{used}}/{{total}} kostenlose Analyse diesen Monat genutzt",
+    "usageFree": "{{used}}/{{total}} frei",
     "usageUnlimited": "Unbegrenzte Analysen",
     "upgradePrompt": "Upgrade auf Premium für unbegrenzte Analysen",
     "upgradeButton": "Auf Premium upgraden",

@@ -175,7 +175,7 @@ const HomeScreen: React.FC = () => {
       return (
         <View style={styles.usageBadge}>
           <Ionicons name="infinite" size={14} color={COLORS.success} />
-          <Text style={[styles.usageText, { color: COLORS.success }]}>
+          <Text style={[styles.usageText, { color: COLORS.success }]} numberOfLines={1}>
             {t('home.usageUnlimited')}
           </Text>
         </View>
@@ -197,6 +197,7 @@ const HomeScreen: React.FC = () => {
             styles.usageText,
             { color: used >= total ? COLORS.accent : COLORS.textSecondary },
           ]}
+          numberOfLines={1}
         >
           {t('home.usageFree', { used, total })}
         </Text>
@@ -336,9 +337,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   settingsButton: {
     padding: 4,
+    flexShrink: 0,
   },
   usageBadge: {
     flexDirection: 'row',
@@ -350,10 +353,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     gap: 5,
+    flexShrink: 0,
   },
   usageText: {
     fontSize: 11,
     fontWeight: '600',
+    flexShrink: 1,
   },
   hero: {
     marginVertical: 24,
