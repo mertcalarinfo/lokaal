@@ -24,7 +24,9 @@ console.log(
 );
 
 const GEMINI_MODEL = 'gemini-2.5-flash';
-const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1/files';
+// Files API lives on v1beta — Google never promoted it to v1.
+// generateContent IS on v1 (stable). Using the wrong version for Files = 404.
+const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
 const GEMINI_GENERATE_API = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
 const ANALYSIS_TIMEOUT_MS = 120000; // 2 minutes
 
@@ -199,7 +201,7 @@ async function waitForFileActive(fileUri: string): Promise<void> {
 
   for (let i = 0; i < maxAttempts; i++) {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/files/${fileName}?key=${GEMINI_API_KEY}`
+      `https://generativelanguage.googleapis.com/v1beta/files/${fileName}?key=${GEMINI_API_KEY}`
     );
 
     if (!response.ok) {
