@@ -18,7 +18,7 @@ console.log(
     : 'KEY IS EMPTY ✗ — check EAS secret and app.config.js'
 );
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-1.5-flash';
 const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1/files';
 const GEMINI_GENERATE_API = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
 const ANALYSIS_TIMEOUT_MS = 120000; // 2 minutes
