@@ -1,4 +1,9 @@
-import * as FileSystem from 'expo-file-system';
+// SDK 54 new API — File class replaces getInfoAsync; Paths replaces cacheDirectory
+import { File, Paths } from 'expo-file-system';
+// Legacy import kept for two operations that have no new-API equivalent:
+//   • copyAsync  — new File.copy() only accepts file:// URIs; legacy handles content://→file:// on Android
+//   • uploadAsync / FileSystemUploadType — native binary streaming; no replacement in new API yet
+import { copyAsync, uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
 import { OnboardingAnswers, AnalysisReport, CategoryResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -96,20 +101,24 @@ async function uploadVideoToGeminiFiles(videoUri: string): Promise<string> {
 
   // Step 0: On Android, content:// URIs cannot be read directly by the Gemini
   // HTTP client — copy them to a local file:// path in the cache directory first.
+  // Uses legacy copyAsync because the new File.copy() does not support content:// source URIs.
   let localUri = videoUri;
   if (videoUri.startsWith('content://')) {
-    const dest = `${FileSystem.cacheDirectory}prezence_${Date.now()}.mp4`;
+    // Build the destination path via the new Paths.cache (SDK 54) to avoid the
+    // deprecated FileSystem.cacheDirectory string constant.
+    const dest = new File(Paths.cache, `prezence_${Date.now()}.mp4`).uri;
     console.log('[Gemini] Copying content:// URI to cache:', dest);
-    await FileSystem.copyAsync({ from: videoUri, to: dest });
+    await copyAsync({ from: videoUri, to: dest });
     localUri = dest;
   }
 
-  // Step 1: Get file info to obtain size
-  const fileInfo = await FileSystem.getInfoAsync(localUri);
-  if (!fileInfo.exists) {
+  // Step 1: Get file info using the SDK 54 File class (replaces deprecated getInfoAsync).
+  // file.exists and file.size are synchronous property reads — no await needed.
+  const file = new File(localUri);
+  if (!file.exists) {
     throw new Error(`Video file not found at: ${localUri}`);
   }
-  const fileSize: number = (fileInfo as any).size ?? 0;
+  const fileSize: number = file.size;
   console.log('[Gemini] Uploading video:', localUri, '— size:', fileSize, 'bytes');
 
   // Step 2: Initiate resumable upload to get the upload URL
@@ -142,17 +151,18 @@ async function uploadVideoToGeminiFiles(videoUri: string): Promise<string> {
   }
   console.log('[Gemini] Got upload URL, streaming file bytes natively...');
 
-  // Step 3: Upload the file bytes using FileSystem.uploadAsync — this streams
-  // the file at the native layer and avoids reading the entire video into the
-  // JavaScript heap (which would OOM for any file larger than ~20MB).
-  const uploadResult = await FileSystem.uploadAsync(uploadUrl, localUri, {
+  // Step 3: Upload the file bytes using legacy uploadAsync — this streams the file
+  // at the native layer and avoids reading the entire video into the JS heap
+  // (which would OOM for any file larger than ~20MB). There is no equivalent in
+  // the SDK 54 new File API yet, so the legacy import is intentional here.
+  const uploadResult = await uploadAsync(uploadUrl, localUri, {
     httpMethod: 'POST',
     headers: {
       'Content-Type': mimeType,
       'X-Goog-Upload-Command': 'upload, finalize',
       'X-Goog-Upload-Offset': '0',
     },
-    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+    uploadType: FileSystemUploadType.BINARY_CONTENT,
   });
 
   if (uploadResult.status < 200 || uploadResult.status >= 300) {
