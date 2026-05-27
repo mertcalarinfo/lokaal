@@ -5,6 +5,7 @@ import { File, Paths } from 'expo-file-system';
 //   • uploadAsync / FileSystemUploadType — native binary streaming; no replacement in new API yet
 import { copyAsync, uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { OnboardingAnswers, AnalysisReport, CategoryResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -25,10 +26,14 @@ console.log(
 
 const GEMINI_MODEL = 'gemini-2.5-flash';
 // Files API lives on v1beta — Google never promoted it to v1.
-// generateContent IS on v1 (stable). Using the wrong version for Files = 404.
+// The generateContent call is handled by the @google/generative-ai SDK,
+// which picks the correct endpoint automatically — no manual URL needed.
 const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
-const GEMINI_GENERATE_API = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
 const ANALYSIS_TIMEOUT_MS = 120000; // 2 minutes
+
+// Single SDK client shared across calls. Initialised at module load so the
+// key is captured once from Constants (which is static after build).
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 function buildSystemPrompt(answers: OnboardingAnswers, userLanguage: string): string {
   const purposeLabels: Record<string, string> = {
@@ -338,31 +343,20 @@ async function doAnalyzeVideo(
   userLanguage: string,
   userId: string
 ): Promise<AnalysisReport> {
-  // Step 0: Connectivity probe — send a simple text prompt to verify the API
-  // key is valid and the network can reach Gemini before we bother uploading.
+  // Step 0: Connectivity probe — send a minimal text prompt via the SDK to
+  // confirm the key is valid and the network can reach Gemini before uploading.
   console.log('[Gemini] Probing API key with text-only request...');
   try {
-    const probeBody = {
-      contents: [{ parts: [{ text: 'Hello' }] }],
+    const probeModel = genAI.getGenerativeModel({
+      model: GEMINI_MODEL,
       generationConfig: { maxOutputTokens: 8 },
-    };
-    const probeRes = await fetch(`${GEMINI_GENERATE_API}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(probeBody),
     });
-    const probeJson = await probeRes.json().catch(() => null);
-    if (!probeRes.ok) {
-      console.error('[Gemini] API key probe FAILED — status:', probeRes.status, '| body:', JSON.stringify(probeJson));
-      throw new Error(`GEMINI_API_ERROR: probe failed ${probeRes.status} — ${JSON.stringify(probeJson)}`);
-    }
-    const probeText = probeJson?.candidates?.[0]?.content?.parts?.[0]?.text ?? '(no text)';
+    const probeResult = await probeModel.generateContent('Hello');
+    const probeText = probeResult.response.text();
     console.log('[Gemini] API key probe OK — response:', probeText);
   } catch (error: any) {
-    // Re-throw only real API errors; network errors surface as-is
-    if (error.message?.startsWith('GEMINI_API_ERROR')) throw error;
-    console.error('[Gemini] API key probe network error:', error.message, error);
-    throw new Error(`GEMINI_API_ERROR: probe network error — ${error.message}`);
+    console.error('[Gemini] API key probe FAILED:', error.message, error);
+    throw new Error(`GEMINI_API_ERROR: probe failed — ${error.message}`);
   }
 
   // Step 1: Upload video to Gemini Files API
@@ -374,59 +368,42 @@ async function doAnalyzeVideo(
     throw new Error(`UPLOAD_FAILED: ${error.message}`);
   }
 
-  // Step 2: Build prompt
+  // Step 2: Build model with system instruction
   const systemPrompt = buildSystemPrompt(answers, userLanguage);
 
-  // Step 3: Send to Gemini
-  // All field names must be camelCase — the v1 REST API rejects snake_case
-  // with INVALID_ARGUMENT "unknown name" errors.
-  const requestBody = {
-    systemInstruction: {
-      parts: [{ text: systemPrompt }],
-    },
-    contents: [
-      {
-        parts: [
-          {
-            fileData: {
-              mimeType: 'video/mp4',
-              fileUri: geminiFileUri,
-            },
-          },
-          {
-            text: 'Please analyze this speaking video and return the structured JSON report as specified.',
-          },
-        ],
-      },
-    ],
+  const model = genAI.getGenerativeModel({
+    model: GEMINI_MODEL,
+    systemInstruction: systemPrompt,
     generationConfig: {
       temperature: 0.4,
       topP: 0.95,
       maxOutputTokens: 4096,
     },
-  };
-
-  const response = await fetch(`${GEMINI_GENERATE_API}?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(requestBody),
   });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error('[Gemini] generateContent failed:', response.status, errText);
-    throw new Error(`GEMINI_API_ERROR: ${response.status} ${errText}`);
+  // Step 3: Send video + prompt via SDK — it handles correct field names and
+  // API version automatically, eliminating the camelCase/snake_case ambiguity.
+  console.log('[Gemini] Sending video to model for analysis...');
+  let sdkResponse;
+  try {
+    sdkResponse = await model.generateContent([
+      {
+        fileData: {
+          mimeType: 'video/mp4',
+          fileUri: geminiFileUri,
+        },
+      },
+      'Please analyze this speaking video and return the structured JSON report as specified.',
+    ]);
+  } catch (error: any) {
+    console.error('[Gemini] generateContent failed:', error.message, error);
+    throw new Error(`GEMINI_API_ERROR: ${error.message}`);
   }
 
-  const geminiResponse = await response.json();
-  console.log('[Gemini] Raw response candidates:', JSON.stringify(geminiResponse?.candidates?.length));
-
-  // Extract text from response
-  const textContent =
-    geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const textContent = sdkResponse.response.text();
+  console.log('[Gemini] Response received, length:', textContent.length);
 
   if (!textContent) {
-    console.error('[Gemini] Empty/unexpected response structure:', JSON.stringify(geminiResponse));
     throw new Error('Empty response from Gemini API');
   }
 
