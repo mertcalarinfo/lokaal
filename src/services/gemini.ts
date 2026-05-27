@@ -230,14 +230,19 @@ async function waitForFileActive(fileUri: string): Promise<void> {
 }
 
 function extractJsonFromText(text: string): any {
-  // Try direct parse first
+  // Safety net: strip markdown code fences before any parse attempt.
+  // responseMimeType:'application/json' prevents this in normal operation,
+  // but the model can still emit fences when it ignores the MIME hint.
+  const stripped = text.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+
+  // Try direct parse on the stripped text first
   try {
-    return JSON.parse(text);
+    return JSON.parse(stripped);
   } catch {
     // ignore
   }
 
-  // Try to find JSON block in markdown code fences
+  // Try to find JSON block in the original text's markdown code fences
   const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) {
     try {
@@ -247,8 +252,8 @@ function extractJsonFromText(text: string): any {
     }
   }
 
-  // Try to find raw JSON object
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  // Try to find raw JSON object in the stripped text
+  const jsonMatch = stripped.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     try {
       return JSON.parse(jsonMatch[0]);
@@ -378,6 +383,9 @@ async function doAnalyzeVideo(
       temperature: 0.4,
       topP: 0.95,
       maxOutputTokens: 4096,
+      // Force pure JSON output — prevents the model from wrapping the
+      // response in markdown code fences (```json ... ```) which broke parsing.
+      responseMimeType: 'application/json',
     },
   });
 
