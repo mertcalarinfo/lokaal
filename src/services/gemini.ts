@@ -344,7 +344,7 @@ async function doAnalyzeVideo(
   try {
     const probeBody = {
       contents: [{ parts: [{ text: 'Hello' }] }],
-      generation_config: { max_output_tokens: 8 },
+      generationConfig: { maxOutputTokens: 8 },
     };
     const probeRes = await fetch(`${GEMINI_GENERATE_API}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -377,18 +377,20 @@ async function doAnalyzeVideo(
   // Step 2: Build prompt
   const systemPrompt = buildSystemPrompt(answers, userLanguage);
 
-  // Step 3: Send to Gemini 1.5 Pro
+  // Step 3: Send to Gemini
+  // All field names must be camelCase — the v1 REST API rejects snake_case
+  // with INVALID_ARGUMENT "unknown name" errors.
   const requestBody = {
-    system_instruction: {
+    systemInstruction: {
       parts: [{ text: systemPrompt }],
     },
     contents: [
       {
         parts: [
           {
-            file_data: {
-              mime_type: 'video/mp4',
-              file_uri: geminiFileUri,
+            fileData: {
+              mimeType: 'video/mp4',
+              fileUri: geminiFileUri,
             },
           },
           {
@@ -397,10 +399,10 @@ async function doAnalyzeVideo(
         ],
       },
     ],
-    generation_config: {
+    generationConfig: {
       temperature: 0.4,
-      top_p: 0.95,
-      max_output_tokens: 4096,
+      topP: 0.95,
+      maxOutputTokens: 4096,
     },
   };
 
