@@ -1,3 +1,13 @@
+// Polyfill crypto.getRandomValues for React Native — must be the very first
+// import so uuid (and any other library that calls getRandomValues) finds it.
+import * as Crypto from 'expo-crypto';
+if (typeof global.crypto === 'undefined' || typeof global.crypto.getRandomValues === 'undefined') {
+  // @ts-ignore — assigning to the global crypto object
+  global.crypto = {
+    getRandomValues: (array: any) => Crypto.getRandomValues(array),
+  };
+}
+
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
