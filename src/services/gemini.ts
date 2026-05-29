@@ -229,40 +229,60 @@ async function waitForFileActive(fileUri: string): Promise<void> {
   throw new Error('File did not become active in time');
 }
 
+/**
+ * extractJSON — pull the first valid JSON object out of any Gemini response.
+ *
+ * Gemini may return any of these shapes even when responseMimeType is set:
+ *   • Bare JSON              {"categories":[...]}
+ *   • Markdown-fenced        ```json\n{"categories":[...]}\n```
+ *   • Fenced without label   ```\n{"categories":[...]}\n```
+ *   • Prose + JSON           "Here is the analysis:\n```json\n{...}\n```"
+ *   • JSON with control chars (invisible Unicode, \r, BOM)
+ *
+ * Strategy (in order):
+ *   1. Extract content from ```json ... ``` fence (most common Gemini quirk)
+ *   2. Extract content from plain ``` ... ``` fence
+ *   3. Slice from first '{' to last '}' in the whole text
+ *   4. Strip all control characters and try again
+ */
+function extractJSON(text: string): string {
+  // 1. ```json ... ``` fence
+  const jsonFenceMatch = text.match(/```json\s*([\s\S]*?)```/i);
+  if (jsonFenceMatch?.[1]) return jsonFenceMatch[1].trim();
+
+  // 2. Plain ``` ... ``` fence
+  const plainFenceMatch = text.match(/```\s*([\s\S]*?)```/);
+  if (plainFenceMatch?.[1]) {
+    const inner = plainFenceMatch[1].trim();
+    if (inner.startsWith('{')) return inner;
+  }
+
+  // 3. First '{' to last '}' — works for prose-wrapped JSON
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    return text.substring(start, end + 1).trim();
+  }
+
+  // 4. Nothing found — return the whole text stripped of control characters
+  //    so JSON.parse at least gets a clean string to reject with a clear error.
+  return text.replace(/[\x00-\x1F\x7F]/g, ' ').trim();
+}
+
+/** Thin wrapper: extract then parse, preserving the raw text for diagnostics. */
 function extractJsonFromText(text: string): any {
-  // Safety net: strip markdown code fences before any parse attempt.
-  // responseMimeType:'application/json' prevents this in normal operation,
-  // but the model can still emit fences when it ignores the MIME hint.
-  const stripped = text.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
-
-  // Try direct parse on the stripped text first
+  const clean = extractJSON(text);
   try {
-    return JSON.parse(stripped);
-  } catch {
-    // ignore
+    return JSON.parse(clean);
+  } catch (e: any) {
+    // Surface enough context to diagnose without logging the full (potentially
+    // large) video-analysis response — first 600 chars is usually enough.
+    throw new Error(
+      `JSON.parse failed after extraction.\n` +
+      `Extracted (first 600 chars): ${clean.slice(0, 600)}\n` +
+      `Original (first 200 chars): ${text.slice(0, 200)}`
+    );
   }
-
-  // Try to find JSON block in the original text's markdown code fences
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) {
-    try {
-      return JSON.parse(fenceMatch[1].trim());
-    } catch {
-      // ignore
-    }
-  }
-
-  // Try to find raw JSON object in the stripped text
-  const jsonMatch = stripped.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    try {
-      return JSON.parse(jsonMatch[0]);
-    } catch {
-      // ignore
-    }
-  }
-
-  throw new Error('Could not extract JSON from Gemini response');
 }
 
 function validateAndNormalizeReport(rawData: any, videoUrl: string, userId: string, answers: OnboardingAnswers): AnalysisReport {
@@ -419,9 +439,10 @@ async function doAnalyzeVideo(
   let rawData: any;
   try {
     rawData = extractJsonFromText(textContent);
-  } catch (parseError) {
-    console.error('[Gemini] JSON parse failed. Raw text:', textContent.slice(0, 500));
-    throw new Error(`PARSE_ERROR: Could not parse Gemini response as JSON`);
+  } catch (parseError: any) {
+    // parseError.message already contains extracted + original text snippets
+    console.error('[Gemini] JSON parse failed:', parseError.message);
+    throw new Error(`PARSE_ERROR: ${parseError.message}`);
   }
 
   // Validate and normalize
