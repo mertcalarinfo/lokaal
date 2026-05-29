@@ -156,9 +156,18 @@ const HomeScreen: React.FC = () => {
       return;
     }
 
-    // Navigate to onboarding with the video URI so answers + video reach AnalysisLoading
-    navigation.navigate('Onboarding', { videoUri: selectedVideo.uri });
-  }, [selectedVideo, canAnalyze, navigation, t]);
+    if (user?.onboardingAnswers) {
+      // Goals were collected once during onboarding — skip the questions and go
+      // straight to analysis, passing the saved answers to Gemini as context.
+      navigation.navigate('AnalysisLoading', {
+        videoUri: selectedVideo.uri,
+        answers: user.onboardingAnswers,
+      });
+    } else {
+      // Fallback for accounts created before goals were persisted: collect once.
+      navigation.navigate('Onboarding', { videoUri: selectedVideo.uri });
+    }
+  }, [selectedVideo, canAnalyze, navigation, t, user?.onboardingAnswers]);
 
   const handleUpgradePress = () => {
     navigation.navigate('Paywall');
@@ -361,25 +370,25 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   hero: {
-    marginVertical: 24,
-    borderRadius: 20,
-    padding: 24,
+    marginVertical: 18,
+    borderRadius: 18,
+    padding: 20,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   heroTitle: {
-    fontSize: 28,
+    fontSize: 23,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 10,
-    lineHeight: 36,
+    marginBottom: 8,
+    lineHeight: 30,
     fontFamily: 'DMSans_700Bold',
   },
   heroSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    lineHeight: 22,
+    lineHeight: 20,
     fontFamily: 'DMSans_400Regular',
   },
   uploadArea: {

@@ -95,19 +95,33 @@ const ProgressScreen: React.FC = () => {
     });
   };
 
-  // Prepare chart data
-  const chartLabels = reports
+  // Date + time, shown on each saved-report card.
+  const formatDateTime = (date: Date | string): string => {
+    const d = date instanceof Date ? date : new Date(date);
+    const datePart = d.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    const timePart = d.toLocaleTimeString(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return `${datePart} · ${timePart}`;
+  };
+
+  // Chart data: only the last 3 months, oldest → newest, capped at 10 points.
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+  const chartReports = reports
+    .filter((r) => new Date(r.createdAt) >= threeMonthsAgo)
     .slice()
     .reverse()
-    .slice(0, 8)
-    .map((r) => formatDate(r.createdAt));
+    .slice(-10);
 
-  const chartData = reports
-    .slice()
-    .reverse()
-    .slice(0, 8)
-    .map((r) => r.averageScore);
-
+  const chartLabels = chartReports.map((r) => formatDate(r.createdAt));
+  const chartData = chartReports.map((r) => r.averageScore);
   const hasChartData = chartData.length >= 2;
 
   const getPurposeLabel = (purpose: string): string => {
@@ -251,16 +265,17 @@ const ProgressScreen: React.FC = () => {
                       },
                     ],
                   }}
-                  width={SCREEN_WIDTH - 64}
-                  height={180}
+                  width={SCREEN_WIDTH - 56}
+                  height={170}
                   yAxisSuffix=""
-                  yAxisInterval={2}
-                  fromZero={false}
+                  segments={5}
+                  fromZero
+                  formatYLabel={(y) => String(Math.round(Number(y)))}
                   chartConfig={{
                     backgroundColor: COLORS.surface,
                     backgroundGradientFrom: '#0d1b2e',
                     backgroundGradientTo: '#0d1b2e',
-                    decimalPlaces: 1,
+                    decimalPlaces: 0,
                     color: (opacity = 1) => `rgba(59, 127, 232, ${opacity})`,
                     labelColor: () => COLORS.textMuted,
                     style: { borderRadius: 16 },
@@ -289,14 +304,14 @@ const ProgressScreen: React.FC = () => {
                 <TouchableOpacity
                   key={report.id}
                   style={styles.reportCard}
-                  onPress={() => navigation.navigate('Report', { report })}
+                  onPress={() => navigation.navigate('Report', { report, saved: true })}
                   activeOpacity={0.8}
                 >
                   <View style={styles.reportCardLeft}>
-                    <ScoreRing score={report.averageScore} size={56} strokeWidth={6} animate={false} />
+                    <ScoreRing score={report.averageScore} size={52} strokeWidth={6} animate={false} />
                   </View>
                   <View style={styles.reportCardContent}>
-                    <Text style={styles.reportDate}>{formatFullDate(report.createdAt)}</Text>
+                    <Text style={styles.reportDate}>{formatDateTime(report.createdAt)}</Text>
                     <Text style={styles.reportPurpose}>
                       {t('progress.analysisItem.purpose', {
                         purpose: getPurposeLabel(report.onboardingAnswers.purpose),
@@ -408,18 +423,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingBottom: 48,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 18,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: COLORS.textPrimary,
     fontFamily: 'DMSans_700Bold',
@@ -476,16 +491,16 @@ const styles = StyleSheet.create({
   chartCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
+    padding: 14,
+    marginBottom: 18,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   chartTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.textSecondary,
-    marginBottom: 16,
+    marginBottom: 12,
     letterSpacing: 0.5,
   },
   chart: {

@@ -15,5 +15,10 @@ module.exports = ({ config }) => ({
   extra: {
     ...config.extra,
     geminiApiKey: process.env.GEMINI_API_KEY || '',
+    // RevenueCat public SDK keys, injected at build time. Set these as EAS
+    // secrets / .env values for production. They are publishable keys (safe to
+    // ship in the bundle), but kept out of source so they are easy to rotate.
+    revenueCatIosKey: process.env.REVENUECAT_IOS_KEY || '',
+    revenueCatAndroidKey: process.env.REVENUECAT_ANDROID_KEY || '',
   },
 });

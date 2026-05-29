@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Switch,
   Platform,
   Linking,
 } from 'react-native';
@@ -55,21 +54,24 @@ const SettingsScreen: React.FC = () => {
       .slice(0, 2);
   };
 
-  const handleLanguageToggle = async () => {
-    const newLang = currentLanguage === 'en' ? 'de' : 'en';
+  // Explicit language selection (replaces the old toggle). Picking the already
+  // active language is a no-op. i18n updates first so all t() calls switch in
+  // the same render as the optimistic updateLanguage() state change.
+  const handleSelectLanguage = async (lang: 'en' | 'de') => {
+    if (lang === currentLanguage || languageLoading) return;
     setLanguageLoading(true);
     try {
-      // Update i18n first so all t() calls immediately return strings in the
-      // new language. updateLanguage is now optimistic — it calls setUser()
-      // synchronously before the Firestore write — so both i18n and React
-      // state change in the same render cycle, eliminating the flicker.
-      await changeLanguage(newLang);
-      await updateLanguage(newLang);
+      await changeLanguage(lang);
+      await updateLanguage(lang);
     } catch (error) {
       Alert.alert(t('common.error'), t('common.error'));
     } finally {
       setLanguageLoading(false);
     }
+  };
+
+  const handleEditGoals = () => {
+    navigation.navigate('EditGoals', { mode: 'edit' });
   };
 
   const handleSignOut = () => {
@@ -143,6 +145,31 @@ const SettingsScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  // A selectable language row with a checkmark on the active language.
+  const renderLanguageOption = (code: 'en' | 'de', label: string) => {
+    const active = currentLanguage === code;
+    return (
+      <TouchableOpacity
+        style={styles.row}
+        onPress={() => handleSelectLanguage(code)}
+        disabled={languageLoading}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.rowIcon, { backgroundColor: `${COLORS.primary}20` }]}>
+          <Ionicons name="language-outline" size={18} color={COLORS.primary} />
+        </View>
+        <Text style={styles.rowLabel}>{label}</Text>
+        <View style={styles.rowRight}>
+          {active && (
+            <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const goals = user?.onboardingAnswers;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -185,22 +212,48 @@ const SettingsScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Language */}
+        {/* Language — explicit selector (English / Deutsch) */}
         {renderSection(
           t('settings.language'),
-          renderRow(
-            'language-outline',
-            COLORS.primary,
-            currentLanguage === 'en' ? t('settings.languageEn') : t('settings.languageDe'),
-            <Switch
-              value={currentLanguage === 'de'}
-              onValueChange={handleLanguageToggle}
-              trackColor={{ false: COLORS.border, true: COLORS.primary }}
-              thumbColor="#fff"
-              disabled={languageLoading}
-            />
-          )
+          <>
+            {renderLanguageOption('en', t('settings.languageEn'))}
+            <View style={styles.rowDivider} />
+            {renderLanguageOption('de', t('settings.languageDe'))}
+          </>
         )}
+
+        {/* Coaching goals — the onboarding answers, editable here */}
+        {goals &&
+          renderSection(
+            t('settings.coachingGoals'),
+            <>
+              {renderRow(
+                'flag-outline',
+                COLORS.primary,
+                t('settings.goalLabel'),
+                <Text style={[styles.rowValue, { color: COLORS.textSecondary }]} numberOfLines={1}>
+                  {t(`onboarding.steps.step1.options.${goals.purpose}`)}
+                </Text>
+              )}
+              <View style={styles.rowDivider} />
+              {renderRow(
+                'sparkles-outline',
+                COLORS.primaryLight,
+                t('settings.focusLabel'),
+                <Text style={[styles.rowValue, { color: COLORS.textSecondary }]} numberOfLines={1}>
+                  {t(`onboarding.steps.step3.options.${goals.focusArea}`)}
+                </Text>
+              )}
+              <View style={styles.rowDivider} />
+              {renderRow(
+                'create-outline',
+                COLORS.success,
+                t('settings.editGoals'),
+                undefined,
+                handleEditGoals
+              )}
+            </>
+          )}
 
         {/* Subscription */}
         {renderSection(
@@ -261,15 +314,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingBottom: 48,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 24,
+    marginBottom: 18,
     fontFamily: 'DMSans_700Bold',
   },
   profileCard: {
@@ -277,8 +330,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.surface,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 28,
+    padding: 14,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -322,7 +375,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 18,
   },
   sectionTitle: {
     fontSize: 11,
@@ -330,7 +383,7 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 10,
+    marginBottom: 8,
     marginLeft: 4,
   },
   sectionCard: {

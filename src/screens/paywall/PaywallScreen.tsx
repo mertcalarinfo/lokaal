@@ -53,27 +53,34 @@ const PaywallScreen: React.FC = () => {
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      const pkg = offering?.monthly || offering?.availablePackages?.[0];
+      // The offering may not have loaded yet (or the first fetch failed) — try
+      // once more at tap time before giving up.
+      let current = offering;
+      if (!current) {
+        current = await getOfferings();
+        setOffering(current);
+      }
+
+      const pkg = current?.monthly || current?.availablePackages?.[0];
 
       if (!pkg) {
-        // RevenueCat not configured / Expo Go - show informational alert
-        Alert.alert(
-          'In-App Purchases',
-          'In-app purchases require a production build. RevenueCat integration is ready to configure.',
-          [{ text: t('common.ok') }]
-        );
+        // No offering available — RevenueCat keys or store products not set up.
+        Alert.alert(t('paywall.title'), t('paywall.errors.notAvailable'), [
+          { text: t('common.ok') },
+        ]);
         setLoading(false);
         return;
       }
 
+      // Triggers the native App Store / Play Store purchase dialog.
       const success = await purchasePackage(pkg);
       if (success) {
-        Alert.alert(t('common.ok'), 'Welcome to Premium! 🎉', [
+        Alert.alert(t('common.ok'), t('paywall.purchaseSuccess'), [
           { text: t('common.ok'), onPress: () => navigation.goBack() },
         ]);
       }
     } catch (error: any) {
-      if (!error?.message?.includes('cancelled')) {
+      if (!error?.message?.includes('cancelled') && error?.userCancelled !== true) {
         Alert.alert(t('common.error'), t('paywall.errors.purchaseFailed'));
       }
     } finally {

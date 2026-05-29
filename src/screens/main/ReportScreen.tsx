@@ -13,10 +13,11 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-
+import { Video, ResizeMode } from 'expo-av';
 
 import { HomeStackParamList } from '../../types';
-import { useAnalysis } from '../../hooks/useAnalysis';
+import { useAuth } from '../../hooks/useAuth';
+import { saveReport } from '../../services/storage';
 import ScoreRing from '../../components/ScoreRing';
 import CategoryCard from '../../components/CategoryCard';
 import Button from '../../components/Button';
@@ -42,12 +43,16 @@ const ReportScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<ReportNavigationProp>();
   const route = useRoute<ReportRouteProp>();
+  const { user } = useAuth();
 
-  const { report } = route.params;
-  const { saveCurrentReport } = useAnalysis();
+  // `saved` is true when opened from the Progress tab (already in Firestore).
+  const { report, saved } = route.params;
 
-  const [isSaved, setIsSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(!!saved);
   const [savingLoading, setSavingLoading] = useState(false);
+
+  // Only render a player when we actually have a video URI to play.
+  const hasVideo = !!report.videoUrl && report.videoUrl.length > 0;
 
   const formatDate = (date: Date | string): string => {
     const d = date instanceof Date ? date : new Date(date);
@@ -61,15 +66,18 @@ const ReportScreen: React.FC = () => {
   const handleSave = useCallback(async () => {
     setSavingLoading(true);
     try {
-      await saveCurrentReport();
+      // Save the report from route params directly — earlier this called a
+      // fresh useAnalysis() instance whose `report` was always null, so nothing
+      // was ever persisted. Persist the actual report, scoped to the user.
+      await saveReport({ ...report, userId: user?.uid || report.userId });
       setIsSaved(true);
       Alert.alert(t('common.ok'), t('report.saved'));
-    } catch (error) {
-      Alert.alert(t('common.error'), t('common.error'));
+    } catch (error: any) {
+      Alert.alert(t('common.error'), error?.message || t('common.error'));
     } finally {
       setSavingLoading(false);
     }
-  }, [saveCurrentReport, t]);
+  }, [report, user?.uid, t]);
 
   const handleShare = useCallback(async () => {
     const dateStr = formatDate(report.createdAt);
@@ -91,7 +99,7 @@ const ReportScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -107,10 +115,23 @@ const ReportScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Video player — shown at the top whenever a video URL is available */}
+        {hasVideo && (
+          <View style={styles.videoCard}>
+            <Video
+              source={{ uri: report.videoUrl }}
+              style={styles.video}
+              useNativeControls
+              resizeMode={ResizeMode.CONTAIN}
+              isLooping={false}
+            />
+          </View>
+        )}
+
         {/* Overall score */}
         <View style={styles.scoreCard}>
           <Text style={styles.scoreLabel}>{t('report.overallScore')}</Text>
-          <ScoreRing score={report.averageScore} size={140} strokeWidth={12} animate />
+          <ScoreRing score={report.averageScore} size={112} strokeWidth={10} animate />
           <Text style={styles.reportDate}>{formatDate(report.createdAt)}</Text>
         </View>
 
@@ -125,7 +146,7 @@ const ReportScreen: React.FC = () => {
         {/* Summary */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryHeader}>
-            <Ionicons name="person-circle-outline" size={22} color={COLORS.primary} />
+            <Ionicons name="person-circle-outline" size={20} color={COLORS.primary} />
             <Text style={styles.summaryTitle}>{t('report.summary')}</Text>
           </View>
           <Text style={styles.summaryText}>{report.summary}</Text>
@@ -158,7 +179,7 @@ const ReportScreen: React.FC = () => {
               loading={savingLoading}
               fullWidth
               size="lg"
-              style={{ marginBottom: 12 }}
+              style={{ marginBottom: 10 }}
             />
           )}
           {isSaved && (
@@ -190,7 +211,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -214,91 +235,105 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    paddingBottom: 48,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    // Small gap above the bottom tab bar — no large empty space.
+    paddingBottom: 16,
+  },
+  videoCard: {
+    backgroundColor: '#000',
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  video: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#000',
   },
   scoreCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 20,
-    padding: 32,
+    borderRadius: 18,
+    padding: 20,
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 18,
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: 'hidden',
   },
   scoreLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: COLORS.textMuted,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
-    marginBottom: 20,
+    marginBottom: 14,
   },
   reportDate: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textMuted,
-    marginTop: 16,
+    marginTop: 12,
   },
   section: {
-    marginBottom: 28,
+    marginBottom: 18,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   summaryCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 28,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 18,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   summaryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
-    gap: 10,
+    marginBottom: 10,
+    gap: 8,
   },
   summaryTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: COLORS.textPrimary,
     fontFamily: 'DMSans_700Bold',
   },
   summaryText: {
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    lineHeight: 24,
+    lineHeight: 22,
     fontFamily: 'DMSans_400Regular',
   },
   exerciseCard: {
     flexDirection: 'row',
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: 'hidden',
     alignItems: 'flex-start',
   },
   exerciseBadge: {
-    width: 28,
-    height: 28,
+    width: 26,
+    height: 26,
     borderRadius: 8,
     backgroundColor: 'rgba(78,205,196,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
     flexShrink: 0,
-    marginTop: 2,
+    marginTop: 1,
   },
   exerciseBadgeText: {
     fontSize: 13,
@@ -309,31 +344,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   exerciseLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: COLORS.textMuted,
     letterSpacing: 1,
     textTransform: 'uppercase',
-    marginBottom: 6,
+    marginBottom: 5,
   },
   exerciseText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    lineHeight: 21,
+    lineHeight: 20,
     fontFamily: 'DMSans_400Regular',
   },
   actionsSection: {
-    marginTop: 8,
+    marginTop: 4,
   },
   savedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     gap: 8,
   },
   savedText: {
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.success,
     fontWeight: '600',
   },

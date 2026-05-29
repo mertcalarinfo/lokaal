@@ -14,6 +14,8 @@ export type AnalysisState =
 interface AnalysisHookState {
   state: AnalysisState;
   uploadProgress: number;
+  /** Unified real progress 0..100 across Firebase upload + Gemini pipeline */
+  progress: number;
   report: AnalysisReport | null;
   error: string | null;
   /** Raw error message from the thrown exception — shown directly in debug alerts */
@@ -35,10 +37,17 @@ interface AnalysisHookActions {
 export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
   const [state, setState] = useState<AnalysisState>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rawError, setRawError] = useState<string | null>(null);
   const cancelledRef = useRef(false);
+
+  // Single source of truth for the progress bar. Never let it move backwards
+  // (Firebase upload and Gemini stages report on different scales).
+  const bumpProgress = useCallback((pct: number) => {
+    setProgress((prev) => (pct > prev ? Math.min(100, Math.round(pct)) : prev));
+  }, []);
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;
@@ -51,6 +60,7 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
     cancelledRef.current = false;
     setState('idle');
     setUploadProgress(0);
+    setProgress(0);
     setReport(null);
     setError(null);
     setRawError(null);
@@ -67,16 +77,19 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
       setError(null);
       setReport(null);
       setUploadProgress(0);
+      setProgress(0);
 
       try {
-        // Step 1: Upload to Firebase Storage (for saving the video URL)
+        // Step 1: Upload to Firebase Storage (for a permanent, replayable video
+        // URL). This is the first 0–15% of the overall bar.
         setState('uploading');
         let videoUrl = videoUri;
 
         try {
-          videoUrl = await uploadVideo(videoUri, userId, (progress) => {
+          videoUrl = await uploadVideo(videoUri, userId, (p) => {
             if (!cancelledRef.current) {
-              setUploadProgress(progress);
+              setUploadProgress(p);
+              bumpProgress(p * 0.15); // Firebase upload → 0–15%
             }
           });
         } catch (uploadErr: any) {
@@ -90,10 +103,19 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
           return null;
         }
 
-        // Step 2: Analyze with Gemini
+        // Step 2: Analyze with Gemini — its 0..1 pipeline maps to 15–100%.
         setState('analyzing');
+        bumpProgress(15);
 
-        const analysisReport = await analyzeVideo(videoUri, answers, userLanguage, userId);
+        const analysisReport = await analyzeVideo(
+          videoUri,
+          answers,
+          userLanguage,
+          userId,
+          (frac) => {
+            if (!cancelledRef.current) bumpProgress(15 + frac * 85);
+          }
+        );
 
         if (cancelledRef.current) {
           setState('cancelled');
@@ -153,6 +175,7 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
   return {
     state,
     uploadProgress,
+    progress,
     report,
     error,
     rawError,

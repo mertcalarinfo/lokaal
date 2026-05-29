@@ -219,7 +219,11 @@
     "signOut": "Sign Out",
     "signOutConfirm": "Are you sure you want to sign out?",
     "version": "Version {{version}}",
-    "appVersion": "App Version"
+    "appVersion": "App Version",
+    "coachingGoals": "Coaching Goals",
+    "goalLabel": "Goal",
+    "focusLabel": "Focus",
+    "editGoals": "Edit Goals"
   },
   "paywall": {
     "title": "Go Premium",
@@ -237,9 +241,11 @@
     "restore": "Restore Purchases",
     "disclaimer": "Cancel anytime. No commitment.",
     "termsNotice": "By subscribing you agree to our Terms of Service and Privacy Policy.",
+    "purchaseSuccess": "Welcome to Premium! 🎉",
     "errors": {
       "purchaseFailed": "Purchase could not be completed. Please try again.",
       "restoreFailed": "No purchases found to restore.",
+      "notAvailable": "Subscriptions aren't available right now. Please make sure you're on a production build and try again later.",
       "generic": "Something went wrong. Please try again."
     }
   }

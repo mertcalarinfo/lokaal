@@ -1,22 +1,51 @@
+import Constants from 'expo-constants';
 import { Subscription } from '../types';
 
-const REVENUECAT_API_KEY_IOS = 'YOUR_REVENUECAT_IOS_API_KEY';
-const REVENUECAT_API_KEY_ANDROID = 'test_oEswHVrjJiDqyaBlKNFltnENDne';
+// Keys are injected at build time via app.config.js → extra. The Android
+// sandbox key remains as a fallback for development. Replace the iOS key by
+// setting REVENUECAT_IOS_KEY (EAS secret / .env) before App Store builds.
+const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string>;
+const REVENUECAT_API_KEY_IOS =
+  extra.revenueCatIosKey || 'YOUR_REVENUECAT_IOS_API_KEY';
+const REVENUECAT_API_KEY_ANDROID =
+  extra.revenueCatAndroidKey || 'test_oEswHVrjJiDqyaBlKNFltnENDne';
 const PREMIUM_ENTITLEMENT_ID = 'premium';
 
 let isInitialized = false;
 let Purchases: any = null;
 
+const isPlaceholderKey = (key: string) => !key || key.startsWith('YOUR_');
+
 const initializeRevenueCat = async (): Promise<void> => {
   if (isInitialized) return;
 
   try {
-    const { default: PurchasesModule } = await import('react-native-purchases');
-    Purchases = PurchasesModule;
-
     const { Platform } = await import('react-native');
     const apiKey =
       Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
+
+    // Don't try to configure with a placeholder key — that throws natively and
+    // leaves the SDK in a half-initialised state. Skip cleanly so the paywall
+    // can show an informative message instead of crashing.
+    if (isPlaceholderKey(apiKey)) {
+      console.warn(
+        `[RevenueCat] No valid API key for ${Platform.OS} — purchases disabled. ` +
+          `Set REVENUECAT_${Platform.OS === 'ios' ? 'IOS' : 'ANDROID'}_KEY to enable.`
+      );
+      return;
+    }
+
+    const { default: PurchasesModule, LOG_LEVEL } = await import(
+      'react-native-purchases'
+    );
+    Purchases = PurchasesModule;
+
+    // Verbose logs help diagnose store/offering issues in production builds.
+    try {
+      Purchases.setLogLevel?.(LOG_LEVEL?.DEBUG ?? 'DEBUG');
+    } catch {
+      // older SDKs — ignore
+    }
 
     console.log('[RevenueCat] Initializing for platform:', Platform.OS, '— key prefix:', apiKey.slice(0, 8));
     Purchases.configure({ apiKey });

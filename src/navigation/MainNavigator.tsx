@@ -117,6 +117,13 @@ const MainNavigator: React.FC = () => {
         component={PaywallScreen}
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
+      {/* Edit coaching goals as a modal — reached from Settings. Reuses the
+          onboarding screen in mode='edit'. */}
+      <MainStack.Screen
+        name="EditGoals"
+        component={OnboardingScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
     </MainStack.Navigator>
   );
 };

@@ -23,7 +23,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '../services/firebase';
 import { saveUserProfile, getUserProfile } from '../services/storage';
-import { User } from '../types';
+import { User, OnboardingAnswers } from '../types';
 
 // AsyncStorage key — scoped per user so switching accounts doesn't bleed
 const onboardingKey = (uid: string) => `@prezence:onboarding_${uid}`;
@@ -42,6 +42,10 @@ interface AuthActions {
   signInWithGoogle: () => Promise<void>;
   updateLanguage: (language: 'en' | 'de') => Promise<void>;
   markOnboardingCompleted: () => Promise<void>;
+  // Save goals + mark onboarding done in one step (new-user intro flow).
+  completeOnboarding: (answers: OnboardingAnswers) => Promise<void>;
+  // Update goals without touching onboardingCompleted (Settings edit flow).
+  saveOnboardingAnswers: (answers: OnboardingAnswers) => Promise<void>;
   clearError: () => void;
   // DEV ONLY — remove before release
   skipLogin: () => void;
@@ -94,6 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             displayName: fbUser.displayName || profile?.displayName || '',
             language: profile?.language || undefined,
             onboardingCompleted,
+            onboardingAnswers: profile?.onboardingAnswers || undefined,
             createdAt: profile?.createdAt?.toDate?.() || new Date(),
           };
           setUser(appUser);
@@ -300,6 +305,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   }, [user]);
 
+  // Save coaching goals AND mark onboarding complete (new-user intro flow).
+  // AsyncStorage is written first so onboardingCompleted survives any Firestore
+  // failure, identical to markOnboardingCompleted's guarantee.
+  const completeOnboarding = useCallback(
+    async (answers: OnboardingAnswers) => {
+      if (!user) return;
+      await AsyncStorage.setItem(onboardingKey(user.uid), 'true');
+      setUser((prev) =>
+        prev
+          ? { ...prev, onboardingAnswers: answers, onboardingCompleted: true }
+          : null
+      );
+      saveUserProfile(user.uid, {
+        onboardingAnswers: answers,
+        onboardingCompleted: true,
+      }).catch((err: any) => {
+        console.warn(
+          '[useAuth] Firestore onboarding write failed (AsyncStorage is still set):',
+          err?.message
+        );
+      });
+    },
+    [user]
+  );
+
+  // Update goals only (Settings edit flow). Optimistic: state updates first,
+  // Firestore write happens in the background.
+  const saveOnboardingAnswers = useCallback(
+    async (answers: OnboardingAnswers) => {
+      if (!user) return;
+      setUser((prev) => (prev ? { ...prev, onboardingAnswers: answers } : null));
+      saveUserProfile(user.uid, { onboardingAnswers: answers }).catch(
+        (err: any) => {
+          console.warn('[useAuth] Firestore goals write failed:', err?.message);
+        }
+      );
+    },
+    [user]
+  );
+
   const clearError = useCallback(() => setError(null), []);
 
   // DEV ONLY — bypasses Firebase and lands directly on MainNavigator
@@ -327,6 +372,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     signInWithGoogle,
     updateLanguage,
     markOnboardingCompleted,
+    completeOnboarding,
+    saveOnboardingAnswers,
     clearError,
     skipLogin,
   };

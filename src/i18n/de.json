@@ -219,7 +219,11 @@
     "signOut": "Abmelden",
     "signOutConfirm": "Möchtest du dich wirklich abmelden?",
     "version": "Version {{version}}",
-    "appVersion": "App-Version"
+    "appVersion": "App-Version",
+    "coachingGoals": "Coaching-Ziele",
+    "goalLabel": "Ziel",
+    "focusLabel": "Schwerpunkt",
+    "editGoals": "Ziele bearbeiten"
   },
   "paywall": {
     "title": "Premium werden",
@@ -237,9 +241,11 @@
     "restore": "Käufe wiederherstellen",
     "disclaimer": "Jederzeit kündbar. Keine Bindung.",
     "termsNotice": "Mit dem Abonnement stimmst du unseren Nutzungsbedingungen und Datenschutzrichtlinien zu.",
+    "purchaseSuccess": "Willkommen bei Premium! 🎉",
     "errors": {
       "purchaseFailed": "Kauf konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
       "restoreFailed": "Keine Käufe zum Wiederherstellen gefunden.",
+      "notAvailable": "Abonnements sind derzeit nicht verfügbar. Bitte stelle sicher, dass du einen Produktions-Build verwendest, und versuche es später erneut.",
       "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
     }
   }

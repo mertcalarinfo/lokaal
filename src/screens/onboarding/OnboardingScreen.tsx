@@ -63,15 +63,22 @@ const OnboardingScreen: React.FC = () => {
   // Use `any` navigation so this screen works in both HomeStack and AppNavigator's intro stack
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { markOnboardingCompleted } = useAuth();
+  const { user, completeOnboarding, saveOnboardingAnswers } = useAuth();
 
-  // videoUri is present when coming from HomeScreen pre-analysis flow
-  // undefined/absent means we're in the new-user intro flow
+  // Three modes:
+  //  • edit (mode==='edit')      → editing saved goals from Settings
+  //  • pre-analysis (videoUri)   → fallback: collect goals right before analysis
+  //  • intro (neither)           → first-run onboarding after registration
+  const mode: string | undefined = route.params?.mode;
   const videoUri: string | undefined = route.params?.videoUri;
-  const isIntroMode = !videoUri;
+  const isEditMode = mode === 'edit';
+  const isIntroMode = !videoUri && !isEditMode;
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Partial<OnboardingAnswers>>({});
+  // Pre-fill with the user's saved goals so editing starts from current values.
+  const [answers, setAnswers] = useState<Partial<OnboardingAnswers>>(
+    user?.onboardingAnswers || {}
+  );
   const [isLoading, setIsLoading] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
 
@@ -120,19 +127,30 @@ const OnboardingScreen: React.FC = () => {
 
   const handleFinishOnboarding = async (finalAnswers: OnboardingAnswers) => {
     if (isIntroMode) {
-      // New-user intro flow: write AsyncStorage + update state, then AppNavigator
-      // auto-transitions. markOnboardingCompleted never throws — AsyncStorage is
-      // the source of truth so navigation is always safe after this call.
+      // New-user intro flow: persist goals + mark onboarding done, then
+      // AppNavigator auto-transitions to the main app. AsyncStorage is the
+      // source of truth so navigation is always safe after this call.
       setIsLoading(true);
       try {
-        await markOnboardingCompleted();
+        await completeOnboarding(finalAnswers);
       } finally {
         setIsLoading(false);
       }
+    } else if (isEditMode) {
+      // Settings edit flow: save the updated goals and dismiss.
+      setIsLoading(true);
+      try {
+        await saveOnboardingAnswers(finalAnswers);
+      } finally {
+        setIsLoading(false);
+      }
+      navigation.goBack();
     } else {
-      // Pre-analysis flow: hand off answers + video to the loading screen.
+      // Pre-analysis fallback: persist the goals (so we never ask again) and
+      // hand off answers + video to the loading screen.
+      saveOnboardingAnswers(finalAnswers).catch(() => {});
       navigation.navigate('AnalysisLoading', {
-        videoUri,
+        videoUri: videoUri as string,
         answers: finalAnswers,
       });
     }
@@ -349,7 +367,7 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: COLORS.border,
     borderRadius: 2,
-    marginBottom: 32,
+    marginBottom: 24,
     overflow: 'hidden',
   },
   progressFill: {
@@ -364,18 +382,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepTitle: {
-    fontSize: 28,
+    fontSize: 23,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 8,
-    lineHeight: 36,
+    marginBottom: 6,
+    lineHeight: 30,
     fontFamily: 'DMSans_700Bold',
   },
   stepSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    marginBottom: 28,
-    lineHeight: 22,
+    marginBottom: 20,
+    lineHeight: 20,
     fontFamily: 'DMSans_400Regular',
   },
   optionsScroll: {
@@ -386,8 +404,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.surface,
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
+    padding: 14,
+    marginBottom: 8,
     borderWidth: 1.5,
     borderColor: COLORS.border,
     overflow: 'hidden',

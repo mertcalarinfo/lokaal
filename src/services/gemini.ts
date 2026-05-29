@@ -31,6 +31,9 @@ const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
 const ANALYSIS_TIMEOUT_MS = 120000; // 2 minutes
 
+// Progress callback — receives a fraction 0..1 reflecting real pipeline stages.
+type ProgressCb = (fraction: number) => void;
+
 // Single SDK client shared across calls. Initialised at module load so the
 // key is captured once from Constants (which is static after build).
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -103,7 +106,10 @@ Return your analysis as JSON in this exact format:
 Respond in the same language the user spoke in the video.`;
 }
 
-async function uploadVideoToGeminiFiles(videoUri: string): Promise<string> {
+async function uploadVideoToGeminiFiles(
+  videoUri: string,
+  onProgress?: ProgressCb
+): Promise<string> {
   const mimeType = 'video/mp4';
 
   // Step 0: On Android, content:// URIs cannot be read directly by the Gemini
@@ -157,6 +163,7 @@ async function uploadVideoToGeminiFiles(videoUri: string): Promise<string> {
     throw new Error('No upload URL received from Gemini Files API');
   }
   console.log('[Gemini] Got upload URL, streaming file bytes natively...');
+  onProgress?.(0.1); // upload initiated
 
   // Step 3: Upload the file bytes using legacy uploadAsync — this streams the file
   // at the native layer and avoids reading the entire video into the JS heap
@@ -176,6 +183,7 @@ async function uploadVideoToGeminiFiles(videoUri: string): Promise<string> {
     console.error('[Gemini] Upload failed:', uploadResult.status, uploadResult.body);
     throw new Error(`Failed to upload video: ${uploadResult.status} ${uploadResult.body}`);
   }
+  onProgress?.(0.45); // bytes uploaded
 
   let uploadResultJson: any;
   try {
@@ -194,12 +202,15 @@ async function uploadVideoToGeminiFiles(videoUri: string): Promise<string> {
   console.log('[Gemini] Upload complete, file URI:', fileUri);
 
   // Step 4: Poll until the file is ACTIVE (Gemini processes it server-side)
-  await waitForFileActive(fileUri);
+  await waitForFileActive(fileUri, onProgress);
 
   return fileUri;
 }
 
-async function waitForFileActive(fileUri: string): Promise<void> {
+async function waitForFileActive(
+  fileUri: string,
+  onProgress?: ProgressCb
+): Promise<void> {
   const fileName = fileUri.split('/').pop();
   const maxAttempts = 30;
   const pollIntervalMs = 3000;
@@ -216,12 +227,17 @@ async function waitForFileActive(fileUri: string): Promise<void> {
     const fileData = await response.json();
 
     if (fileData.state === 'ACTIVE') {
+      onProgress?.(0.65); // processing complete
       return;
     }
 
     if (fileData.state === 'FAILED') {
       throw new Error('File processing failed on Gemini servers');
     }
+
+    // Map polling attempts onto the 0.45→0.65 band so the bar keeps moving
+    // while Gemini processes the file server-side.
+    onProgress?.(Math.min(0.45 + (i / maxAttempts) * 0.2, 0.64));
 
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
   }
@@ -350,14 +366,15 @@ export async function analyzeVideo(
   videoUri: string,
   answers: OnboardingAnswers,
   userLanguage: string,
-  userId: string = 'anonymous'
+  userId: string = 'anonymous',
+  onProgress?: ProgressCb
 ): Promise<AnalysisReport> {
   // Create a timeout promise
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('TIMEOUT')), ANALYSIS_TIMEOUT_MS)
   );
 
-  const analysisPromise = doAnalyzeVideo(videoUri, answers, userLanguage, userId);
+  const analysisPromise = doAnalyzeVideo(videoUri, answers, userLanguage, userId, onProgress);
 
   return Promise.race([analysisPromise, timeoutPromise]);
 }
@@ -366,7 +383,8 @@ async function doAnalyzeVideo(
   videoUri: string,
   answers: OnboardingAnswers,
   userLanguage: string,
-  userId: string
+  userId: string,
+  onProgress?: ProgressCb
 ): Promise<AnalysisReport> {
   // Step 0: Connectivity probe — send a minimal text prompt via the SDK to
   // confirm the key is valid and the network can reach Gemini before uploading.
@@ -383,11 +401,12 @@ async function doAnalyzeVideo(
     console.error('[Gemini] API key probe FAILED:', error.message, error);
     throw new Error(`GEMINI_API_ERROR: probe failed — ${error.message}`);
   }
+  onProgress?.(0.05); // probe ok
 
   // Step 1: Upload video to Gemini Files API
   let geminiFileUri: string;
   try {
-    geminiFileUri = await uploadVideoToGeminiFiles(videoUri);
+    geminiFileUri = await uploadVideoToGeminiFiles(videoUri, onProgress);
   } catch (error: any) {
     console.error('[Gemini] Video upload failed:', error);
     throw new Error(`UPLOAD_FAILED: ${error.message}`);
@@ -412,6 +431,7 @@ async function doAnalyzeVideo(
   // Step 3: Send video + prompt via SDK — it handles correct field names and
   // API version automatically, eliminating the camelCase/snake_case ambiguity.
   console.log('[Gemini] Sending video to model for analysis...');
+  onProgress?.(0.7); // analysis request sent
   let sdkResponse;
   try {
     sdkResponse = await model.generateContent([
@@ -427,6 +447,7 @@ async function doAnalyzeVideo(
     console.error('[Gemini] generateContent failed:', error.message, error);
     throw new Error(`GEMINI_API_ERROR: ${error.message}`);
   }
+  onProgress?.(0.95); // model returned
 
   const textContent = sdkResponse.response.text();
   console.log('[Gemini] Response received, length:', textContent.length);
@@ -446,5 +467,7 @@ async function doAnalyzeVideo(
   }
 
   // Validate and normalize
-  return validateAndNormalizeReport(rawData, videoUri, userId, answers);
+  const report = validateAndNormalizeReport(rawData, videoUri, userId, answers);
+  onProgress?.(1); // done
+  return report;
 }

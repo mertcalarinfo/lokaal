@@ -35,7 +35,6 @@ type AnalysisLoadingRouteProp = RouteProp<HomeStackParamList, 'AnalysisLoading'>
 type AnalysisLoadingNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'AnalysisLoading'>;
 
 const TIP_INTERVAL_MS = 4000;
-const SIMULATED_DURATION_MS = 50000;
 
 const AnalysisLoadingScreen: React.FC = () => {
   const { t } = useTranslation();
@@ -45,17 +44,19 @@ const AnalysisLoadingScreen: React.FC = () => {
 
   const { videoUri, answers } = route.params;
 
-  const { state, uploadProgress, report, error, rawError, startAnalysis, cancel } = useAnalysis();
+  const { state, uploadProgress, progress: realProgress, report, error, rawError, startAnalysis, cancel } = useAnalysis();
 
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [secondsRemaining, setSecondsRemaining] = useState(60);
+  // Displayed percentage — eased toward the real progress, with a gentle creep
+  // during long server-side stages so the bar never looks frozen.
+  const [displayPct, setDisplayPct] = useState(0);
 
-  const progressAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const tipTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasStarted = useRef(false);
+
+  // Estimate remaining time from real progress (nominal 60s full run).
+  const secondsRemaining = Math.max(1, Math.round(((100 - displayPct) / 100) * 60));
 
   // `returnObjects: true` can return undefined when i18n hasn't loaded the
   // namespace yet (common on Android before the first render cycle completes).
@@ -96,27 +97,27 @@ const AnalysisLoadingScreen: React.FC = () => {
     };
   }, [tips.length]);
 
-  // Simulated progress (0–95%)
+  // Ease the displayed bar toward the real progress value. While a server-side
+  // stage plateaus (e.g. the model is generating), creep slowly upward — but
+  // never past a ceiling just above the last real checkpoint, so the number
+  // still reflects genuine progress rather than a pure animation.
   useEffect(() => {
-    const startTime = Date.now();
-    progressTimer.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const frac = Math.min(elapsed / SIMULATED_DURATION_MS, 0.95);
-      const pct = Math.round(frac * 100);
-      setProgress(pct);
-      setSecondsRemaining(Math.max(0, Math.round((SIMULATED_DURATION_MS - elapsed) / 1000)));
-
-      Animated.timing(progressAnim, {
-        toValue: frac,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    }, 500);
-
-    return () => {
-      if (progressTimer.current) clearInterval(progressTimer.current);
-    };
-  }, []);
+    const id = setInterval(() => {
+      setDisplayPct((prev) => {
+        if (realProgress >= 100) return Math.min(100, prev + 4);
+        const creepCeil = Math.min(realProgress + 18, 95);
+        if (realProgress > prev) {
+          // Catch up to a real checkpoint quickly
+          return Math.min(prev + Math.max(1, Math.ceil((realProgress - prev) / 3)), creepCeil);
+        }
+        if (state === 'analyzing' && prev < creepCeil) {
+          return prev + 1; // gentle creep during the long wait
+        }
+        return prev;
+      });
+    }, 250);
+    return () => clearInterval(id);
+  }, [realProgress, state]);
 
   // Start analysis
   useEffect(() => {
@@ -132,14 +133,11 @@ const AnalysisLoadingScreen: React.FC = () => {
       );
 
       if (result) {
-        // Complete progress bar
-        Animated.timing(progressAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: false,
-        }).start(() => {
+        // Snap the bar to 100% then hand off to the report screen.
+        setDisplayPct(100);
+        setTimeout(() => {
           navigation.replace('Report', { report: result });
-        });
+        }, 300);
       }
     };
 
@@ -190,14 +188,7 @@ const AnalysisLoadingScreen: React.FC = () => {
     );
   }, [cancel, navigation, t]);
 
-  const progressBarWidth = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-  });
-
-  const displayProgress = state === 'uploading'
-    ? Math.min(uploadProgress * 0.3, 30) // Upload takes 0-30%
-    : progress;
+  const displayProgress = displayPct;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -223,12 +214,7 @@ const AnalysisLoadingScreen: React.FC = () => {
         {/* Progress bar */}
         <View style={styles.progressSection}>
           <View style={styles.progressTrack}>
-            <Animated.View
-              style={[
-                styles.progressFill,
-                { width: progressBarWidth },
-              ]}
-            />
+            <View style={[styles.progressFill, { width: `${displayProgress}%` }]} />
           </View>
           <View style={styles.progressLabels}>
             <Text style={styles.progressText}>{displayProgress}%</Text>
@@ -288,17 +274,17 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 28,
   },
   logoOuter: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   logoImage: {
-    width: 88,
-    height: 88,
+    width: 64,
+    height: 64,
   },
   logoText: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     color: COLORS.textPrimary,
     letterSpacing: 4,
@@ -306,10 +292,10 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 28,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: 8,

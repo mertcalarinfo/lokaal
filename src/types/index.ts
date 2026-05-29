@@ -4,6 +4,9 @@ export interface User {
   displayName: string;
   language?: 'en' | 'de';
   onboardingCompleted?: boolean;
+  // Persisted coaching goals collected once during onboarding. Editable in
+  // Settings. Passed to Gemini on every analysis so feedback stays tailored.
+  onboardingAnswers?: OnboardingAnswers;
   createdAt: Date;
 }
 
@@ -66,6 +69,8 @@ export type AuthStackParamList = {
 export type MainStackParamList = {
   Tabs: undefined;
   Paywall: undefined;
+  // Edit coaching goals as a root-level modal, reachable from Settings.
+  EditGoals: undefined;
 };
 
 export type MainTabParamList = {
@@ -76,8 +81,10 @@ export type MainTabParamList = {
 
 export type HomeStackParamList = {
   Home: undefined;
-  Onboarding: { videoUri: string };
+  // videoUri present = pre-analysis fallback flow; mode='edit' = editing goals
+  Onboarding: { videoUri?: string; mode?: 'edit' } | undefined;
   AnalysisLoading: { videoUri: string; answers: OnboardingAnswers };
-  Report: { report: AnalysisReport };
+  // saved=true when opened from the Progress tab (report already in Firestore)
+  Report: { report: AnalysisReport; saved?: boolean };
   Paywall: undefined;
 };
