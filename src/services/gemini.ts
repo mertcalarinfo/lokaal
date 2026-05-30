@@ -103,6 +103,8 @@ Return your analysis as JSON in this exact format:
   "exercises": ["exercise 1", "exercise 2", "exercise 3"]
 }
 
+The video can be up to 5 minutes long. Provide deep analysis but be concise and structured in your descriptions. Ensure your entire response strictly fits into a single, valid JSON object. Do not exceed length limits; prioritize density of feedback over wordiness so the JSON structure never breaks or gets truncated. Keep each observation and tip to one short sentence, and keep the summary under 120 words.
+
 Respond in the same language the user spoke in the video.`;
 }
 
@@ -421,7 +423,9 @@ async function doAnalyzeVideo(
     generationConfig: {
       temperature: 0.4,
       topP: 0.95,
-      maxOutputTokens: 4096,
+      // Max buffer for gemini-2.5-flash so the full 9-category JSON for videos
+      // up to 5 minutes is never truncated mid-object (4096 cut off ~1m30s+).
+      maxOutputTokens: 8192,
       // Force pure JSON output — prevents the model from wrapping the
       // response in markdown code fences (```json ... ```) which broke parsing.
       responseMimeType: 'application/json',

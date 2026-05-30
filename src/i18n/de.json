@@ -122,7 +122,7 @@
     "usageUnlimited": "Unbegrenzte Analysen",
     "upgradePrompt": "Upgrade auf Premium für unbegrenzte Analysen",
     "upgradeButton": "Auf Premium upgraden",
-    "maxDuration": "Videos sind auf 10 Minuten begrenzt",
+    "maxDuration": "Videos müssen kürzer als 5 Minuten sein. Bitte wähle ein kürzeres Video.",
     "pickError": "Video konnte nicht geladen werden. Bitte erneut versuchen.",
     "recordError": "Kamera konnte nicht geöffnet werden. Bitte Berechtigungen prüfen.",
     "noVideoSelected": "Bitte zuerst ein Video auswählen oder aufnehmen"

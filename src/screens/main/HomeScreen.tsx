@@ -39,7 +39,7 @@ const COLORS = {
 
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
-const MAX_VIDEO_DURATION_SECONDS = 600; // 10 minutes
+const MAX_VIDEO_DURATION_SECONDS = 300; // 5 minutes — Gemini analysis cap
 
 const HomeScreen: React.FC = () => {
   const { t } = useTranslation();
@@ -135,9 +135,18 @@ const HomeScreen: React.FC = () => {
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
+        const durationInSeconds = asset.duration ? asset.duration / 1000 : undefined;
+
+        // Recording is capped by videoMaxDuration, but guard defensively so an
+        // over-length clip never reaches Gemini.
+        if (durationInSeconds && durationInSeconds > MAX_VIDEO_DURATION_SECONDS) {
+          Alert.alert(t('common.error'), t('home.maxDuration'));
+          return;
+        }
+
         setSelectedVideo({
           uri: asset.uri,
-          duration: asset.duration ? asset.duration / 1000 : undefined,
+          duration: durationInSeconds,
         });
       }
     } catch (error) {
