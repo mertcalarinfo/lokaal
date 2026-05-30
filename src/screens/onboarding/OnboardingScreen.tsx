@@ -7,15 +7,13 @@ import {
   Animated,
   Dimensions,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
-import { HomeStackParamList, OnboardingAnswers } from '../../types';
+import { OnboardingAnswers } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/Button';
 
@@ -33,103 +31,123 @@ const COLORS = {
   border: 'rgba(59,127,232,0.3)',
 };
 
-type OnboardingNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Onboarding'>;
-
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type Step1Option = OnboardingAnswers['purpose'];
-type Step2Option = OnboardingAnswers['videoLanguage'];
-type Step3Option = OnboardingAnswers['focusArea'];
+// Each onboarding step maps to one answer field. The language question was
+// removed (Gemini detects the spoken language). 5 questions give the AI rich
+// context: goal, experience, struggle, focus area, and preferred feedback tone.
+type StepKey = keyof OnboardingAnswers;
 
-const step1Icons: Record<Step1Option, string> = {
-  job_interview: 'briefcase-outline',
-  business_presentation: 'bar-chart-outline',
-  content_creation: 'camera-outline',
-  public_speaking: 'people-outline',
-  personal_improvement: 'trending-up-outline',
-  other: 'ellipsis-horizontal-outline',
-};
+interface StepConfig {
+  key: StepKey;
+  i18nKey: string;
+  options: { value: string; icon: string }[];
+}
 
-const step3Icons: Record<Step3Option, string> = {
-  filler_words: 'chatbubble-ellipses-outline',
-  body_language: 'body-outline',
-  confidence: 'flame-outline',
-  speaking_pace: 'speedometer-outline',
-  everything: 'sparkles-outline',
+const STEPS: StepConfig[] = [
+  {
+    key: 'purpose',
+    i18nKey: 'purpose',
+    options: [
+      { value: 'job_interview', icon: 'briefcase-outline' },
+      { value: 'business_presentation', icon: 'bar-chart-outline' },
+      { value: 'content_creation', icon: 'camera-outline' },
+      { value: 'public_speaking', icon: 'people-outline' },
+      { value: 'personal_improvement', icon: 'trending-up-outline' },
+      { value: 'other', icon: 'ellipsis-horizontal-outline' },
+    ],
+  },
+  {
+    key: 'experienceLevel',
+    i18nKey: 'experience',
+    options: [
+      { value: 'beginner', icon: 'leaf-outline' },
+      { value: 'intermediate', icon: 'trending-up-outline' },
+      { value: 'advanced', icon: 'ribbon-outline' },
+    ],
+  },
+  {
+    key: 'biggestChallenge',
+    i18nKey: 'challenge',
+    options: [
+      { value: 'nervousness', icon: 'pulse-outline' },
+      { value: 'structure', icon: 'list-outline' },
+      { value: 'engagement', icon: 'people-outline' },
+      { value: 'clarity', icon: 'chatbubble-ellipses-outline' },
+      { value: 'confidence', icon: 'flame-outline' },
+    ],
+  },
+  {
+    key: 'focusArea',
+    i18nKey: 'focus',
+    options: [
+      { value: 'filler_words', icon: 'chatbubble-ellipses-outline' },
+      { value: 'body_language', icon: 'body-outline' },
+      { value: 'confidence', icon: 'flame-outline' },
+      { value: 'speaking_pace', icon: 'speedometer-outline' },
+      { value: 'everything', icon: 'sparkles-outline' },
+    ],
+  },
+  {
+    key: 'feedbackStyle',
+    i18nKey: 'feedback',
+    options: [
+      { value: 'gentle', icon: 'heart-outline' },
+      { value: 'balanced', icon: 'scale-outline' },
+      { value: 'direct', icon: 'flash-outline' },
+    ],
+  },
+];
+
+// Defaults applied if somehow a step is skipped (shouldn't happen — Next is
+// disabled until an option is selected).
+const DEFAULTS: OnboardingAnswers = {
+  purpose: 'personal_improvement',
+  experienceLevel: 'beginner',
+  biggestChallenge: 'nervousness',
+  focusArea: 'everything',
+  feedbackStyle: 'balanced',
 };
 
 const OnboardingScreen: React.FC = () => {
   const { t } = useTranslation();
-  // Use `any` navigation so this screen works in both HomeStack and AppNavigator's intro stack
+  // `any` navigation so this screen works in both the intro stack and the
+  // EditGoals modal.
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { user, completeOnboarding, saveOnboardingAnswers } = useAuth();
 
-  // Three modes:
-  //  • edit (mode==='edit')      → editing saved goals from Settings
-  //  • pre-analysis (videoUri)   → fallback: collect goals right before analysis
-  //  • intro (neither)           → first-run onboarding after registration
   const mode: string | undefined = route.params?.mode;
   const videoUri: string | undefined = route.params?.videoUri;
   const isEditMode = mode === 'edit';
   const isIntroMode = !videoUri && !isEditMode;
 
   const [currentStep, setCurrentStep] = useState(0);
-  // Pre-fill with the user's saved goals so editing starts from current values.
   const [answers, setAnswers] = useState<Partial<OnboardingAnswers>>(
     user?.onboardingAnswers || {}
   );
   const [isLoading, setIsLoading] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
 
-  const totalSteps = 3;
-
-  const step1Options: Step1Option[] = [
-    'job_interview',
-    'business_presentation',
-    'content_creation',
-    'public_speaking',
-    'personal_improvement',
-    'other',
-  ];
-
-  const step2Options: Step2Option[] = ['english', 'deutsch', 'other'];
-
-  const step3Options: Step3Option[] = [
-    'filler_words',
-    'body_language',
-    'confidence',
-    'speaking_pace',
-    'everything',
-  ];
+  const totalSteps = STEPS.length;
+  const step = STEPS[currentStep];
+  const selectedValue = answers[step.key];
 
   const animateTransition = (direction: 'forward' | 'back') => {
     const toValue = direction === 'forward' ? -SCREEN_WIDTH : SCREEN_WIDTH;
-
     Animated.sequence([
-      Animated.timing(translateX, {
-        toValue,
-        duration: 200,
-        useNativeDriver: true,
-      }),
+      Animated.timing(translateX, { toValue, duration: 200, useNativeDriver: true }),
       Animated.timing(translateX, {
         toValue: direction === 'forward' ? SCREEN_WIDTH : -SCREEN_WIDTH,
         duration: 0,
         useNativeDriver: true,
       }),
-      Animated.timing(translateX, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
+      Animated.timing(translateX, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start();
   };
 
   const handleFinishOnboarding = async (finalAnswers: OnboardingAnswers) => {
     if (isIntroMode) {
-      // New-user intro flow: persist goals + mark onboarding done, then
-      // AppNavigator auto-transitions to the main app. AsyncStorage is the
-      // source of truth so navigation is always safe after this call.
       setIsLoading(true);
       try {
         await completeOnboarding(finalAnswers);
@@ -137,7 +155,6 @@ const OnboardingScreen: React.FC = () => {
         setIsLoading(false);
       }
     } else if (isEditMode) {
-      // Settings edit flow: save the updated goals and dismiss.
       setIsLoading(true);
       try {
         await saveOnboardingAnswers(finalAnswers);
@@ -146,8 +163,7 @@ const OnboardingScreen: React.FC = () => {
       }
       navigation.goBack();
     } else {
-      // Pre-analysis fallback: persist the goals (so we never ask again) and
-      // hand off answers + video to the loading screen.
+      // Pre-analysis fallback (legacy path): persist + hand off to analysis.
       saveOnboardingAnswers(finalAnswers).catch(() => {});
       navigation.navigate('AnalysisLoading', {
         videoUri: videoUri as string,
@@ -161,11 +177,7 @@ const OnboardingScreen: React.FC = () => {
       animateTransition('forward');
       setTimeout(() => setCurrentStep((s) => s + 1), 200);
     } else {
-      const finalAnswers: OnboardingAnswers = {
-        purpose: answers.purpose || 'personal_improvement',
-        videoLanguage: answers.videoLanguage || 'english',
-        focusArea: answers.focusArea || 'everything',
-      };
+      const finalAnswers: OnboardingAnswers = { ...DEFAULTS, ...answers } as OnboardingAnswers;
       handleFinishOnboarding(finalAnswers);
     }
   };
@@ -177,106 +189,12 @@ const OnboardingScreen: React.FC = () => {
     } else if (navigation.canGoBack()) {
       navigation.goBack();
     }
-    // If at step 0 in intro mode (no parent screen), do nothing
   };
 
-  const canProceed = (): boolean => {
-    if (currentStep === 0) return !!answers.purpose;
-    if (currentStep === 1) return !!answers.videoLanguage;
-    if (currentStep === 2) return !!answers.focusArea;
-    return false;
-  };
+  const canProceed = (): boolean => !!answers[step.key];
 
-  const renderOptionCard = (
-    value: string,
-    label: string,
-    icon: string,
-    isSelected: boolean,
-    onSelect: () => void
-  ) => (
-    <TouchableOpacity
-      key={value}
-      style={[styles.optionCard, isSelected && styles.optionCardSelected]}
-      onPress={onSelect}
-      activeOpacity={0.8}
-    >
-      <Ionicons
-        name={icon as any}
-        size={22}
-        color={isSelected ? COLORS.primary : COLORS.textMuted}
-        style={styles.optionIcon}
-      />
-      <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
-        {label}
-      </Text>
-      {isSelected && (
-        <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} style={styles.optionCheck} />
-      )}
-    </TouchableOpacity>
-  );
-
-  const renderStep = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>{t('onboarding.steps.step1.title')}</Text>
-            <Text style={styles.stepSubtitle}>{t('onboarding.steps.step1.subtitle')}</Text>
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.optionsScroll}>
-              {step1Options.map((option) =>
-                renderOptionCard(
-                  option,
-                  t(`onboarding.steps.step1.options.${option}`),
-                  step1Icons[option],
-                  answers.purpose === option,
-                  () => setAnswers((prev) => ({ ...prev, purpose: option }))
-                )
-              )}
-            </ScrollView>
-          </View>
-        );
-
-      case 1:
-        return (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>{t('onboarding.steps.step2.title')}</Text>
-            <Text style={styles.stepSubtitle}>{t('onboarding.steps.step2.subtitle')}</Text>
-            <View style={styles.optionsScroll}>
-              {step2Options.map((option) =>
-                renderOptionCard(
-                  option,
-                  t(`onboarding.steps.step2.options.${option}`),
-                  option === 'english' ? 'flag-outline' : option === 'deutsch' ? 'flag-outline' : 'globe-outline',
-                  answers.videoLanguage === option,
-                  () => setAnswers((prev) => ({ ...prev, videoLanguage: option }))
-                )
-              )}
-            </View>
-          </View>
-        );
-
-      case 2:
-        return (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>{t('onboarding.steps.step3.title')}</Text>
-            <Text style={styles.stepSubtitle}>{t('onboarding.steps.step3.subtitle')}</Text>
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.optionsScroll}>
-              {step3Options.map((option) =>
-                renderOptionCard(
-                  option,
-                  t(`onboarding.steps.step3.options.${option}`),
-                  step3Icons[option],
-                  answers.focusArea === option,
-                  () => setAnswers((prev) => ({ ...prev, focusArea: option }))
-                )
-              )}
-            </ScrollView>
-          </View>
-        );
-
-      default:
-        return null;
-    }
+  const selectOption = (value: string) => {
+    setAnswers((prev) => ({ ...prev, [step.key]: value } as Partial<OnboardingAnswers>));
   };
 
   return (
@@ -287,42 +205,66 @@ const OnboardingScreen: React.FC = () => {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color={COLORS.textSecondary} />
           </TouchableOpacity>
-
           <Text style={styles.stepIndicator}>
-            {t('onboarding.steps.stepOf', {
-              current: currentStep + 1,
-              total: totalSteps,
-            })}
+            {t('onboarding.steps.stepOf', { current: currentStep + 1, total: totalSteps })}
           </Text>
-
           <View style={styles.backButton} />
         </View>
 
         {/* Progress bar */}
         <View style={styles.progressTrack}>
           <Animated.View
-            style={[
-              styles.progressFill,
-              { width: `${((currentStep + 1) / totalSteps) * 100}%` },
-            ]}
+            style={[styles.progressFill, { width: `${((currentStep + 1) / totalSteps) * 100}%` }]}
           />
         </View>
 
         {/* Animated step content */}
-        <Animated.View
-          style={[styles.animatedContent, { transform: [{ translateX }] }]}
-        >
-          {renderStep()}
+        <Animated.View style={[styles.animatedContent, { transform: [{ translateX }] }]}>
+          <View style={styles.stepContent}>
+            <Text style={styles.stepTitle}>
+              {t(`onboarding.steps.${step.i18nKey}.title`)}
+            </Text>
+            <Text style={styles.stepSubtitle}>
+              {t(`onboarding.steps.${step.i18nKey}.subtitle`)}
+            </Text>
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.optionsScroll}>
+              {step.options.map((opt) => {
+                const isSelected = selectedValue === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[styles.optionCard, isSelected && styles.optionCardSelected]}
+                    onPress={() => selectOption(opt.value)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name={opt.icon as any}
+                      size={22}
+                      color={isSelected ? COLORS.primary : COLORS.textMuted}
+                      style={styles.optionIcon}
+                    />
+                    <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
+                      {t(`onboarding.steps.${step.i18nKey}.options.${opt.value}`)}
+                    </Text>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={18}
+                        color={COLORS.primary}
+                        style={styles.optionCheck}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
         </Animated.View>
 
         {/* Footer */}
         <View style={styles.footer}>
           <Button
-            label={
-              currentStep === totalSteps - 1
-                ? t('common.done')
-                : t('common.next')
-            }
+            label={currentStep === totalSteps - 1 ? t('common.done') : t('common.next')}
             onPress={handleNext}
             disabled={!canProceed() || isLoading}
             loading={isLoading}

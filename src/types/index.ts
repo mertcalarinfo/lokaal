@@ -11,6 +11,7 @@ export interface User {
 }
 
 export interface OnboardingAnswers {
+  // What the user is preparing for.
   purpose:
     | 'job_interview'
     | 'business_presentation'
@@ -18,13 +19,25 @@ export interface OnboardingAnswers {
     | 'public_speaking'
     | 'personal_improvement'
     | 'other';
-  videoLanguage: 'english' | 'deutsch' | 'other';
+  // How experienced they are with public speaking.
+  experienceLevel: 'beginner' | 'intermediate' | 'advanced';
+  // What they personally struggle with most.
+  biggestChallenge:
+    | 'nervousness'
+    | 'structure'
+    | 'engagement'
+    | 'clarity'
+    | 'confidence';
+  // The area they most want the AI to focus on.
   focusArea:
     | 'filler_words'
     | 'body_language'
     | 'confidence'
     | 'speaking_pace'
     | 'everything';
+  // How they want feedback delivered.
+  feedbackStyle: 'gentle' | 'balanced' | 'direct';
+  // NOTE: video language is no longer asked — Gemini detects it automatically.
 }
 
 export interface CategoryResult {

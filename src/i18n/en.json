@@ -73,8 +73,8 @@
     },
     "steps": {
       "stepOf": "{{current}} of {{total}}",
-      "step1": {
-        "title": "What's your goal?",
+      "purpose": {
+        "title": "What are you preparing for?",
         "subtitle": "This helps us tailor your coaching",
         "options": {
           "job_interview": "Job Interview",
@@ -85,24 +85,44 @@
           "other": "Other"
         }
       },
-      "step2": {
-        "title": "What language will you speak?",
-        "subtitle": "AI will analyze you in this language",
+      "experience": {
+        "title": "How experienced are you with public speaking?",
+        "subtitle": "We'll calibrate feedback to your level",
         "options": {
-          "english": "English",
-          "deutsch": "Deutsch",
-          "other": "Other"
+          "beginner": "Beginner — just getting started",
+          "intermediate": "Intermediate — some practice",
+          "advanced": "Advanced — very comfortable"
         }
       },
-      "step3": {
-        "title": "What's your focus area?",
-        "subtitle": "We'll pay extra attention to this",
+      "challenge": {
+        "title": "What do you struggle with most?",
+        "subtitle": "We'll pay special attention to this",
+        "options": {
+          "nervousness": "Nervousness & anxiety",
+          "structure": "Structuring my thoughts",
+          "engagement": "Keeping the audience engaged",
+          "clarity": "Speaking clearly",
+          "confidence": "Sounding confident"
+        }
+      },
+      "focus": {
+        "title": "What should we focus on?",
+        "subtitle": "Pick the area you most want to improve",
         "options": {
           "filler_words": "Filler Words",
           "body_language": "Body Language",
           "confidence": "Confidence",
           "speaking_pace": "Speaking Pace",
           "everything": "Everything — let AI decide"
+        }
+      },
+      "feedback": {
+        "title": "How do you want your feedback?",
+        "subtitle": "We'll match this tone in your report",
+        "options": {
+          "gentle": "Gentle & encouraging",
+          "balanced": "Balanced",
+          "direct": "Direct & honest"
         }
       }
     }

@@ -1,11 +1,29 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Localization from 'expo-localization';
 
 import en from './en.json';
 import de from './de.json';
 
 const LANGUAGE_KEY = '@prezence_language';
+
+// Default to German when the device language OR region is German; otherwise
+// English. Only used on first launch (no saved preference yet) — once the user
+// picks a language anywhere, that choice is saved and always wins.
+const detectDeviceLanguage = (): 'en' | 'de' => {
+  try {
+    const locales = Localization.getLocales();
+    const isGerman = locales.some(
+      (l) =>
+        l.languageCode?.toLowerCase() === 'de' ||
+        l.regionCode?.toUpperCase() === 'DE'
+    );
+    return isGerman ? 'de' : 'en';
+  } catch {
+    return 'en';
+  }
+};
 
 const languageDetector = {
   type: 'languageDetector' as const,
@@ -13,7 +31,12 @@ const languageDetector = {
   detect: async (callback: (lang: string) => void) => {
     try {
       const savedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY);
-      callback(savedLanguage || 'en');
+      if (savedLanguage) {
+        callback(savedLanguage);
+        return;
+      }
+      // First launch — fall back to the device locale/region.
+      callback(detectDeviceLanguage());
     } catch {
       callback('en');
     }

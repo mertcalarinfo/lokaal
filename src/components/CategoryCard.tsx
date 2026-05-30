@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { CategoryResult } from '../types';
+import RichText from './RichText';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -106,7 +107,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
               {category.observations.map((obs, i) => (
                 <View key={i} style={styles.bulletRow}>
                   <View style={[styles.bullet, { backgroundColor: COLORS.textMuted }]} />
-                  <Text style={styles.bulletText}>{obs}</Text>
+                  <RichText text={obs} style={styles.bulletText} />
                 </View>
               ))}
             </View>
@@ -124,7 +125,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
                     color={COLORS.primary}
                     style={{ marginTop: 2, marginRight: 8 }}
                   />
-                  <Text style={styles.bulletText}>{tip}</Text>
+                  <RichText text={tip} style={styles.bulletText} />
                 </View>
               ))}
             </View>

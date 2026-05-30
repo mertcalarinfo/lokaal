@@ -171,8 +171,10 @@ const HomeScreen: React.FC = () => {
     // defaults — the user can refine them in Settings → Edit Goals.
     const answers: OnboardingAnswers = user?.onboardingAnswers ?? {
       purpose: 'personal_improvement',
-      videoLanguage: user?.language === 'de' ? 'deutsch' : 'english',
+      experienceLevel: 'beginner',
+      biggestChallenge: 'nervousness',
       focusArea: 'everything',
+      feedbackStyle: 'balanced',
     };
 
     navigation.navigate('AnalysisLoading', {

@@ -73,8 +73,8 @@
     },
     "steps": {
       "stepOf": "{{current}} von {{total}}",
-      "step1": {
-        "title": "Was ist dein Ziel?",
+      "purpose": {
+        "title": "Worauf bereitest du dich vor?",
         "subtitle": "Das hilft uns, dein Coaching anzupassen",
         "options": {
           "job_interview": "Vorstellungsgespräch",
@@ -85,24 +85,44 @@
           "other": "Sonstiges"
         }
       },
-      "step2": {
-        "title": "In welcher Sprache sprichst du?",
-        "subtitle": "Die KI analysiert dich in dieser Sprache",
+      "experience": {
+        "title": "Wie viel Erfahrung hast du mit öffentlichem Sprechen?",
+        "subtitle": "Wir passen das Feedback an dein Niveau an",
         "options": {
-          "english": "English",
-          "deutsch": "Deutsch",
-          "other": "Andere"
+          "beginner": "Anfänger — gerade gestartet",
+          "intermediate": "Fortgeschritten — etwas Übung",
+          "advanced": "Profi — sehr sicher"
         }
       },
-      "step3": {
-        "title": "Was ist dein Schwerpunkt?",
-        "subtitle": "Darauf legen wir besonders viel Wert",
+      "challenge": {
+        "title": "Womit hast du am meisten Schwierigkeiten?",
+        "subtitle": "Darauf achten wir besonders",
+        "options": {
+          "nervousness": "Nervosität & Anspannung",
+          "structure": "Meine Gedanken strukturieren",
+          "engagement": "Das Publikum fesseln",
+          "clarity": "Deutlich sprechen",
+          "confidence": "Selbstsicher klingen"
+        }
+      },
+      "focus": {
+        "title": "Worauf sollen wir uns konzentrieren?",
+        "subtitle": "Wähle den Bereich, den du verbessern willst",
         "options": {
           "filler_words": "Füllwörter",
           "body_language": "Körpersprache",
           "confidence": "Selbstsicherheit",
           "speaking_pace": "Sprechtempo",
           "everything": "Alles — KI entscheidet"
+        }
+      },
+      "feedback": {
+        "title": "Wie möchtest du dein Feedback?",
+        "subtitle": "Diesen Ton verwenden wir in deinem Bericht",
+        "options": {
+          "gentle": "Sanft & ermutigend",
+          "balanced": "Ausgewogen",
+          "direct": "Direkt & ehrlich"
         }
       }
     }

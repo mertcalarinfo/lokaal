@@ -56,16 +56,44 @@ function buildSystemPrompt(answers: OnboardingAnswers, userLanguage: string): st
     everything: 'All categories equally',
   };
 
+  const experienceLabels: Record<string, string> = {
+    beginner: 'Beginner',
+    intermediate: 'Intermediate',
+    advanced: 'Advanced',
+  };
+
+  const challengeLabels: Record<string, string> = {
+    nervousness: 'Nervousness & anxiety',
+    structure: 'Structuring their thoughts',
+    engagement: 'Keeping the audience engaged',
+    clarity: 'Speaking clearly',
+    confidence: 'Sounding confident',
+  };
+
+  const feedbackLabels: Record<string, string> = {
+    gentle: 'Gentle & encouraging',
+    balanced: 'Balanced',
+    direct: 'Direct & honest',
+  };
+
   const purposeText = purposeLabels[answers.purpose] || answers.purpose;
   const focusText = focusLabels[answers.focusArea] || answers.focusArea;
-  const langText = answers.videoLanguage === 'deutsch' ? 'German' : answers.videoLanguage === 'english' ? 'English' : 'Other';
+  const experienceText = experienceLabels[answers.experienceLevel] || answers.experienceLevel;
+  const challengeText = challengeLabels[answers.biggestChallenge] || answers.biggestChallenge;
+  const feedbackText = feedbackLabels[answers.feedbackStyle] || answers.feedbackStyle;
 
   return `You are an elite communication coach with expertise in public speaking, rhetoric, body language, and personal presence. The user has submitted a video of themselves speaking. Your job is to analyze the video thoroughly and return a structured coaching report.
 
-User context:
-- Purpose: ${purposeText}
-- Language spoken: ${langText}
-- Focus area: ${focusText}
+User context (use this to tailor every part of your feedback):
+- Goal / preparing for: ${purposeText}
+- Experience level: ${experienceText}
+- Biggest self-reported challenge: ${challengeText}
+- Area they most want feedback on: ${focusText}
+- Preferred feedback tone: ${feedbackText}
+
+Detect the language the speaker uses in the video automatically and write the ENTIRE report (observations, tips, summary, exercises) in that language.
+
+Adapt your tone to their preferred feedback style: "gentle" = warm and encouraging while still honest; "direct" = candid and straight to the point; "balanced" = a mix of both. Give extra attention to their biggest challenge and chosen focus area.
 
 Analyze the following 9 categories. For each category:
 - Give a score from 1 to 10

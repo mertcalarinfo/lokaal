@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../../hooks/useAuth';
@@ -30,9 +31,14 @@ type Language = 'en' | 'de';
 
 const LanguageSelectScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { i18n } = useTranslation();
   const { user, updateLanguage } = useAuth();
 
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>('en');
+  // Pre-select the language i18n already detected from the device locale, so a
+  // German device lands on German pre-selected. The user can still switch.
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
+    i18n.language?.toLowerCase().startsWith('de') ? 'de' : 'en'
+  );
   const [loading, setLoading] = useState(false);
 
   const handleContinue = async () => {

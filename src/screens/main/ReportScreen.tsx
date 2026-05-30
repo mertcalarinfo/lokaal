@@ -21,6 +21,7 @@ import { saveReport } from '../../services/storage';
 import ScoreRing from '../../components/ScoreRing';
 import CategoryCard from '../../components/CategoryCard';
 import Button from '../../components/Button';
+import RichText from '../../components/RichText';
 
 const COLORS = {
   background: '#0a1628',
@@ -150,7 +151,7 @@ const ReportScreen: React.FC = () => {
             <Ionicons name="person-circle-outline" size={20} color={COLORS.primary} />
             <Text style={styles.summaryTitle}>{t('report.summary')}</Text>
           </View>
-          <Text style={styles.summaryText}>{report.summary}</Text>
+          <RichText text={report.summary} style={styles.summaryText} />
         </View>
 
         {/* Exercises */}
@@ -165,43 +166,43 @@ const ReportScreen: React.FC = () => {
                 <Text style={styles.exerciseLabel}>
                   {t('report.exercise', { number: index + 1 })}
                 </Text>
-                <Text style={styles.exerciseText}>{exercise}</Text>
+                <RichText text={exercise} style={styles.exerciseText} />
               </View>
             </View>
           ))}
         </View>
 
-      </ScrollView>
-
-      {/* Fixed footer — pins the action buttons ~16px above the bottom tab bar.
-          Previously these lived at the end of the scroll content, which left a
-          variable empty gap between the last button and the navigation. As a
-          fixed footer the last element always sits just above the nav. */}
-      <View style={styles.footer}>
-        {!isSaved && (
+        {/* Actions — INSIDE the scroll content. contentContainer has flexGrow:1
+            and this block has marginTop:'auto', so for a short report the buttons
+            are pushed down to sit ~16px above the tab bar (no dead space), and for
+            a long report they simply flow right after the exercises. This is what
+            finally removes the empty gap in every case. */}
+        <View style={styles.actionsSection}>
+          {!isSaved && (
+            <Button
+              label={t('report.saveReport')}
+              onPress={handleSave}
+              loading={savingLoading}
+              fullWidth
+              size="lg"
+              style={{ marginBottom: 10 }}
+            />
+          )}
+          {isSaved && (
+            <View style={styles.savedBadge}>
+              <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
+              <Text style={styles.savedText}>{t('report.saved')}</Text>
+            </View>
+          )}
           <Button
-            label={t('report.saveReport')}
-            onPress={handleSave}
-            loading={savingLoading}
+            label={t('report.newAnalysis')}
+            onPress={handleNewAnalysis}
+            variant="outline"
             fullWidth
             size="lg"
-            style={{ marginBottom: 10 }}
           />
-        )}
-        {isSaved && (
-          <View style={styles.savedBadge}>
-            <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
-            <Text style={styles.savedText}>{t('report.saved')}</Text>
-          </View>
-        )}
-        <Button
-          label={t('report.newAnalysis')}
-          onPress={handleNewAnalysis}
-          variant="outline"
-          fullWidth
-          size="lg"
-        />
-      </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -245,14 +246,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    // Scroll content ends tight against the fixed footer below.
-    paddingBottom: 12,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
     // Last element sits ~16px above the bottom tab bar.
     paddingBottom: 16,
+    // Fill the viewport so a short report can push its actions to the bottom.
+    flexGrow: 1,
   },
   videoCard: {
     backgroundColor: '#000',
@@ -372,7 +369,9 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans_400Regular',
   },
   actionsSection: {
-    marginTop: 4,
+    // Pushes the buttons to the bottom of the viewport when the report is short.
+    marginTop: 'auto',
+    paddingTop: 12,
   },
   savedBadge: {
     flexDirection: 'row',
