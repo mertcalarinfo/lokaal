@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -72,9 +72,14 @@ const ProgressScreen: React.FC = () => {
     }
   }, [user?.uid]);
 
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+  // Re-fetch every time the tab gains focus, so a report saved on the Report
+  // screen appears immediately when the user switches back to the Progress tab
+  // (tabs stay mounted, so a plain useEffect would not re-run).
+  useFocusEffect(
+    useCallback(() => {
+      fetchReports();
+    }, [fetchReports])
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -120,9 +125,15 @@ const ProgressScreen: React.FC = () => {
     .reverse()
     .slice(-10);
 
-  const chartLabels = chartReports.map((r) => formatDate(r.createdAt));
-  const chartData = chartReports.map((r) => r.averageScore);
-  const hasChartData = chartData.length >= 2;
+  const rawLabels = chartReports.map((r) => formatDate(r.createdAt));
+  const rawData = chartReports.map((r) => r.averageScore);
+
+  // The chart should appear as soon as there is at least one report. chart-kit
+  // needs >= 2 points to draw a line, so for a single report we duplicate the
+  // point to render a flat segment with its dot.
+  const chartLabels = rawData.length === 1 ? [rawLabels[0], rawLabels[0]] : rawLabels;
+  const chartData = rawData.length === 1 ? [rawData[0], rawData[0]] : rawData;
+  const hasChartData = rawData.length >= 1;
 
   const getPurposeLabel = (purpose: string): string => {
     return t(`progress.purposes.${purpose}`, { defaultValue: purpose });
@@ -304,7 +315,15 @@ const ProgressScreen: React.FC = () => {
                 <TouchableOpacity
                   key={report.id}
                   style={styles.reportCard}
-                  onPress={() => navigation.navigate('Report', { report, saved: true })}
+                  // Report lives in HomeTab's stack; from this sibling tab we
+                  // must target it via the nested navigator, otherwise the
+                  // navigate call is not handled and nothing opens.
+                  onPress={() =>
+                    (navigation as any).navigate('HomeTab', {
+                      screen: 'Report',
+                      params: { report, saved: true },
+                    })
+                  }
                   activeOpacity={0.8}
                 >
                   <View style={styles.reportCardLeft}>

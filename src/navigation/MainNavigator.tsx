@@ -60,10 +60,12 @@ const TabNavigator: React.FC = () => {
           backgroundColor: COLORS.background,
           borderTopColor: COLORS.border,
           borderTopWidth: 1,
-          // Extend height by the system navigation bar inset so nothing is hidden
-          height: 60 + insets.bottom,
-          paddingBottom: insets.bottom + 8,
-          paddingTop: 10,
+          // Extend height by the system navigation bar inset so nothing is hidden,
+          // but keep the internal padding tight so the bar doesn't add a visible
+          // empty band above the system nav.
+          height: 56 + insets.bottom,
+          paddingBottom: insets.bottom + 4,
+          paddingTop: 8,
         },
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,

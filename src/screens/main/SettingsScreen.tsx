@@ -168,8 +168,6 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
-  const goals = user?.onboardingAnswers;
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -222,38 +220,17 @@ const SettingsScreen: React.FC = () => {
           </>
         )}
 
-        {/* Coaching goals — the onboarding answers, editable here */}
-        {goals &&
-          renderSection(
-            t('settings.coachingGoals'),
-            <>
-              {renderRow(
-                'flag-outline',
-                COLORS.primary,
-                t('settings.goalLabel'),
-                <Text style={[styles.rowValue, { color: COLORS.textSecondary }]} numberOfLines={1}>
-                  {t(`onboarding.steps.step1.options.${goals.purpose}`)}
-                </Text>
-              )}
-              <View style={styles.rowDivider} />
-              {renderRow(
-                'sparkles-outline',
-                COLORS.primaryLight,
-                t('settings.focusLabel'),
-                <Text style={[styles.rowValue, { color: COLORS.textSecondary }]} numberOfLines={1}>
-                  {t(`onboarding.steps.step3.options.${goals.focusArea}`)}
-                </Text>
-              )}
-              <View style={styles.rowDivider} />
-              {renderRow(
-                'create-outline',
-                COLORS.success,
-                t('settings.editGoals'),
-                undefined,
-                handleEditGoals
-              )}
-            </>
-          )}
+        {/* Coaching goals — no goal text shown, just the edit entry point */}
+        {renderSection(
+          t('settings.coachingGoals'),
+          renderRow(
+            'create-outline',
+            COLORS.primary,
+            t('settings.editGoals'),
+            undefined,
+            handleEditGoals
+          )
+        )}
 
         {/* Subscription */}
         {renderSection(

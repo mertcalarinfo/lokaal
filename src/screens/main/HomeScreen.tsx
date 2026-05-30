@@ -156,18 +156,21 @@ const HomeScreen: React.FC = () => {
       return;
     }
 
-    if (user?.onboardingAnswers) {
-      // Goals were collected once during onboarding — skip the questions and go
-      // straight to analysis, passing the saved answers to Gemini as context.
-      navigation.navigate('AnalysisLoading', {
-        videoUri: selectedVideo.uri,
-        answers: user.onboardingAnswers,
-      });
-    } else {
-      // Fallback for accounts created before goals were persisted: collect once.
-      navigation.navigate('Onboarding', { videoUri: selectedVideo.uri });
-    }
-  }, [selectedVideo, canAnalyze, navigation, t, user?.onboardingAnswers]);
+    // Onboarding is shown exactly once, right after registration (gated by
+    // AppNavigator). It must NEVER appear before an analysis. Use the saved
+    // goals; if they are missing (legacy accounts), fall back to sensible
+    // defaults — the user can refine them in Settings → Edit Goals.
+    const answers: OnboardingAnswers = user?.onboardingAnswers ?? {
+      purpose: 'personal_improvement',
+      videoLanguage: user?.language === 'de' ? 'deutsch' : 'english',
+      focusArea: 'everything',
+    };
+
+    navigation.navigate('AnalysisLoading', {
+      videoUri: selectedVideo.uri,
+      answers,
+    });
+  }, [selectedVideo, canAnalyze, navigation, t, user?.onboardingAnswers, user?.language]);
 
   const handleUpgradePress = () => {
     navigation.navigate('Paywall');

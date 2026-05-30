@@ -112,6 +112,7 @@ const ReportScreen: React.FC = () => {
       </View>
 
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -170,33 +171,37 @@ const ReportScreen: React.FC = () => {
           ))}
         </View>
 
-        {/* Actions */}
-        <View style={styles.actionsSection}>
-          {!isSaved && (
-            <Button
-              label={t('report.saveReport')}
-              onPress={handleSave}
-              loading={savingLoading}
-              fullWidth
-              size="lg"
-              style={{ marginBottom: 10 }}
-            />
-          )}
-          {isSaved && (
-            <View style={styles.savedBadge}>
-              <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
-              <Text style={styles.savedText}>{t('report.saved')}</Text>
-            </View>
-          )}
+      </ScrollView>
+
+      {/* Fixed footer — pins the action buttons ~16px above the bottom tab bar.
+          Previously these lived at the end of the scroll content, which left a
+          variable empty gap between the last button and the navigation. As a
+          fixed footer the last element always sits just above the nav. */}
+      <View style={styles.footer}>
+        {!isSaved && (
           <Button
-            label={t('report.newAnalysis')}
-            onPress={handleNewAnalysis}
-            variant="outline"
+            label={t('report.saveReport')}
+            onPress={handleSave}
+            loading={savingLoading}
             fullWidth
             size="lg"
+            style={{ marginBottom: 10 }}
           />
-        </View>
-      </ScrollView>
+        )}
+        {isSaved && (
+          <View style={styles.savedBadge}>
+            <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
+            <Text style={styles.savedText}>{t('report.saved')}</Text>
+          </View>
+        )}
+        <Button
+          label={t('report.newAnalysis')}
+          onPress={handleNewAnalysis}
+          variant="outline"
+          fullWidth
+          size="lg"
+        />
+      </View>
     </SafeAreaView>
   );
 };
@@ -234,10 +239,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  scroll: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    // Small gap above the bottom tab bar — no large empty space.
+    // Scroll content ends tight against the fixed footer below.
+    paddingBottom: 12,
+  },
+  footer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    // Last element sits ~16px above the bottom tab bar.
     paddingBottom: 16,
   },
   videoCard: {
