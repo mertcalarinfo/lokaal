@@ -191,7 +191,7 @@ const AnalysisLoadingScreen: React.FC = () => {
   const displayProgress = displayPct;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <View style={styles.container}>
         {/* Animated logo */}
         <View style={styles.logoSection}>
