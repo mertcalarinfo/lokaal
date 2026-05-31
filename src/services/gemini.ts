@@ -5,6 +5,7 @@ import { File, Paths } from 'expo-file-system';
 //   • uploadAsync / FileSystemUploadType — native binary streaming; no replacement in new API yet
 import { copyAsync, uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
+import { Video as VideoCompressor } from 'react-native-compressor';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { OnboardingAnswers, AnalysisReport, CategoryResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,7 +30,7 @@ const GEMINI_MODEL = 'gemini-2.5-flash';
 // The generateContent call is handled by the @google/generative-ai SDK,
 // which picks the correct endpoint automatically — no manual URL needed.
 const GEMINI_FILES_API = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
-const ANALYSIS_TIMEOUT_MS = 120000; // 2 minutes
+const ANALYSIS_TIMEOUT_MS = 240000; // 4 minutes — allows local compression of longer clips
 
 // Progress callback — receives a fraction 0..1 reflecting real pipeline stages.
 type ProgressCb = (fraction: number) => void;
@@ -168,18 +169,40 @@ async function uploadVideoToGeminiFiles(
 ): Promise<string> {
   const mimeType = 'video/mp4';
 
-  // Step 0: On Android, content:// URIs cannot be read directly by the Gemini
-  // HTTP client — copy them to a local file:// path in the cache directory first.
-  // Uses legacy copyAsync because the new File.copy() does not support content:// source URIs.
+  // Step 0: Compress the video BEFORE uploading. A full-quality phone clip can be
+  // 50–100 MB+ for just over a minute, which is far too slow to upload over a
+  // typical mobile/Wi-Fi upstream (that was the real cause of the 42% stall /
+  // 90s upload timeout). 'auto' downscales to roughly 720p — more than enough for
+  // speech/body-language analysis — and the resulting file is a local file:// URI,
+  // which also resolves the Android content:// problem for free.
   let localUri = videoUri;
-  if (videoUri.startsWith('content://')) {
-    // Build the destination path via the new Paths.cache (SDK 54) to avoid the
-    // deprecated FileSystem.cacheDirectory string constant.
-    const dest = new File(Paths.cache, `prezence_${Date.now()}.mp4`).uri;
-    console.log('[Gemini] Copying content:// URI to cache:', dest);
-    await copyAsync({ from: videoUri, to: dest });
-    localUri = dest;
+  try {
+    console.log('[Gemini] Compressing video before upload…');
+    const compressed = await VideoCompressor.compress(
+      videoUri,
+      { compressionMethod: 'auto' },
+      (p) => onProgress?.(0.05 + p * 0.15) // compression spans 5%→20% of the bar
+    );
+    localUri = compressed;
+    const cf = new File(compressed);
+    console.log(
+      '[Gemini] Compressed →',
+      compressed,
+      '— size:',
+      cf.exists ? cf.size : '?',
+      'bytes'
+    );
+  } catch (compressErr: any) {
+    // Compression failed — fall back to the original. content:// URIs still need
+    // to be copied to a readable file:// path for the native upload.
+    console.warn('[Gemini] Compression failed, using original video:', compressErr?.message);
+    if (videoUri.startsWith('content://')) {
+      const dest = new File(Paths.cache, `prezence_${Date.now()}.mp4`).uri;
+      await copyAsync({ from: videoUri, to: dest });
+      localUri = dest;
+    }
   }
+  onProgress?.(0.2);
 
   // Step 1: Get file info using the SDK 54 File class (replaces deprecated getInfoAsync).
   // file.exists and file.size are synchronous property reads — no await needed.
@@ -220,7 +243,7 @@ async function uploadVideoToGeminiFiles(
     throw new Error('No upload URL received from Gemini Files API');
   }
   console.log('[Gemini] Got upload URL, streaming file bytes natively...');
-  onProgress?.(0.1); // upload initiated
+  onProgress?.(0.25); // upload initiated (after compression)
 
   // Step 3: Upload the file bytes using legacy uploadAsync — this streams the file
   // at the native layer and avoids reading the entire video into the JS heap

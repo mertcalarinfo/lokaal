@@ -55,7 +55,8 @@
           "microphonePermission": "Allow PREZENCE to access your microphone to record audio."
         }
       ],
-      "expo-font"
+      "expo-font",
+      "react-native-compressor"
     ],
     "extra": {
       "eas": {
