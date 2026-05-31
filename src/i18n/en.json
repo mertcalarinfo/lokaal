@@ -142,7 +142,7 @@
     "usageUnlimited": "Unlimited analyses",
     "upgradePrompt": "Upgrade to Premium for unlimited analyses",
     "upgradeButton": "Upgrade to Premium",
-    "maxDuration": "Videos must be under 5 minutes. Please choose a shorter video.",
+    "maxDuration": "Videos must be under 5 minutes (this one is about {{minutes}} min). Please choose a shorter video.",
     "pickError": "Could not load video. Please try again.",
     "recordError": "Could not open camera. Please check permissions.",
     "noVideoSelected": "Please select or record a video first"

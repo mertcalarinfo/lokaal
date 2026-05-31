@@ -41,6 +41,21 @@ type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
 const MAX_VIDEO_DURATION_SECONDS = 300; // 5 minutes — Gemini analysis cap
 
+// expo-image-picker documents asset.duration in MILLISECONDS, but several
+// Android devices actually return MICROSECONDS — a 74-second clip then reads as
+// 74,000 "seconds" and wrongly trips the 5-minute limit. Normalise defensively:
+// assume milliseconds, and if the result is impossibly long for a phone video
+// (> 6 hours), it was microseconds, so divide once more.
+function getVideoDurationSeconds(raw?: number | null): number | undefined {
+  if (!raw || raw <= 0) return undefined;
+  let seconds = raw / 1000;
+  if (seconds > 6 * 3600) {
+    seconds = seconds / 1000;
+  }
+  console.log('[Home] video duration raw:', raw, '→ seconds:', Math.round(seconds));
+  return seconds;
+}
+
 const HomeScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<HomeNavigationProp>();
@@ -86,10 +101,13 @@ const HomeScreen: React.FC = () => {
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-        const durationInSeconds = asset.duration ? asset.duration / 1000 : undefined;
+        const durationInSeconds = getVideoDurationSeconds(asset.duration);
 
         if (durationInSeconds && durationInSeconds > MAX_VIDEO_DURATION_SECONDS) {
-          Alert.alert(t('common.error'), t('home.maxDuration'));
+          Alert.alert(
+            t('common.error'),
+            t('home.maxDuration', { minutes: Math.ceil(durationInSeconds / 60) })
+          );
           return;
         }
 
@@ -135,12 +153,15 @@ const HomeScreen: React.FC = () => {
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-        const durationInSeconds = asset.duration ? asset.duration / 1000 : undefined;
+        const durationInSeconds = getVideoDurationSeconds(asset.duration);
 
         // Recording is capped by videoMaxDuration, but guard defensively so an
         // over-length clip never reaches Gemini.
         if (durationInSeconds && durationInSeconds > MAX_VIDEO_DURATION_SECONDS) {
-          Alert.alert(t('common.error'), t('home.maxDuration'));
+          Alert.alert(
+            t('common.error'),
+            t('home.maxDuration', { minutes: Math.ceil(durationInSeconds / 60) })
+          );
           return;
         }
 
