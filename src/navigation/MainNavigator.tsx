@@ -1,11 +1,11 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Mic, TrendingUp, Settings2 } from 'lucide-react-native';
 
-import { MainTabParamList, MainStackParamList, HomeStackParamList } from '../types';
+import { MainTabParamList, MainStackParamList } from '../types';
 import HomeScreen from '../screens/main/HomeScreen';
 import AnalysisLoadingScreen from '../screens/main/AnalysisLoadingScreen';
 import ReportScreen from '../screens/main/ReportScreen';
@@ -13,41 +13,33 @@ import ProgressScreen from '../screens/main/ProgressScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import PaywallScreen from '../screens/paywall/PaywallScreen';
+import { HomeStackParamList } from '../types';
+import { C, F, R, S } from '../theme';
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Tab  = createBottomTabNavigator<MainTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const MainStack = createNativeStackNavigator<MainStackParamList>();
 
-const COLORS = {
-  background: '#0a1628',
-  surface: '#0d1b2e',
-  primary: '#3B7FE8',
-  textMuted: 'rgba(255,255,255,0.35)',
-  border: 'rgba(59,127,232,0.3)',
-};
+const HomeStackNavigator: React.FC = () => (
+  <HomeStack.Navigator
+    screenOptions={{
+      headerShown: false,
+      contentStyle: { backgroundColor: C.bg },
+      animation: 'slide_from_right',
+    }}
+  >
+    <HomeStack.Screen name="Home"           component={HomeScreen} />
+    <HomeStack.Screen name="Onboarding"     component={OnboardingScreen} />
+    <HomeStack.Screen
+      name="AnalysisLoading"
+      component={AnalysisLoadingScreen}
+      options={{ gestureEnabled: false }}
+    />
+    <HomeStack.Screen name="Report"         component={ReportScreen} />
+  </HomeStack.Navigator>
+);
 
-const HomeStackNavigator: React.FC = () => {
-  return (
-    <HomeStack.Navigator
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: COLORS.background },
-        animation: 'slide_from_right',
-      }}
-    >
-      <HomeStack.Screen name="Home" component={HomeScreen} />
-      <HomeStack.Screen name="Onboarding" component={OnboardingScreen} />
-      <HomeStack.Screen
-        name="AnalysisLoading"
-        component={AnalysisLoadingScreen}
-        options={{ gestureEnabled: false }}
-      />
-      <HomeStack.Screen name="Report" component={ReportScreen} />
-    </HomeStack.Navigator>
-  );
-};
-
-// Inner tab navigator — separated so useSafeAreaInsets can be called as a hook
+// Tab navigator is a separate component so useSafeAreaInsets works as a hook.
 const TabNavigator: React.FC = () => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -56,37 +48,36 @@ const TabNavigator: React.FC = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+
+        // ── Tab Bar — exact spec from DESIGN_SYSTEM.html ──────────────────
         tabBarStyle: {
-          backgroundColor: COLORS.background,
-          borderTopColor: COLORS.border,
+          backgroundColor: C.bgDeep,
+          borderTopColor: C.line,
           borderTopWidth: 1,
-          // Extend height by the system navigation bar inset so nothing is hidden,
-          // but keep the internal padding tight so the bar doesn't add a visible
-          // empty band above the system nav.
-          height: 56 + insets.bottom,
-          paddingBottom: insets.bottom + 4,
-          paddingTop: 8,
+          // Height: icon (22) + label + paddingTop (12) + paddingBottom (14) + system inset
+          height: 60 + insets.bottom,
+          paddingTop: 12,
+          paddingBottom: insets.bottom + 14,
         },
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarActiveTintColor:   C.accent,
+        tabBarInactiveTintColor: C.textFaint,
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginTop: 2,
-          fontFamily: 'DMSans_700Bold',
+          fontSize:   10.5,
+          fontWeight: '500',
+          fontFamily: F.medium,
+          marginTop:  4,
         },
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: string;
 
+        // ── Icons — Lucide, stroke 1.7, round ────────────────────────────
+        tabBarIcon: ({ focused, color }) => {
+          const s = 1.7;
           if (route.name === 'HomeTab') {
-            iconName = focused ? 'mic' : 'mic-outline';
-          } else if (route.name === 'ProgressTab') {
-            iconName = focused ? 'analytics' : 'analytics-outline';
-          } else {
-            iconName = focused ? 'settings' : 'settings-outline';
+            return <Mic size={22} color={color} strokeWidth={s} />;
           }
-
-          return <Ionicons name={iconName as any} size={22} color={color} />;
+          if (route.name === 'ProgressTab') {
+            return <TrendingUp size={22} color={color} strokeWidth={s} />;
+          }
+          return <Settings2 size={22} color={color} strokeWidth={s} />;
         },
       })}
     >
@@ -109,25 +100,21 @@ const TabNavigator: React.FC = () => {
   );
 };
 
-// Outer stack — exposes Paywall as a root-level modal accessible from any tab
-const MainNavigator: React.FC = () => {
-  return (
-    <MainStack.Navigator screenOptions={{ headerShown: false }}>
-      <MainStack.Screen name="Tabs" component={TabNavigator} />
-      <MainStack.Screen
-        name="Paywall"
-        component={PaywallScreen}
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-      />
-      {/* Edit coaching goals as a modal — reached from Settings. Reuses the
-          onboarding screen in mode='edit'. */}
-      <MainStack.Screen
-        name="EditGoals"
-        component={OnboardingScreen}
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-      />
-    </MainStack.Navigator>
-  );
-};
+// Root stack — Paywall and EditGoals as root-level modals.
+const MainNavigator: React.FC = () => (
+  <MainStack.Navigator screenOptions={{ headerShown: false }}>
+    <MainStack.Screen name="Tabs"      component={TabNavigator} />
+    <MainStack.Screen
+      name="Paywall"
+      component={PaywallScreen}
+      options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+    />
+    <MainStack.Screen
+      name="EditGoals"
+      component={OnboardingScreen}
+      options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+    />
+  </MainStack.Navigator>
+);
 
 export default MainNavigator;

@@ -2,7 +2,7 @@
 // import so uuid (and any other library that calls getRandomValues) finds it.
 import * as Crypto from 'expo-crypto';
 if (typeof global.crypto === 'undefined' || typeof global.crypto.getRandomValues === 'undefined') {
-  // @ts-ignore — assigning to the global crypto object
+  // @ts-ignore
   global.crypto = {
     getRandomValues: (array: any) => Crypto.getRandomValues(array),
   };
@@ -14,7 +14,18 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Text } from 'react-native';
-import { useFonts, DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
+import { useFonts } from 'expo-font';
+import {
+  HankenGrotesk_400Regular,
+  HankenGrotesk_500Medium,
+  HankenGrotesk_600SemiBold,
+  HankenGrotesk_700Bold,
+  HankenGrotesk_800ExtraBold,
+} from '@expo-google-fonts/hanken-grotesk';
+import {
+  JetBrainsMono_400Regular,
+  JetBrainsMono_500Medium,
+} from '@expo-google-fonts/jetbrains-mono';
 
 // Initialize i18n before anything else
 import './src/i18n';
@@ -27,16 +38,7 @@ import { initRevenueCat } from './src/services/revenuecat';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/contexts/AuthContext';
-
-const COLORS = {
-  background: '#0a1628',
-  surface: '#0d1b2e',
-  primary: '#3B7FE8',
-  accent: '#FF6B6B',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#8E8EA0',
-  border: 'rgba(59,127,232,0.25)',
-};
+import { C } from './src/theme';
 
 const FirebaseNotConfiguredBanner: React.FC = () => (
   <View style={bannerStyles.banner}>
@@ -48,35 +50,37 @@ const FirebaseNotConfiguredBanner: React.FC = () => (
 
 const bannerStyles = StyleSheet.create({
   banner: {
-    backgroundColor: 'rgba(255,107,107,0.15)',
+    backgroundColor: C.errorBg,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,107,107,0.3)',
+    borderBottomColor: C.error,
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
   text: {
     fontSize: 11,
-    color: COLORS.accent,
+    color: C.error,
     textAlign: 'center',
     lineHeight: 16,
-    fontFamily: 'DMSans_400Regular',
   },
 });
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    DMSans_400Regular,
-    DMSans_700Bold,
+    HankenGrotesk_400Regular,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold,
+    HankenGrotesk_700Bold,
+    HankenGrotesk_800ExtraBold,
+    JetBrainsMono_400Regular,
+    JetBrainsMono_500Medium,
   });
 
   useEffect(() => {
-    // Initialize RevenueCat on app start
     initRevenueCat().catch((err) => {
       console.warn('RevenueCat init failed:', err);
     });
   }, []);
 
-  // Keep native splash visible until fonts are ready
   if (!fontsLoaded) {
     return null;
   }
@@ -86,25 +90,21 @@ export default function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        {/* AuthProvider wraps NavigationContainer so every screen — including
-            AppNavigator — shares one auth state instance. This is what fixes
-            the onboarding loop: markOnboardingCompleted() now updates the same
-            user object that AppNavigator reads, triggering an immediate re-render. */}
         <AuthProvider>
           <NavigationContainer
             theme={{
               dark: true,
               colors: {
-                primary: COLORS.primary,
-                background: COLORS.background,
-                card: COLORS.surface,
-                text: COLORS.textPrimary,
-                border: COLORS.border,
-                notification: COLORS.accent,
+                primary:      C.accent,
+                background:   C.bg,
+                card:         C.surface,
+                text:         C.text,
+                border:       C.hairline,
+                notification: C.error,
               },
             }}
           >
-            <StatusBar style="light" backgroundColor="#0a1628" />
+            <StatusBar style="light" backgroundColor={C.bg} />
             {!firebaseConfigured && <FirebaseNotConfiguredBanner />}
             <AppNavigator />
           </NavigationContainer>
@@ -117,6 +117,6 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: C.bg,
   },
 });
