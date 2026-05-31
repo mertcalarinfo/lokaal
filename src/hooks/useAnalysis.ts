@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { AnalysisReport, OnboardingAnswers } from '../types';
 import { analyzeVideo } from '../services/gemini';
-import { uploadVideo, saveReport } from '../services/storage';
+import { saveReport } from '../services/storage';
 
 export type AnalysisState =
   | 'idle'
@@ -80,32 +80,11 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
       setProgress(0);
 
       try {
-        // Step 1: Upload to Firebase Storage (for a permanent, replayable video
-        // URL). This is the first 0–15% of the overall bar.
+        // The video is uploaded ONCE — directly to Gemini inside analyzeVideo.
+        // Previously it was also pre-uploaded to Firebase Storage, so the same
+        // file went up twice and doubled the wait before analysis even began.
+        // Gemini's 0..1 pipeline now maps straight onto the full 0–100% bar.
         setState('uploading');
-        let videoUrl = videoUri;
-
-        try {
-          videoUrl = await uploadVideo(videoUri, userId, (p) => {
-            if (!cancelledRef.current) {
-              setUploadProgress(p);
-              bumpProgress(p * 0.15); // Firebase upload → 0–15%
-            }
-          });
-        } catch (uploadErr: any) {
-          // If Firebase storage fails, continue with local URI for Gemini analysis
-          console.warn('Firebase upload failed, using local URI:', uploadErr.message);
-          videoUrl = videoUri;
-        }
-
-        if (cancelledRef.current) {
-          setState('cancelled');
-          return null;
-        }
-
-        // Step 2: Analyze with Gemini — its 0..1 pipeline maps to 15–100%.
-        setState('analyzing');
-        bumpProgress(15);
 
         const analysisReport = await analyzeVideo(
           videoUri,
@@ -113,7 +92,15 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
           userLanguage,
           userId,
           (frac) => {
-            if (!cancelledRef.current) bumpProgress(15 + frac * 85);
+            if (cancelledRef.current) return;
+            bumpProgress(frac * 100);
+            // Up to ~45% is the upload; after that the model is processing.
+            if (frac < 0.5) {
+              setState('uploading');
+              setUploadProgress(Math.min(100, Math.round((frac / 0.45) * 100)));
+            } else {
+              setState('analyzing');
+            }
           }
         );
 
@@ -122,10 +109,10 @@ export const useAnalysis = (): AnalysisHookState & AnalysisHookActions => {
           return null;
         }
 
-        // Update report with the Firebase storage URL if available
+        // The video stays at its local URI — it was not re-uploaded to Firebase.
         const finalReport: AnalysisReport = {
           ...analysisReport,
-          videoUrl,
+          videoUrl: videoUri,
           userId,
         };
 

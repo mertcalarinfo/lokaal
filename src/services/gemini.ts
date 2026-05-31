@@ -34,6 +34,32 @@ const ANALYSIS_TIMEOUT_MS = 120000; // 2 minutes
 // Progress callback — receives a fraction 0..1 reflecting real pipeline stages.
 type ProgressCb = (fraction: number) => void;
 
+// Hard caps so the upload can never hang silently. These reject with a clear,
+// user-facing message instead of leaving the progress bar stuck forever.
+const UPLOAD_START_TIMEOUT_MS = 30000; // initiating the resumable upload
+const UPLOAD_STREAM_TIMEOUT_MS = 90000; // streaming the video bytes to Gemini
+
+/**
+ * Race a promise against a timeout. If the promise doesn't settle in time, this
+ * rejects with `<label> timed out after Ns`. The underlying native task may keep
+ * running, but the JS flow proceeds so the UI can surface an error.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            `${label} timed out after ${Math.round(ms / 1000)}s — check your internet connection and try again`
+          )
+        ),
+      ms
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer)) as Promise<T>;
+}
+
 // Single SDK client shared across calls. Initialised at module load so the
 // key is captured once from Constants (which is static after build).
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -164,10 +190,9 @@ async function uploadVideoToGeminiFiles(
   const fileSize: number = file.size;
   console.log('[Gemini] Uploading video:', localUri, '— size:', fileSize, 'bytes');
 
-  // Step 2: Initiate resumable upload to get the upload URL
-  const initiateResponse = await fetch(
-    `${GEMINI_FILES_API}?key=${GEMINI_API_KEY}`,
-    {
+  // Step 2: Initiate resumable upload to get the upload URL (bounded by a timeout)
+  const initiateResponse = await withTimeout(
+    fetch(`${GEMINI_FILES_API}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'X-Goog-Upload-Protocol': 'resumable',
@@ -179,7 +204,9 @@ async function uploadVideoToGeminiFiles(
       body: JSON.stringify({
         file: { display_name: `prezence_video_${Date.now()}.mp4` },
       }),
-    }
+    }),
+    UPLOAD_START_TIMEOUT_MS,
+    'Starting the video upload'
   );
 
   if (!initiateResponse.ok) {
@@ -199,15 +226,21 @@ async function uploadVideoToGeminiFiles(
   // at the native layer and avoids reading the entire video into the JS heap
   // (which would OOM for any file larger than ~20MB). There is no equivalent in
   // the SDK 54 new File API yet, so the legacy import is intentional here.
-  const uploadResult = await uploadAsync(uploadUrl, localUri, {
-    httpMethod: 'POST',
-    headers: {
-      'Content-Type': mimeType,
-      'X-Goog-Upload-Command': 'upload, finalize',
-      'X-Goog-Upload-Offset': '0',
-    },
-    uploadType: FileSystemUploadType.BINARY_CONTENT,
-  });
+  // Bounded by a timeout so a stalled native upload surfaces an error instead of
+  // hanging the progress bar forever.
+  const uploadResult = await withTimeout(
+    uploadAsync(uploadUrl, localUri, {
+      httpMethod: 'POST',
+      headers: {
+        'Content-Type': mimeType,
+        'X-Goog-Upload-Command': 'upload, finalize',
+        'X-Goog-Upload-Offset': '0',
+      },
+      uploadType: FileSystemUploadType.BINARY_CONTENT,
+    }),
+    UPLOAD_STREAM_TIMEOUT_MS,
+    'Uploading the video'
+  );
 
   if (uploadResult.status < 200 || uploadResult.status >= 300) {
     console.error('[Gemini] Upload failed:', uploadResult.status, uploadResult.body);
