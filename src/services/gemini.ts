@@ -118,7 +118,7 @@ User context (use this to tailor every part of your feedback):
 - Area they most want feedback on: ${focusText}
 - Preferred feedback tone: ${feedbackText}
 
-Detect the language the speaker uses in the video automatically and write the ENTIRE report (observations, tips, summary, exercises) in that language.
+Detect the language the speaker uses in the video automatically and write the ENTIRE report (observations, tips, summary, exercises) in that language. If the language is German, always use the informal "du" form (duzen) — never the formal "Sie" form.
 
 Adapt your tone to their preferred feedback style: "gentle" = warm and encouraging while still honest; "direct" = candid and straight to the point; "balanced" = a mix of both. Give extra attention to their biggest challenge and chosen focus area.
 
