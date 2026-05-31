@@ -1,153 +1,108 @@
-import React, { useState } from 'react';
+import React, { useState, ReactNode } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  Platform,
-  Linking,
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView, Alert, Platform, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Globe, Pencil, Star, CreditCard, Info, LogOut,
+  ChevronRight, CheckCircle2,
+} from 'lucide-react-native';
 
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
 import { changeLanguage } from '../../i18n';
-
-const COLORS = {
-  background: '#0a1628',
-  surface: '#0d1b2e',
-  surfaceElevated: '#111d30',
-  primary: '#3B7FE8',
-  primaryLight: '#5B9AFF',
-  accent: '#FF6B6B',
-  success: '#4ECDC4',
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.7)',
-  textMuted: 'rgba(255,255,255,0.35)',
-  border: 'rgba(59,127,232,0.3)',
-};
+import { C, F, R, S } from '../../theme';
 
 const APP_VERSION = '1.0.0';
 
 const SettingsScreen: React.FC = () => {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
+  const { t }        = useTranslation();
+  const navigation   = useNavigation<any>();
   const { user, signOut, updateLanguage } = useAuth();
-  const { subscription, isSubscribed } = useSubscription(user?.uid || null);
+  const { subscription, isSubscribed }   = useSubscription(user?.uid || null);
 
-  const [signingOut, setSigningOut] = useState(false);
+  const [signingOut,      setSigningOut]      = useState(false);
   const [languageLoading, setLanguageLoading] = useState(false);
 
-  const currentLanguage = user?.language || 'en';
+  const currentLang = user?.language || 'en';
 
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name: string) =>
+    name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
-  // Explicit language selection (replaces the old toggle). Picking the already
-  // active language is a no-op. i18n updates first so all t() calls switch in
-  // the same render as the optimistic updateLanguage() state change.
   const handleSelectLanguage = async (lang: 'en' | 'de') => {
-    if (lang === currentLanguage || languageLoading) return;
+    if (lang === currentLang || languageLoading) return;
     setLanguageLoading(true);
     try {
       await changeLanguage(lang);
       await updateLanguage(lang);
-    } catch (error) {
+    } catch {
       Alert.alert(t('common.error'), t('common.error'));
     } finally {
       setLanguageLoading(false);
     }
   };
 
-  const handleEditGoals = () => {
-    navigation.navigate('EditGoals', { mode: 'edit' });
-  };
+  const handleEditGoals = () => navigation.navigate('EditGoals', { mode: 'edit' });
 
   const handleSignOut = () => {
-    Alert.alert(
-      t('settings.signOut'),
-      t('settings.signOutConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('settings.signOut'),
-          style: 'destructive',
-          onPress: async () => {
-            setSigningOut(true);
-            try {
-              await signOut();
-            } catch (error) {
-              Alert.alert(t('common.error'), t('common.error'));
-            } finally {
-              setSigningOut(false);
-            }
-          },
+    Alert.alert(t('settings.signOut'), t('settings.signOutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('settings.signOut'),
+        style: 'destructive',
+        onPress: async () => {
+          setSigningOut(true);
+          try { await signOut(); }
+          catch { Alert.alert(t('common.error'), t('common.error')); }
+          finally { setSigningOut(false); }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleManageSubscription = () => {
     if (!isSubscribed) {
       navigation.navigate('Paywall');
     } else {
-      const url =
-        Platform.OS === 'ios'
-          ? 'https://apps.apple.com/account/subscriptions'
-          : 'https://play.google.com/store/account/subscriptions';
-      Linking.openURL(url).catch(() => {
-        Alert.alert(t('common.error'), t('common.error'));
-      });
+      const url = Platform.OS === 'ios'
+        ? 'https://apps.apple.com/account/subscriptions'
+        : 'https://play.google.com/store/account/subscriptions';
+      Linking.openURL(url).catch(() => Alert.alert(t('common.error'), t('common.error')));
     }
   };
 
-  const renderSection = (title: string, children: React.ReactNode) => (
+  // ── Layout helpers ─────────────────────────────────────────────────────────
+
+  const Section = ({ title, children }: { title: string; children: ReactNode }) => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionLabel}>{title}</Text>
       <View style={styles.sectionCard}>{children}</View>
     </View>
   );
 
-  const renderRow = (
-    icon: string,
-    iconColor: string,
-    label: string,
-    right?: React.ReactNode,
-    onPress?: () => void
-  ) => (
+  const Row = ({
+    icon, label, right, onPress,
+  }: { icon: ReactNode; label: string; right?: ReactNode; onPress?: () => void }) => (
     <TouchableOpacity
       style={styles.row}
       onPress={onPress}
       disabled={!onPress}
       activeOpacity={onPress ? 0.7 : 1}
     >
-      <View style={[styles.rowIcon, { backgroundColor: `${iconColor}20` }]}>
-        <Ionicons name={icon as any} size={18} color={iconColor} />
-      </View>
+      <View style={styles.rowIcon}>{icon}</View>
       <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.rowRight}>
         {right}
-        {onPress && !right && (
-          <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
-        )}
+        {onPress && !right && <ChevronRight size={16} color={C.textFaint} strokeWidth={1.7} />}
       </View>
     </TouchableOpacity>
   );
 
-  // A selectable language row with a checkmark on the active language.
-  const renderLanguageOption = (code: 'en' | 'de', label: string) => {
-    const active = currentLanguage === code;
+  const LangRow = ({ code, label }: { code: 'en' | 'de'; label: string }) => {
+    const active = currentLang === code;
     return (
       <TouchableOpacity
         style={styles.row}
@@ -155,31 +110,23 @@ const SettingsScreen: React.FC = () => {
         disabled={languageLoading}
         activeOpacity={0.7}
       >
-        <View style={[styles.rowIcon, { backgroundColor: `${COLORS.primary}20` }]}>
-          <Ionicons name="language-outline" size={18} color={COLORS.primary} />
-        </View>
-        <Text style={styles.rowLabel}>{label}</Text>
+        <View style={styles.rowIcon}><Globe size={18} color={C.textMuted} strokeWidth={1.7} /></View>
+        <Text style={[styles.rowLabel, active && { color: C.accent }]}>{label}</Text>
         <View style={styles.rowRight}>
-          {active && (
-            <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
-          )}
+          {active && <CheckCircle2 size={18} color={C.accent} strokeWidth={1.7} />}
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Text style={styles.pageTitle}>{t('settings.title')}</Text>
 
-        {/* Profile section */}
+        {/* Profile card */}
         <View style={styles.profileCard}>
-          <View style={styles.avatarCircle}>
+          <View style={styles.avatar}>
             <Text style={styles.avatarText}>
               {user?.displayName ? getInitials(user.displayName) : '?'}
             </Text>
@@ -188,240 +135,131 @@ const SettingsScreen: React.FC = () => {
             <Text style={styles.profileName}>{user?.displayName || '—'}</Text>
             <Text style={styles.profileEmail}>{user?.email || '—'}</Text>
           </View>
-          <View
-            style={[
-              styles.tierBadge,
-              { backgroundColor: isSubscribed ? 'rgba(78,205,196,0.15)' : 'rgba(59,127,232,0.15)' },
-            ]}
-          >
-            <Ionicons
-              name={isSubscribed ? 'star' : 'star-outline'}
-              size={12}
-              color={isSubscribed ? COLORS.success : COLORS.primary}
-            />
-            <Text
-              style={[
-                styles.tierBadgeText,
-                { color: isSubscribed ? COLORS.success : COLORS.primary },
-              ]}
-            >
+          <View style={[
+            styles.tierPill,
+            { backgroundColor: isSubscribed ? C.successBg : C.surfaceAccent },
+          ]}>
+            <Text style={[styles.tierPillText, { color: isSubscribed ? C.success : C.textMuted }]}>
               {isSubscribed ? t('settings.tierPremium') : t('settings.tierFree')}
             </Text>
           </View>
         </View>
 
-        {/* Language — explicit selector (English / Deutsch) */}
-        {renderSection(
-          t('settings.language'),
-          <>
-            {renderLanguageOption('en', t('settings.languageEn'))}
-            <View style={styles.rowDivider} />
-            {renderLanguageOption('de', t('settings.languageDe'))}
-          </>
-        )}
+        {/* Language */}
+        <Section title={t('settings.language')}>
+          <LangRow code="en" label={t('settings.languageEn')} />
+          <View style={styles.divider} />
+          <LangRow code="de" label={t('settings.languageDe')} />
+        </Section>
 
-        {/* Coaching goals — no goal text shown, just the edit entry point */}
-        {renderSection(
-          t('settings.coachingGoals'),
-          renderRow(
-            'create-outline',
-            COLORS.primary,
-            t('settings.editGoals'),
-            undefined,
-            handleEditGoals
-          )
-        )}
+        {/* Coaching goals */}
+        <Section title={t('settings.coachingGoals')}>
+          <Row
+            icon={<Pencil size={18} color={C.textMuted} strokeWidth={1.7} />}
+            label={t('settings.editGoals')}
+            onPress={handleEditGoals}
+          />
+        </Section>
 
         {/* Subscription */}
-        {renderSection(
-          t('settings.subscription'),
-          <>
-            {renderRow(
-              isSubscribed ? 'star' : 'star-outline',
-              isSubscribed ? COLORS.success : COLORS.textMuted,
-              isSubscribed ? t('settings.subscriptionPremium') : t('settings.subscriptionFree'),
-              <Text style={[styles.rowValue, { color: isSubscribed ? COLORS.success : COLORS.textMuted }]}>
+        <Section title={t('settings.subscription')}>
+          <Row
+            icon={<Star size={18} color={isSubscribed ? C.success : C.textFaint} strokeWidth={1.7} />}
+            label={isSubscribed ? t('settings.subscriptionPremium') : t('settings.subscriptionFree')}
+            right={
+              <Text style={[styles.rowValue, { color: isSubscribed ? C.success : C.textFaint }]}>
                 {isSubscribed ? t('settings.statusActive') : t('settings.statusFree')}
               </Text>
-            )}
-            <View style={styles.rowDivider} />
-            {renderRow(
-              'card-outline',
-              COLORS.primary,
-              t('settings.manageSubscription'),
-              undefined,
-              handleManageSubscription
-            )}
-          </>
-        )}
+            }
+          />
+          <View style={styles.divider} />
+          <Row
+            icon={<CreditCard size={18} color={C.textMuted} strokeWidth={1.7} />}
+            label={t('settings.manageSubscription')}
+            onPress={handleManageSubscription}
+          />
+        </Section>
 
-        {/* Account */}
-        {renderSection(
-          t('settings.appVersion'),
-          <>
-            {renderRow(
-              'information-circle-outline',
-              COLORS.textMuted,
-              t('settings.version', { version: APP_VERSION }),
-              undefined
-            )}
-          </>
-        )}
+        {/* App version */}
+        <Section title={t('settings.appVersion')}>
+          <Row
+            icon={<Info size={18} color={C.textFaint} strokeWidth={1.7} />}
+            label={t('settings.version', { version: APP_VERSION })}
+          />
+        </Section>
 
         {/* Sign out */}
         <TouchableOpacity
-          style={styles.signOutButton}
+          style={styles.signOut}
           onPress={handleSignOut}
           disabled={signingOut}
           activeOpacity={0.8}
         >
-          <Ionicons name="log-out-outline" size={20} color={COLORS.accent} />
+          <LogOut size={18} color={C.error} strokeWidth={1.7} />
           <Text style={styles.signOutText}>
             {signingOut ? t('common.loading') : t('settings.signOut')}
           </Text>
         </TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 18,
-    fontFamily: 'DMSans_700Bold',
+  safe:    { flex: 1, backgroundColor: C.bg },
+  scroll:  { paddingHorizontal: S.screen, paddingTop: S.s4, paddingBottom: S.s6 },
+  pageTitle: {
+    fontFamily: F.xBold, fontSize: 34, fontWeight: '800',
+    color: C.text, letterSpacing: -1.02, marginBottom: S.s5,
   },
   profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: C.surface, borderRadius: R.lg,
+    padding: S.s4, marginBottom: S.s5,
+    borderWidth: 1, borderColor: C.hairline, gap: S.s3,
   },
-  avatarCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-    backgroundColor: '#3B7FE8',
+  avatar: {
+    width: 48, height: 48, borderRadius: R.sm,
+    backgroundColor: C.surface2, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: C.hairline,
   },
-  avatarText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+  avatarText:   { fontFamily: F.bold, fontSize: 17, fontWeight: '700', color: C.text },
+  profileInfo:  { flex: 1 },
+  profileName:  { fontFamily: F.semiBold, fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 2 },
+  profileEmail: { fontFamily: F.regular,  fontSize: 12, color: C.textFaint },
+  tierPill: {
+    borderRadius: R.pill, paddingHorizontal: S.s3, paddingVertical: 5,
+    borderWidth: 1, borderColor: C.hairline,
   },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 3,
-  },
-  profileEmail: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-  },
-  tierBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    gap: 4,
-  },
-  tierBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  section: {
-    marginBottom: 18,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    marginLeft: 4,
+  tierPillText: { fontFamily: F.semiBold, fontSize: 11, fontWeight: '700' },
+  section: { marginBottom: S.s5 },
+  sectionLabel: {
+    fontFamily: F.semiBold, fontSize: 10, fontWeight: '600',
+    color: C.textFaint, letterSpacing: 1.5, textTransform: 'uppercase',
+    marginBottom: S.s2, marginLeft: 2,
   },
   sectionCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
+    backgroundColor: C.surface, borderRadius: R.lg,
+    borderWidth: 1, borderColor: C.hairline, overflow: 'hidden',
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: S.s4, paddingVertical: S.s4, gap: S.s3,
   },
-  rowIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+  rowIcon:  { width: 20, alignItems: 'center' },
+  rowLabel: { flex: 1, fontFamily: F.medium, fontSize: 15, fontWeight: '500', color: C.text },
+  rowRight: { flexDirection: 'row', alignItems: 'center' },
+  rowValue: { fontFamily: F.medium, fontSize: 13, fontWeight: '500', marginRight: 4 },
+  divider:  { height: 1, backgroundColor: C.line, marginLeft: S.s4 + 20 + S.s3 },
+  signOut: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: C.errorBg, borderRadius: R.md,
+    paddingVertical: S.s4, marginTop: S.s2,
+    borderWidth: 1, borderColor: C.error,
+    gap: S.s3,
   },
-  rowLabel: {
-    flex: 1,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    fontWeight: '500',
-    fontFamily: 'DMSans_400Regular',
-  },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowValue: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginRight: 4,
-  },
-  rowDivider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginLeft: 62,
-  },
-  signOutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,107,107,0.1)',
-    borderRadius: 14,
-    paddingVertical: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,107,0.2)',
-    gap: 10,
-    marginTop: 8,
-  },
-  signOutText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.accent,
-  },
+  signOutText: { fontFamily: F.semiBold, fontSize: 15, fontWeight: '600', color: C.error },
 });
 
 export default SettingsScreen;

@@ -1,208 +1,118 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, Animated, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Upload, Sparkles } from 'lucide-react-native';
+
 import { HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import Button from '../../components/Button';
+import { C, F, R, S } from '../../theme';
 
-const COLORS = {
-  background: '#0a1628',
-  surface: '#0d1b2e',
-  surfaceElevated: '#111d30',
-  primary: '#3B7FE8',
-  primaryLight: '#5B9AFF',
-  accent: '#FF6B6B',
-  success: '#4ECDC4',
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.7)',
-  textMuted: 'rgba(255,255,255,0.35)',
-  border: 'rgba(59,127,232,0.3)',
-};
-
-type AnalysisLoadingRouteProp = RouteProp<HomeStackParamList, 'AnalysisLoading'>;
-type AnalysisLoadingNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'AnalysisLoading'>;
+type LoadingRoute = RouteProp<HomeStackParamList, 'AnalysisLoading'>;
+type LoadingNav   = NativeStackNavigationProp<HomeStackParamList, 'AnalysisLoading'>;
 
 const TIP_INTERVAL_MS = 4000;
 
 const AnalysisLoadingScreen: React.FC = () => {
-  const { t } = useTranslation();
-  const navigation = useNavigation<AnalysisLoadingNavigationProp>();
-  const route = useRoute<AnalysisLoadingRouteProp>();
-  const { user } = useAuth();
-
+  const { t }          = useTranslation();
+  const navigation     = useNavigation<LoadingNav>();
+  const route          = useRoute<LoadingRoute>();
+  const { user }       = useAuth();
   const { videoUri, answers } = route.params;
 
-  const { state, uploadProgress, progress: realProgress, report, error, rawError, startAnalysis, cancel } = useAnalysis();
+  const {
+    state, uploadProgress, progress: realProgress,
+    report, error, rawError, startAnalysis, cancel,
+  } = useAnalysis();
 
-  const [currentTipIndex, setCurrentTipIndex] = useState(0);
-  // Displayed percentage — eased toward the real progress, with a gentle creep
-  // during long server-side stages so the bar never looks frozen.
-  const [displayPct, setDisplayPct] = useState(0);
-
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const tipTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [tipIndex,    setTipIndex]    = useState(0);
+  const [displayPct,  setDisplayPct]  = useState(0);
+  const pulseAnim  = useRef(new Animated.Value(1)).current;
   const hasStarted = useRef(false);
 
-  // Estimate remaining time from real progress (nominal 60s full run).
   const secondsRemaining = Math.max(1, Math.round(((100 - displayPct) / 100) * 60));
 
-  // `returnObjects: true` can return undefined when i18n hasn't loaded the
-  // namespace yet (common on Android before the first render cycle completes).
-  // Fall back to a non-empty array so `tips.length` never throws.
   const rawTips = t('analysis.loading.tips', { returnObjects: true });
   const tips: string[] = Array.isArray(rawTips) && rawTips.length > 0
     ? rawTips
-    : ['Analyzing your presentation...', 'Processing video frames...', 'Generating insights...'];
+    : ['Analyzing…', 'Processing…', 'Generating insights…'];
 
-  // Pulse animation
+  // Pulse logo
   useEffect(() => {
-    const pulse = Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.08,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: true,
-        }),
+        Animated.timing(pulseAnim, { toValue: 1.06, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1,    duration: 900, useNativeDriver: true }),
       ])
     );
-    pulse.start();
-    return () => pulse.stop();
+    loop.start();
+    return () => loop.stop();
   }, []);
 
-  // Rotate through tips
+  // Cycle tips
   useEffect(() => {
-    tipTimer.current = setInterval(() => {
-      setCurrentTipIndex((prev) => (prev + 1) % tips.length);
-    }, TIP_INTERVAL_MS);
-
-    return () => {
-      if (tipTimer.current) clearInterval(tipTimer.current);
-    };
+    const id = setInterval(() => setTipIndex((p) => (p + 1) % tips.length), TIP_INTERVAL_MS);
+    return () => clearInterval(id);
   }, [tips.length]);
 
-  // Ease the displayed bar toward the real progress value. While a server-side
-  // stage plateaus (e.g. the model is generating), creep slowly upward — but
-  // never past a ceiling just above the last real checkpoint, so the number
-  // still reflects genuine progress rather than a pure animation.
+  // Ease display bar toward real progress
   useEffect(() => {
     const id = setInterval(() => {
       setDisplayPct((prev) => {
         if (realProgress >= 100) return Math.min(100, prev + 4);
-        const creepCeil = Math.min(realProgress + 18, 95);
-        if (realProgress > prev) {
-          // Catch up to a real checkpoint quickly
-          return Math.min(prev + Math.max(1, Math.ceil((realProgress - prev) / 3)), creepCeil);
-        }
-        if (state === 'analyzing' && prev < creepCeil) {
-          return prev + 1; // gentle creep during the long wait
-        }
+        const ceil = Math.min(realProgress + 18, 95);
+        if (realProgress > prev)
+          return Math.min(prev + Math.max(1, Math.ceil((realProgress - prev) / 3)), ceil);
+        if (state === 'analyzing' && prev < ceil) return prev + 1;
         return prev;
       });
     }, 250);
     return () => clearInterval(id);
   }, [realProgress, state]);
 
-  // Start analysis
+  // Kick off analysis
   useEffect(() => {
     if (hasStarted.current) return;
     hasStarted.current = true;
-
-    const run = async () => {
-      const result = await startAnalysis(
-        videoUri,
-        answers,
-        user?.uid || 'anonymous',
-        user?.language || 'en'
-      );
-
+    (async () => {
+      const result = await startAnalysis(videoUri, answers, user?.uid || 'anonymous', user?.language || 'en');
       if (result) {
-        // Snap the bar to 100% then hand off to the report screen.
         setDisplayPct(100);
-        setTimeout(() => {
-          navigation.replace('Report', { report: result });
-        }, 300);
+        setTimeout(() => navigation.replace('Report', { report: result }), 300);
       }
-    };
-
-    run();
+    })();
   }, []);
 
-  // Handle errors — show the exact raw error so failures are diagnosable
-  // even without a dev console (e.g. preview / TestFlight builds).
+  // Error alert
   useEffect(() => {
     if (state === 'error' && error) {
-      const errorKey = `analysis.errors.${error}`;
-      const friendlyMessage = t(errorKey, { defaultValue: t('analysis.errors.generic') });
-
-      // Always append the raw technical error so you can see exactly what went
-      // wrong from the app itself — no Expo logs / Metro needed.
-      const fullMessage = rawError
-        ? `${friendlyMessage}\n\n— Debug —\n${rawError}`
-        : friendlyMessage;
-
-      Alert.alert(
-        t('common.error'),
-        fullMessage,
-        [
-          {
-            text: t('common.ok'),
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      const msg = t(`analysis.errors.${error}`, { defaultValue: t('analysis.errors.generic') });
+      const full = rawError ? `${msg}\n\n— Debug —\n${rawError}` : msg;
+      Alert.alert(t('common.error'), full, [{ text: t('common.ok'), onPress: () => navigation.goBack() }]);
     }
   }, [state, error]);
 
   const handleCancel = useCallback(() => {
-    Alert.alert(
-      t('common.cancel'),
-      t('analysis.loading.cancelButton') + '?',
-      [
-        { text: t('common.no'), style: 'cancel' },
-        {
-          text: t('common.yes'),
-          style: 'destructive',
-          onPress: () => {
-            cancel();
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+    Alert.alert(t('common.cancel'), t('analysis.loading.cancelButton') + '?', [
+      { text: t('common.no'), style: 'cancel' },
+      { text: t('common.yes'), style: 'destructive', onPress: () => { cancel(); navigation.goBack(); } },
+    ]);
   }, [cancel, navigation, t]);
 
-  const displayProgress = displayPct;
-
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <View style={styles.container}>
-        {/* Animated logo */}
+
+        {/* Logo */}
         <View style={styles.logoSection}>
-          <Animated.View style={[styles.logoOuter, { transform: [{ scale: pulseAnim }] }]}>
-            <Image
-              source={require('../../../assets/logo.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <Image source={require('../../../assets/logo.png')} style={styles.logoImg} resizeMode="contain" />
           </Animated.View>
-          <Text style={styles.logoText}>PREZENCE</Text>
+          <Text style={styles.wordmark}>PREZENCE</Text>
         </View>
 
         {/* Title */}
@@ -212,13 +122,13 @@ const AnalysisLoadingScreen: React.FC = () => {
         </View>
 
         {/* Progress bar */}
-        <View style={styles.progressSection}>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${displayProgress}%` }]} />
+        <View style={styles.barSection}>
+          <View style={styles.barTrack}>
+            <View style={[styles.barFill, { width: `${displayPct}%` }]} />
           </View>
-          <View style={styles.progressLabels}>
-            <Text style={styles.progressText}>{displayProgress}%</Text>
-            <Text style={styles.timeRemaining}>
+          <View style={styles.barLabels}>
+            <Text style={styles.barPct}>{displayPct}%</Text>
+            <Text style={styles.barEta}>
               {t('analysis.loading.estimatedTime', { seconds: secondsRemaining })}
             </Text>
           </View>
@@ -227,160 +137,160 @@ const AnalysisLoadingScreen: React.FC = () => {
         {/* Rotating tip */}
         <View style={styles.tipCard}>
           <View style={styles.tipDot} />
-          <Text style={styles.tipText}>{tips[currentTipIndex]}</Text>
+          <Text style={styles.tipText}>{tips[tipIndex]}</Text>
         </View>
 
         {/* Status */}
-        <View style={styles.statusContainer}>
+        <View style={styles.statusRow}>
           {state === 'uploading' && (
-            <View style={styles.statusRow}>
-              <Ionicons name="cloud-upload-outline" size={16} color={COLORS.primary} />
-              <Text style={styles.statusText}>Uploading video... {uploadProgress}%</Text>
-            </View>
+            <>
+              <Upload size={14} color={C.textFaint} strokeWidth={1.7} />
+              <Text style={styles.statusText}>Uploading… {uploadProgress}%</Text>
+            </>
           )}
           {state === 'analyzing' && (
-            <View style={styles.statusRow}>
-              <Ionicons name="sparkles-outline" size={16} color={COLORS.primaryLight} />
-              <Text style={styles.statusText}>AI analysis in progress...</Text>
-            </View>
+            <>
+              <Sparkles size={14} color={C.accent} strokeWidth={1.7} />
+              <Text style={styles.statusText}>AI analysiert…</Text>
+            </>
           )}
         </View>
 
-        {/* Cancel button */}
-        <View style={styles.cancelSection}>
-          <Button
-            label={t('analysis.loading.cancelButton')}
-            onPress={handleCancel}
-            variant="ghost"
-            size="sm"
-          />
-        </View>
+        {/* Cancel */}
+        <Button
+          label={t('analysis.loading.cancelButton')}
+          onPress={handleCancel}
+          variant="ghost"
+          size="sm"
+          style={styles.cancelBtn}
+        />
+
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  safe: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: C.bg,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 32,
+    paddingHorizontal: S.s8,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: S.s10,
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: S.s6,
   },
-  logoOuter: {
-    marginBottom: 12,
+  logoImg: {
+    width: 56,
+    height: 56,
+    marginBottom: S.s3,
   },
-  logoImage: {
-    width: 64,
-    height: 64,
-  },
-  logoText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    letterSpacing: 4,
-    fontFamily: 'DMSans_700Bold',
+  wordmark: {
+    fontFamily:    F.xBold,
+    fontSize:      16,
+    fontWeight:    '800',
+    color:         C.text,
+    letterSpacing: 5,
   },
   titleSection: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: S.s6,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 8,
-    textAlign: 'center',
-    fontFamily: 'DMSans_700Bold',
+    fontFamily:  F.bold,
+    fontSize:    20,
+    fontWeight:  '700',
+    color:       C.text,
+    marginBottom: S.s2,
+    textAlign:   'center',
+    letterSpacing: -0.4,
   },
   subtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: F.regular,
+    fontSize:   14.5,
+    color:      C.textMuted,
+    textAlign:  'center',
+    lineHeight: 21,
   },
-  progressSection: {
+  barSection: {
     width: '100%',
-    marginBottom: 32,
+    marginBottom: S.s8,
   },
-  progressTrack: {
-    height: 6,
-    backgroundColor: COLORS.surfaceElevated,
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 10,
+  barTrack: {
+    height:          2,
+    backgroundColor: C.line,
+    borderRadius:    2,
+    overflow:        'hidden',
+    marginBottom:    S.s2,
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-    borderRadius: 3,
+  barFill: {
+    height:          4,
+    marginTop:       -1,
+    backgroundColor: C.accent,
+    borderRadius:    2,
   },
-  progressLabels: {
-    flexDirection: 'row',
+  barLabels: {
+    flexDirection:  'row',
     justifyContent: 'space-between',
   },
-  progressText: {
-    fontSize: 13,
+  barPct: {
+    fontFamily: F.semiBold,
+    fontSize:   13,
     fontWeight: '600',
-    color: COLORS.primary,
+    color:      C.accent,
   },
-  timeRemaining: {
-    fontSize: 12,
-    color: COLORS.textMuted,
+  barEta: {
+    fontFamily: F.regular,
+    fontSize:   12,
+    color:      C.textFaint,
   },
   tipCard: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    width: '100%',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    minHeight: 56,
+    alignItems:    'center',
+    backgroundColor: C.surface,
+    borderRadius:  R.md,
+    padding:       S.s4,
+    marginBottom:  S.s6,
+    width:         '100%',
+    borderWidth:   1,
+    borderColor:   C.hairline,
+    minHeight:     52,
   },
   tipDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.primary,
-    marginRight: 12,
-    flexShrink: 0,
+    width:        6,
+    height:       6,
+    borderRadius: 3,
+    backgroundColor: C.accent,
+    marginRight:  S.s3,
+    flexShrink:   0,
   },
   tipText: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    flex:       1,
+    fontFamily: F.regular,
+    fontSize:   14,
+    color:      C.textMuted,
     lineHeight: 20,
-    fontFamily: 'DMSans_400Regular',
-  },
-  statusContainer: {
-    minHeight: 30,
-    marginBottom: 16,
-    alignItems: 'center',
   },
   statusRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    alignItems:    'center',
+    gap:           6,
+    minHeight:     24,
+    marginBottom:  S.s4,
   },
   statusText: {
-    fontSize: 13,
-    color: COLORS.textMuted,
+    fontFamily: F.regular,
+    fontSize:   12,
+    color:      C.textFaint,
   },
-  cancelSection: {
-    marginTop: 16,
+  cancelBtn: {
+    marginTop: S.s4,
   },
 });
 

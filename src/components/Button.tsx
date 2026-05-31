@@ -2,23 +2,11 @@ import React from 'react';
 import {
   TouchableOpacity,
   Text,
-  StyleSheet,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
 } from 'react-native';
-
-const COLORS = {
-  primary: '#3B7FE8',
-  primaryLight: '#5B9AFF',
-  background: '#0a1628',
-  surface: '#0d1b2e',
-  surfaceElevated: '#111d30',
-  border: 'rgba(59,127,232,0.3)',
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.7)',
-  accent: '#FF6B6B',
-};
+import { C, F, R } from '../theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 
@@ -48,75 +36,53 @@ const Button: React.FC<ButtonProps> = ({
   const isDisabled = disabled || loading;
 
   const getContainerStyle = (): ViewStyle => {
-    const base: ViewStyle = {
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'row',
-    };
-
+    // Padding scales with size; font stays 14/700/UPPER/ls .14em per spec.
     const sizeStyles: Record<string, ViewStyle> = {
-      sm: { paddingHorizontal: 16, paddingVertical: 8, minHeight: 36 },
-      md: { paddingHorizontal: 24, paddingVertical: 14, minHeight: 48 },
-      lg: { paddingHorizontal: 32, paddingVertical: 18, minHeight: 56 },
+      sm: { paddingHorizontal: 16, paddingVertical: 9,  minHeight: 36 },
+      md: { paddingHorizontal: 22, paddingVertical: 13, minHeight: 48 },
+      lg: { paddingHorizontal: 26, paddingVertical: 17, minHeight: 54 },
     };
 
-    const variantStyles: Record<ButtonVariant, ViewStyle> = {
-      primary: {
-        backgroundColor: isDisabled ? '#1e3a6e' : COLORS.primary,
-      },
-      secondary: {
-        backgroundColor: isDisabled ? '#0a1628' : COLORS.background,
-        borderWidth: 1.5,
-        borderColor: isDisabled ? 'rgba(59,127,232,0.15)' : COLORS.primary,
-      },
-      outline: {
-        backgroundColor: 'transparent',
-        borderWidth: 1.5,
-        borderColor: isDisabled ? COLORS.border : COLORS.primary,
-      },
-      ghost: {
-        backgroundColor: 'transparent',
-      },
-      danger: {
-        backgroundColor: isDisabled ? '#662020' : COLORS.accent,
-      },
+    const variantBg: Record<ButtonVariant, ViewStyle> = {
+      // Primary: --text surface, dark label (Design System spec)
+      primary:   { backgroundColor: isDisabled ? C.textFaint  : C.text },
+      // Secondary: --surface-2 + hairline border
+      secondary: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.hairline },
+      // Outline / Ghost: transparent + hairline
+      outline:   { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.hairline },
+      ghost:     { backgroundColor: 'transparent' },
+      // Danger: error surface
+      danger:    { backgroundColor: isDisabled ? C.errorBg : C.error },
     };
 
     return {
-      ...base,
+      borderRadius: R.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
       ...sizeStyles[size],
-      ...variantStyles[variant],
+      ...variantBg[variant],
       ...(fullWidth ? { width: '100%' } : {}),
-      ...(isDisabled ? { opacity: 0.6 } : {}),
+      ...(isDisabled ? { opacity: 0.45 } : {}),
     };
   };
 
   const getTextStyle = (): TextStyle => {
-    const base: TextStyle = {
-      fontWeight: '600',
-      letterSpacing: 0.3,
-      fontFamily: 'DMSans_700Bold',
-    };
-
-    const sizeTextStyles: Record<string, TextStyle> = {
-      sm: { fontSize: 13 },
-      md: { fontSize: 15 },
-      lg: { fontSize: 17 },
-    };
-
-    const variantTextStyles: Record<ButtonVariant, TextStyle> = {
-      primary: { color: COLORS.textPrimary },
-      secondary: { color: isDisabled ? COLORS.textSecondary : COLORS.primary },
-      outline: { color: isDisabled ? COLORS.textSecondary : COLORS.primary },
-      ghost: { color: isDisabled ? COLORS.textSecondary : COLORS.primary },
-      danger: { color: COLORS.textPrimary },
+    const variantTextColor: Record<ButtonVariant, string> = {
+      primary:   isDisabled ? C.textMuted : '#101A28',  // dark on warm-white
+      secondary: C.text,
+      outline:   C.text,
+      ghost:     C.textMuted,
+      danger:    '#101A28',
     };
 
     return {
-      ...base,
-      ...sizeTextStyles[size],
-      ...variantTextStyles[variant],
+      fontFamily:    F.bold,
+      fontSize:      14,
+      fontWeight:    '700',
+      letterSpacing: 1.96,           // 0.14em of 14px
+      textTransform: 'uppercase',
+      color:         variantTextColor[variant],
     };
   };
 
@@ -130,7 +96,7 @@ const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' || variant === 'danger' ? COLORS.textPrimary : COLORS.primary}
+          color={variant === 'primary' || variant === 'danger' ? '#101A28' : C.textMuted}
           style={{ marginRight: 8 }}
         />
       ) : null}

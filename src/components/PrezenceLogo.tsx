@@ -1,39 +1,47 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
+import { C, F } from '../theme';
 
 interface PrezenceLogoProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?:        'sm' | 'md' | 'lg';
   showTagline?: boolean;
-  style?: ViewStyle;
-  layout?: 'horizontal' | 'vertical';
+  style?:       ViewStyle;
+  layout?:      'horizontal' | 'vertical';
 }
 
 const PrezenceLogo: React.FC<PrezenceLogoProps> = ({
-  size = 'md',
+  size        = 'md',
   showTagline = false,
   style,
-  layout = 'vertical',
+  layout      = 'vertical',
 }) => {
-  const imgSizes = { sm: 32, md: 56, lg: 80 };
-  const textSizes = { sm: 16, md: 24, lg: 34 };
-  const imgSize = imgSizes[size];
-  const textSize = textSizes[size];
-
-  const isHorizontal = layout === 'horizontal';
+  const imgSizes  = { sm: 28, md: 48, lg: 72 };
+  const textSizes = { sm: 14, md: 22, lg: 32 };
+  const imgSize   = imgSizes[size];
+  const textSize  = textSizes[size];
+  const isH       = layout === 'horizontal';
 
   return (
-    <View style={[isHorizontal ? styles.horizontal : styles.vertical, style]}>
+    <View style={[isH ? styles.horizontal : styles.vertical, style]}>
       <Image
         source={require('../../assets/logo.png')}
         style={[
           styles.logoImage,
           { width: imgSize, height: imgSize },
-          isHorizontal && { marginRight: 10, marginBottom: 0 },
+          isH && { marginRight: 10, marginBottom: 0 },
         ]}
         resizeMode="contain"
       />
       <View>
-        <Text style={[styles.wordmark, { fontSize: textSize, letterSpacing: textSize * 0.18 }]}>
+        <Text
+          style={[
+            styles.wordmark,
+            {
+              fontSize:      textSize,
+              letterSpacing: textSize * 0.20,
+            },
+          ]}
+        >
           PREZENCE
         </Text>
         {showTagline && (
@@ -50,21 +58,22 @@ const styles = StyleSheet.create({
   },
   horizontal: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems:    'center',
   },
   logoImage: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   wordmark: {
+    fontFamily: F.xBold,
     fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 4,
+    color:      C.text,
   },
   tagline: {
-    fontSize: 12,
-    color: '#4a5568',
-    marginTop: 4,
-    letterSpacing: 0.5,
+    fontFamily: F.regular,
+    fontSize:   12,
+    color:      C.textFaint,
+    marginTop:  4,
+    letterSpacing: 0.3,
     textAlign: 'center',
   },
 });

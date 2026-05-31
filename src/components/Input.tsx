@@ -8,26 +8,14 @@ import {
   TextInputProps,
   ViewStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-const COLORS = {
-  background: '#0a1628',
-  surface: '#0d1b2e',
-  surfaceElevated: '#111d30',
-  primary: '#3B7FE8',
-  accent: '#FF6B6B',
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.7)',
-  textMuted: 'rgba(255,255,255,0.35)',
-  border: 'rgba(59,127,232,0.3)',
-};
+import { Eye, EyeOff } from 'lucide-react-native';
+import { C, F, R } from '../theme';
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
   error?: string;
   isPassword?: boolean;
   containerStyle?: ViewStyle;
-  rightIcon?: string;
   onRightIconPress?: () => void;
 }
 
@@ -36,14 +24,11 @@ const Input: React.FC<InputProps> = ({
   error,
   isPassword = false,
   containerStyle,
-  rightIcon,
   onRightIconPress,
   ...textInputProps
 }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-
-  const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
+  const [isFocused, setIsFocused]       = useState(false);
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -52,44 +37,29 @@ const Input: React.FC<InputProps> = ({
         style={[
           styles.inputWrapper,
           isFocused && styles.inputWrapperFocused,
-          error ? styles.inputWrapperError : null,
+          error     && styles.inputWrapperError,
         ]}
       >
         <TextInput
           {...textInputProps}
           style={styles.input}
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={C.textFaint}
           secureTextEntry={isPassword && !showPassword}
-          onFocus={(e) => {
-            setIsFocused(true);
-            textInputProps.onFocus?.(e);
-          }}
-          onBlur={(e) => {
-            setIsFocused(false);
-            textInputProps.onBlur?.(e);
-          }}
+          onFocus={(e) => { setIsFocused(true);  textInputProps.onFocus?.(e); }}
+          onBlur={(e)  => { setIsFocused(false); textInputProps.onBlur?.(e);  }}
         />
-        {isPassword ? (
+        {isPassword && (
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={togglePasswordVisibility}
+            onPress={() => setShowPassword((v) => !v)}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-              size={20}
-              color={COLORS.textSecondary}
-            />
+            {showPassword
+              ? <EyeOff size={20} color={C.textMuted} strokeWidth={1.7} />
+              : <Eye    size={20} color={C.textMuted} strokeWidth={1.7} />
+            }
           </TouchableOpacity>
-        ) : rightIcon ? (
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={onRightIconPress}
-            activeOpacity={0.7}
-          >
-            <Ionicons name={rightIcon as any} size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        ) : null}
+        )}
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
@@ -101,43 +71,45 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
-    marginBottom: 8,
-    letterSpacing: 0.3,
-    fontFamily: 'DMSans_400Regular',
+    fontSize:      10,
+    fontWeight:    '600',
+    fontFamily:    F.semiBold,
+    color:         C.textMuted,
+    letterSpacing: 2,           // 0.2em of 10px
+    textTransform: 'uppercase',
+    marginBottom:  8,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surfaceElevated,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 12,
+    flexDirection:   'row',
+    alignItems:      'center',
+    backgroundColor: C.surface,
+    borderWidth:     1,
+    borderColor:     C.hairline,
+    borderRadius:    R.md,
     paddingHorizontal: 16,
   },
   inputWrapperFocused: {
-    borderColor: COLORS.primary,
+    borderColor: C.accent,
   },
   inputWrapperError: {
-    borderColor: COLORS.accent,
+    borderColor: C.error,
   },
   input: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    fontFamily: 'DMSans_400Regular',
+    flex:       1,
+    paddingVertical: 15,
+    fontSize:   15,
+    fontFamily: F.regular,
+    color:      C.text,
   },
   iconButton: {
-    padding: 4,
+    padding:    4,
     marginLeft: 8,
   },
   errorText: {
-    fontSize: 12,
-    color: COLORS.accent,
-    marginTop: 6,
+    fontSize:   12,
+    fontFamily: F.regular,
+    color:      C.error,
+    marginTop:  6,
     marginLeft: 4,
   },
 });

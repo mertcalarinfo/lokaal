@@ -1,6 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
+import { C, F } from '../theme';
+
+// Design system rule: score color is ALWAYS --accent (#E2D3B0).
+// No colour-coding per value (no red/green). No gradient.
 
 interface ScoreRingProps {
   score: number;
@@ -11,32 +15,25 @@ interface ScoreRingProps {
   animate?: boolean;
 }
 
-const getScoreColor = (score: number): { start: string; end: string } => {
-  if (score >= 9) return { start: '#3B7FE8', end: '#5B9AFF' };
-  if (score >= 7) return { start: '#4ECDC4', end: '#45B7AA' };
-  if (score >= 4) return { start: '#FFD93D', end: '#FFC107' };
-  return { start: '#FF6B6B', end: '#FF4444' };
-};
-
 const ScoreRing: React.FC<ScoreRingProps> = ({
   score,
-  size = 120,
+  size        = 120,
   strokeWidth = 10,
-  showLabel = true,
+  showLabel   = true,
   labelText,
-  animate = true,
+  animate     = true,
 }) => {
   const animatedValue = useRef(new Animated.Value(0)).current;
-  const radius = (size - strokeWidth) / 2;
+  const radius        = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const clampedScore = Math.min(10, Math.max(0, score));
-  const fillPercent = clampedScore / 10;
+  const clampedScore  = Math.min(10, Math.max(0, score));
+  const fillPercent   = clampedScore / 10;
 
   useEffect(() => {
     if (animate) {
       Animated.timing(animatedValue, {
-        toValue: fillPercent,
-        duration: 1200,
+        toValue:         fillPercent,
+        duration:        1200,
         useNativeDriver: false,
       }).start();
     } else {
@@ -44,41 +41,27 @@ const ScoreRing: React.FC<ScoreRingProps> = ({
     }
   }, [fillPercent, animate]);
 
-  const strokeDashoffset = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [circumference, circumference * (1 - fillPercent)],
-  });
-
-  const colors = getScoreColor(clampedScore);
-
-  // We use a fixed strokeDashoffset for the static ring since Animated.Value can't be used directly with SVG
   const staticOffset = circumference * (1 - fillPercent);
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Svg width={size} height={size}>
-        <Defs>
-          <LinearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor={colors.start} />
-            <Stop offset="100%" stopColor={colors.end} />
-          </LinearGradient>
-        </Defs>
-        {/* Background track */}
+        {/* Track — --hairline */}
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(59,127,232,0.18)"
+          stroke={C.hairline}
           strokeWidth={strokeWidth}
         />
-        {/* Score arc */}
+        {/* Fill — always --accent */}
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="url(#scoreGradient)"
+          stroke={C.accent}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={staticOffset}
@@ -89,13 +72,15 @@ const ScoreRing: React.FC<ScoreRingProps> = ({
       </Svg>
       {showLabel && (
         <View style={styles.labelContainer}>
-          <Text style={[styles.scoreText, { fontSize: size * 0.22, color: colors.start }]}>
-            {clampedScore % 1 === 0 ? clampedScore.toFixed(0) : clampedScore.toFixed(1)}
+          <Text style={[styles.scoreText, { fontSize: size * 0.22 }]}>
+            {clampedScore % 1 === 0
+              ? clampedScore.toFixed(0)
+              : clampedScore.toFixed(1)}
           </Text>
           {labelText ? (
-            <Text style={[styles.labelText, { fontSize: size * 0.1 }]}>{labelText}</Text>
+            <Text style={[styles.subText, { fontSize: size * 0.1 }]}>{labelText}</Text>
           ) : (
-            <Text style={[styles.outOf, { fontSize: size * 0.1 }]}>/10</Text>
+            <Text style={[styles.subText, { fontSize: size * 0.1 }]}>/10</Text>
           )}
         </View>
       )}
@@ -109,25 +94,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   labelContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position:        'absolute',
+    alignItems:      'center',
+    justifyContent:  'center',
   },
   scoreText: {
-    fontWeight: '700',
+    fontFamily:    F.xBold,
+    fontWeight:    '800',
     letterSpacing: -1,
-    fontFamily: 'DMSans_700Bold',
+    color:         C.accent,
   },
-  outOf: {
-    color: '#8E8EA0',
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  labelText: {
-    color: '#8E8EA0',
-    fontWeight: '500',
-    marginTop: 2,
-    textAlign: 'center',
+  subText: {
+    fontFamily: F.regular,
+    fontWeight: '400',
+    color:      C.textMuted,
+    marginTop:  2,
   },
 });
 

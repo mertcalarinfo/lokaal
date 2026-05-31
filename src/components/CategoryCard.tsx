@@ -1,46 +1,22 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
   LayoutAnimation,
   Platform,
   UIManager,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ChevronDown, ChevronUp, Zap } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { CategoryResult } from '../types';
 import RichText from './RichText';
+import { C, F, S } from '../theme';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
-const COLORS = {
-  surface: '#0d1b2e',
-  surfaceElevated: '#111d30',
-  primary: '#3B7FE8',
-  accent: '#FF6B6B',
-  success: '#4ECDC4',
-  warning: '#FFD93D',
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.7)',
-  textMuted: 'rgba(255,255,255,0.35)',
-  border: 'rgba(59,127,232,0.3)',
-};
-
-const getScoreColor = (score: number): string => {
-  if (score >= 9) return COLORS.primary;
-  if (score >= 7) return COLORS.success;
-  if (score >= 4) return COLORS.warning;
-  return COLORS.accent;
-};
-
-const getScoreBarWidth = (score: number): string => {
-  return `${(score / 10) * 100}%`;
-};
 
 interface CategoryCardProps {
   category: CategoryResult;
@@ -51,80 +27,56 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
   const [expanded, setExpanded] = useState(false);
   const { t } = useTranslation();
 
-  const scoreColor = getScoreColor(category.score);
-
   const translatedName = t(`report.categoryNames.${category.name}`, {
     defaultValue: category.name,
   });
 
-  const toggleExpanded = () => {
+  const toggle = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded((prev) => !prev);
+    setExpanded((v) => !v);
   };
+
+  const barWidth = `${(category.score / 10) * 100}%`;
 
   return (
     <View style={styles.card}>
-      <TouchableOpacity
-        style={styles.header}
-        onPress={toggleExpanded}
-        activeOpacity={0.8}
-      >
-        <View style={styles.headerLeft}>
-          <Text style={styles.indexText}>{String(index + 1).padStart(2, '0')}</Text>
-          <Text style={styles.categoryName}>{translatedName}</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <Text style={[styles.scoreText, { color: scoreColor }]}>
-            {category.score}
-            <Text style={styles.outOf}>/10</Text>
-          </Text>
-          <Ionicons
-            name={expanded ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={COLORS.textMuted}
-            style={{ marginLeft: 8 }}
-          />
-        </View>
+      <TouchableOpacity style={styles.header} onPress={toggle} activeOpacity={0.8}>
+        <Text style={styles.index}>{String(index + 1).padStart(2, '0')}</Text>
+        <Text style={styles.name}>{translatedName}</Text>
+        <Text style={styles.score}>
+          {category.score}
+          <Text style={styles.outOf}>/10</Text>
+        </Text>
+        {expanded
+          ? <ChevronUp   size={16} color={C.textFaint} strokeWidth={1.7} style={styles.chev} />
+          : <ChevronDown size={16} color={C.textFaint} strokeWidth={1.7} style={styles.chev} />
+        }
       </TouchableOpacity>
 
-      {/* Score bar */}
-      <View style={styles.scoreBarTrack}>
-        <View
-          style={[
-            styles.scoreBarFill,
-            { width: getScoreBarWidth(category.score) as any, backgroundColor: scoreColor },
-          ]}
-        />
+      {/* Score bar — 2px track, 4px fill, --accent */}
+      <View style={styles.barTrack}>
+        <View style={[styles.barFill, { width: barWidth as any }]} />
       </View>
 
-      {/* Expanded content */}
       {expanded && (
-        <View style={styles.expandedContent}>
-          {/* Observations */}
+        <View style={styles.expanded}>
           {category.observations.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('report.observations')}</Text>
+            <View style={styles.block}>
+              <Text style={styles.blockLabel}>{t('report.observations')}</Text>
               {category.observations.map((obs, i) => (
                 <View key={i} style={styles.bulletRow}>
-                  <View style={[styles.bullet, { backgroundColor: COLORS.textMuted }]} />
+                  <View style={styles.bullet} />
                   <RichText text={obs} style={styles.bulletText} />
                 </View>
               ))}
             </View>
           )}
-
-          {/* Tips */}
           {category.tips.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('report.tips')}</Text>
+            <View style={styles.block}>
+              <Text style={styles.blockLabel}>{t('report.tips')}</Text>
               {category.tips.map((tip, i) => (
                 <View key={i} style={styles.bulletRow}>
-                  <Ionicons
-                    name="flash"
-                    size={14}
-                    color={COLORS.primary}
-                    style={{ marginTop: 2, marginRight: 8 }}
-                  />
+                  <Zap size={13} color={C.accent} strokeWidth={1.7} style={styles.zapIcon} />
                   <RichText text={tip} style={styles.bulletText} />
                 </View>
               ))}
@@ -138,95 +90,98 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surfaceElevated,
-    borderRadius: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: C.line,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    flexDirection:  'row',
+    alignItems:     'baseline',
+    gap:            12,
+    paddingVertical: 15,
+    paddingHorizontal: 2,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+  index: {
+    fontFamily: F.monoMd,
+    fontSize:   11,
+    color:      C.textFaint,
+    width:      20,
   },
-  indexText: {
-    fontSize: 11,
-    color: COLORS.textMuted,
+  name: {
+    fontFamily: F.semiBold,
+    fontSize:   15,
     fontWeight: '600',
-    marginRight: 12,
-    fontVariant: ['tabular-nums'],
+    color:      C.text,
+    flex:       1,
   },
-  categoryName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    flex: 1,
-    fontFamily: 'DMSans_700Bold',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  scoreText: {
-    fontSize: 18,
-    fontWeight: '700',
+  score: {
+    fontFamily:    F.xBold,
+    fontSize:      18,
+    fontWeight:    '800',
+    color:         C.accent,
+    letterSpacing: -0.36,
   },
   outOf: {
-    fontSize: 12,
-    color: COLORS.textMuted,
+    fontFamily: F.regular,
+    fontSize:   11,
     fontWeight: '400',
+    color:      C.textMuted,
   },
-  scoreBarTrack: {
-    height: 3,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 16,
-    borderRadius: 2,
+  chev: {
+    marginLeft: 4,
   },
-  scoreBarFill: {
-    height: 3,
-    borderRadius: 2,
+  barTrack: {
+    height:          2,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    marginHorizontal: 2,
   },
-  expandedContent: {
-    padding: 16,
-    paddingTop: 12,
+  barFill: {
+    height:          4,
+    marginTop:       -1,
+    backgroundColor: C.accent,
+    borderRadius:    2,
   },
-  section: {
+  expanded: {
+    paddingHorizontal: 2,
+    paddingTop:        12,
+    paddingBottom:     16,
+  },
+  block: {
     marginBottom: 14,
   },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    letterSpacing: 1,
+  blockLabel: {
+    fontFamily:    F.semiBold,
+    fontSize:      10,
+    fontWeight:    '600',
+    color:         C.textMuted,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 10,
+    marginBottom:  10,
   },
   bulletRow: {
     flexDirection: 'row',
-    marginBottom: 8,
-    alignItems: 'flex-start',
+    marginBottom:  8,
+    alignItems:    'flex-start',
   },
   bullet: {
-    width: 5,
-    height: 5,
+    width:        5,
+    height:       5,
     borderRadius: 3,
-    marginTop: 5,
-    marginRight: 10,
+    backgroundColor: C.textFaint,
+    marginTop:    5,
+    marginRight:  10,
+    flexShrink:   0,
+  },
+  zapIcon: {
+    marginTop:  2,
+    marginRight: 8,
+    flexShrink:  0,
   },
   bulletText: {
-    flex: 1,
-    fontSize: 13,
-    color: COLORS.textSecondary,
+    flex:       1,
+    fontFamily: F.regular,
+    fontSize:   13,
+    color:      C.textMuted,
     lineHeight: 20,
-    fontFamily: 'DMSans_400Regular',
   },
 });
 

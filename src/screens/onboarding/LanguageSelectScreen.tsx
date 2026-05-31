@@ -1,42 +1,24 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircle2 } from 'lucide-react-native';
 
 import { useAuth } from '../../hooks/useAuth';
 import { changeLanguage } from '../../i18n';
 import Button from '../../components/Button';
 import PrezenceLogo from '../../components/PrezenceLogo';
-
-const COLORS = {
-  background: '#0a1628',
-  surface: '#0d1b2e',
-  surfaceElevated: '#111d30',
-  primary: '#3B7FE8',
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.7)',
-  textMuted: 'rgba(255,255,255,0.35)',
-  border: 'rgba(59,127,232,0.3)',
-};
+import { C, F, R, S } from '../../theme';
 
 type Language = 'en' | 'de';
 
 const LanguageSelectScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const { i18n } = useTranslation();
+  const navigation   = useNavigation();
+  const { i18n }     = useTranslation();
   const { user, updateLanguage } = useAuth();
 
-  // Pre-select the language i18n already detected from the device locale, so a
-  // German device lands on German pre-selected. The user can still switch.
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
+  const [selected, setSelected] = useState<Language>(
     i18n.language?.toLowerCase().startsWith('de') ? 'de' : 'en'
   );
   const [loading, setLoading] = useState(false);
@@ -44,10 +26,8 @@ const LanguageSelectScreen: React.FC = () => {
   const handleContinue = async () => {
     setLoading(true);
     try {
-      await changeLanguage(selectedLanguage);
-      if (user) {
-        await updateLanguage(selectedLanguage);
-      }
+      await changeLanguage(selected);
+      if (user) await updateLanguage(selected);
     } catch {
       Alert.alert('Error', 'Failed to save language preference. Please try again.');
     } finally {
@@ -55,50 +35,45 @@ const LanguageSelectScreen: React.FC = () => {
     }
   };
 
-  const languages: { code: Language; label: string; sublabel: string; flag: string }[] = [
-    { code: 'en', label: 'English', sublabel: 'English', flag: '🇬🇧' },
-    { code: 'de', label: 'Deutsch', sublabel: 'German', flag: '🇩🇪' },
+  const langs = [
+    { code: 'en' as Language, label: 'English', sub: 'English',  flag: '🇬🇧' },
+    { code: 'de' as Language, label: 'Deutsch',  sub: 'German',   flag: '🇩🇪' },
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
+        <View style={styles.logoWrap}>
           <PrezenceLogo size="sm" layout="horizontal" />
         </View>
 
-        {/* Title */}
-        <View style={styles.titleContainer}>
+        <View style={styles.titleWrap}>
           <Text style={styles.title}>
-            {selectedLanguage === 'de' ? 'Wähle deine Sprache' : 'Choose your language'}
+            {selected === 'de' ? 'Wähle deine Sprache' : 'Choose your language'}
           </Text>
-          <Text style={styles.subtitle}>
-            {selectedLanguage === 'de'
+          <Text style={styles.sub}>
+            {selected === 'de'
               ? 'Du kannst dies später in den Einstellungen ändern'
-              : 'You can change this later in settings'}
+              : 'You can change this later in Settings'}
           </Text>
         </View>
 
-        {/* Language cards */}
-        <View style={styles.languageCards}>
-          {languages.map((lang) => {
-            const isSelected = selectedLanguage === lang.code;
+        <View style={styles.cards}>
+          {langs.map((lang) => {
+            const active = selected === lang.code;
             return (
               <TouchableOpacity
                 key={lang.code}
-                style={[styles.languageCard, isSelected && styles.languageCardSelected]}
-                onPress={() => setSelectedLanguage(lang.code)}
+                style={[styles.card, active && styles.cardActive]}
+                onPress={() => setSelected(lang.code)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.languageFlag}>{lang.flag}</Text>
-                <Text style={[styles.languageLabel, isSelected && styles.languageLabelSelected]}>
-                  {lang.label}
-                </Text>
-                <Text style={styles.languageSublabel}>{lang.sublabel}</Text>
-                {isSelected && (
-                  <View style={styles.checkmark}>
-                    <Ionicons name="checkmark-circle" size={22} color={COLORS.primary} />
+                <Text style={styles.flag}>{lang.flag}</Text>
+                <Text style={[styles.langLabel, active && { color: C.accent }]}>{lang.label}</Text>
+                <Text style={styles.langSub}>{lang.sub}</Text>
+                {active && (
+                  <View style={styles.check}>
+                    <CheckCircle2 size={20} color={C.accent} strokeWidth={1.7} />
                   </View>
                 )}
               </TouchableOpacity>
@@ -106,10 +81,9 @@ const LanguageSelectScreen: React.FC = () => {
           })}
         </View>
 
-        {/* Continue button */}
         <View style={styles.footer}>
           <Button
-            label={selectedLanguage === 'de' ? 'Weiter' : 'Continue'}
+            label={selected === 'de' ? 'Weiter' : 'Continue'}
             onPress={handleContinue}
             loading={loading}
             fullWidth
@@ -122,81 +96,28 @@ const LanguageSelectScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-  },
-  header: {
-    marginBottom: 48,
-  },
-  titleContainer: {
-    marginBottom: 40,
-  },
+  safe:      { flex: 1, backgroundColor: C.bg },
+  container: { flex: 1, paddingHorizontal: S.screen, paddingVertical: S.s6 },
+  logoWrap:  { marginBottom: S.s10 },
+  titleWrap: { marginBottom: S.s8 },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 10,
-    lineHeight: 36,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: F.xBold, fontSize: 28, fontWeight: '800',
+    color: C.text, letterSpacing: -0.56, marginBottom: S.s2, lineHeight: 32,
   },
-  subtitle: {
-    fontSize: 15,
-    color: COLORS.textSecondary,
-    lineHeight: 22,
-    fontFamily: 'DMSans_400Regular',
+  sub: { fontFamily: F.regular, fontSize: 14.5, color: C.textMuted, lineHeight: 21 },
+  cards: { flexDirection: 'row', gap: S.s4, flex: 1, alignItems: 'center' },
+  card: {
+    flex: 1, backgroundColor: C.surface,
+    borderRadius: R.lg, padding: S.s6,
+    alignItems: 'center', borderWidth: 1.5, borderColor: C.hairline,
+    minHeight: 148, justifyContent: 'center',
   },
-  languageCards: {
-    flexDirection: 'row',
-    gap: 16,
-    flex: 1,
-    alignItems: 'center',
-  },
-  languageCard: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    minHeight: 160,
-    justifyContent: 'center',
-  },
-  languageCardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: 'rgba(59,127,232,0.08)',
-  },
-  languageFlag: {
-    fontSize: 40,
-    marginBottom: 12,
-  },
-  languageLabel: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  languageLabelSelected: {
-    color: COLORS.primary,
-  },
-  languageSublabel: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-  },
-  checkmark: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-  },
-  footer: {
-    paddingBottom: 8,
-  },
+  cardActive: { borderColor: C.accent, backgroundColor: C.surfaceAccent },
+  flag:      { fontSize: 36, marginBottom: S.s3 },
+  langLabel: { fontFamily: F.bold, fontSize: 18, fontWeight: '700', color: C.text, marginBottom: 3 },
+  langSub:   { fontFamily: F.regular, fontSize: 13, color: C.textFaint },
+  check:     { position: 'absolute', top: S.s3, right: S.s3 },
+  footer:    { paddingBottom: S.s2 },
 });
 
 export default LanguageSelectScreen;
