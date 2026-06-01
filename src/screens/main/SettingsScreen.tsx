@@ -1,4 +1,4 @@
-import React, { useState, ReactNode } from 'react';
+import React, { useState, ReactNode, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Alert, Platform, Linking,
@@ -8,21 +8,91 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import {
   Globe, Pencil, Star, CreditCard, Info, LogOut,
-  ChevronRight, CheckCircle2,
+  ChevronRight, CheckCircle2, Sun, Moon, Smartphone,
 } from 'lucide-react-native';
 
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
+import { ThemePreference } from '../../contexts/ThemeContext';
 import { useSubscription } from '../../hooks/useSubscription';
 import { changeLanguage } from '../../i18n';
-import { C, F, R, S } from '../../theme';
+import { ThemeColors, F, R, S } from '../../theme';
 
 const APP_VERSION = '1.0.0';
+
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe:    { flex: 1, backgroundColor: T.bg },
+  scroll:  { paddingHorizontal: S.screen, paddingTop: S.s4, paddingBottom: S.s6 },
+  pageTitle: {
+    fontFamily: F.xBold, fontSize: 34, fontWeight: '800',
+    color: T.text, letterSpacing: -1.02, marginBottom: S.s5,
+  },
+  profileCard: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: T.surface, borderRadius: R.lg,
+    padding: S.s4, marginBottom: S.s5,
+    borderWidth: 1, borderColor: T.hairline, gap: S.s3,
+  },
+  avatar: {
+    width: 48, height: 48, borderRadius: R.sm,
+    backgroundColor: T.surface2, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: T.hairline,
+  },
+  avatarText:   { fontFamily: F.bold, fontSize: 17, fontWeight: '700', color: T.text },
+  profileInfo:  { flex: 1 },
+  profileName:  { fontFamily: F.semiBold, fontSize: 15, fontWeight: '600', color: T.text, marginBottom: 2 },
+  profileEmail: { fontFamily: F.regular,  fontSize: 12, color: T.textFaint },
+  tierPill: {
+    borderRadius: R.pill, paddingHorizontal: S.s3, paddingVertical: 5,
+    borderWidth: 1, borderColor: T.hairline,
+  },
+  tierPillText: { fontFamily: F.semiBold, fontSize: 11, fontWeight: '700' },
+  section:      { marginBottom: S.s5 },
+  sectionLabel: {
+    fontFamily: F.semiBold, fontSize: 10, fontWeight: '600',
+    color: T.textFaint, letterSpacing: 1.5, textTransform: 'uppercase',
+    marginBottom: S.s2, marginLeft: 2,
+  },
+  sectionCard: {
+    backgroundColor: T.surface, borderRadius: R.lg,
+    borderWidth: 1, borderColor: T.hairline, overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: S.s4, paddingVertical: S.s4, gap: S.s3,
+  },
+  rowIcon:  { width: 20, alignItems: 'center' },
+  rowLabel: { flex: 1, fontFamily: F.medium, fontSize: 15, fontWeight: '500', color: T.text },
+  rowRight: { flexDirection: 'row', alignItems: 'center' },
+  rowValue: { fontFamily: F.medium, fontSize: 13, fontWeight: '500', marginRight: 4 },
+  divider:  { height: 1, backgroundColor: T.line, marginLeft: S.s4 + 20 + S.s3 },
+  // §04 Settings-Radio — gefüllter Sand-Kreis mit dunklem Check (aktiv)
+  radioFilled: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: T.accent,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  radioEmpty: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 1.5, borderColor: T.hairline,
+  },
+  signOut: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: T.errorBg, borderRadius: R.md,
+    paddingVertical: S.s4, marginTop: S.s2,
+    borderWidth: 1, borderColor: T.error,
+    gap: S.s3,
+  },
+  signOutText: { fontFamily: F.semiBold, fontSize: 15, fontWeight: '600', color: T.error },
+});
 
 const SettingsScreen: React.FC = () => {
   const { t }        = useTranslation();
   const navigation   = useNavigation<any>();
   const { user, signOut, updateLanguage } = useAuth();
   const { subscription, isSubscribed }   = useSubscription(user?.uid || null);
+  const { T, themePreference, setThemePreference } = useTheme();
+  const styles = useMemo(() => createStyles(T), [T]);
 
   const [signingOut,      setSigningOut]      = useState(false);
   const [languageLoading, setLanguageLoading] = useState(false);
@@ -96,38 +166,30 @@ const SettingsScreen: React.FC = () => {
       <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.rowRight}>
         {right}
-        {onPress && !right && <ChevronRight size={16} color={C.textFaint} strokeWidth={1.7} />}
+        {onPress && !right && <ChevronRight size={16} color={T.textFaint} strokeWidth={1.7} />}
       </View>
     </TouchableOpacity>
   );
 
   // Settings-Radio — gefüllter Sand-Kreis mit dunklem Check (aktiv)
   //                  leerer Outline-Kreis (inaktiv)  (§04 Settings-Radio)
-  const LangRow = ({ code, label }: { code: 'en' | 'de'; label: string }) => {
-    const active = currentLang === code;
-    return (
-      <TouchableOpacity
-        style={styles.row}
-        onPress={() => handleSelectLanguage(code)}
-        disabled={languageLoading}
-        activeOpacity={0.7}
-      >
-        <View style={styles.rowIcon}><Globe size={18} color={C.textMuted} strokeWidth={1.7} /></View>
-        <Text style={[styles.rowLabel, active && { color: C.accent }]}>{label}</Text>
-        <View style={styles.rowRight}>
-          {active ? (
-            /* Gefüllter Sand-Kreis mit dunklem Häkchen */
-            <View style={styles.radioFilled}>
-              <CheckCircle2 size={11} color="#1A1305" strokeWidth={2.5} />
-            </View>
-          ) : (
-            /* Leerer Outline-Kreis */
-            <View style={styles.radioEmpty} />
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const RadioRow = ({
+    active, label, icon, onPress,
+  }: { active: boolean; label: string; icon: ReactNode; onPress: () => void }) => (
+    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+      <View style={styles.rowIcon}>{icon}</View>
+      <Text style={[styles.rowLabel, active && { color: T.accent }]}>{label}</Text>
+      <View style={styles.rowRight}>
+        {active ? (
+          <View style={styles.radioFilled}>
+            <CheckCircle2 size={11} color={T.onAccent} strokeWidth={2.5} />
+          </View>
+        ) : (
+          <View style={styles.radioEmpty} />
+        )}
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -147,25 +209,59 @@ const SettingsScreen: React.FC = () => {
           </View>
           <View style={[
             styles.tierPill,
-            { backgroundColor: isSubscribed ? C.successBg : C.surfaceAccent },
+            { backgroundColor: isSubscribed ? T.successBg : T.surfaceAccent },
           ]}>
-            <Text style={[styles.tierPillText, { color: isSubscribed ? C.success : C.textMuted }]}>
+            <Text style={[styles.tierPillText, { color: isSubscribed ? T.success : T.textMuted }]}>
               {isSubscribed ? t('settings.tierPremium') : t('settings.tierFree')}
             </Text>
           </View>
         </View>
 
+        {/* Darstellung (Theme) */}
+        <Section title={t('settings.appearance')}>
+          <RadioRow
+            active={themePreference === 'system'}
+            label={t('settings.themeSystem')}
+            icon={<Smartphone size={18} color={T.textMuted} strokeWidth={1.7} />}
+            onPress={() => setThemePreference('system')}
+          />
+          <View style={styles.divider} />
+          <RadioRow
+            active={themePreference === 'dark'}
+            label={t('settings.themeDark')}
+            icon={<Moon size={18} color={T.textMuted} strokeWidth={1.7} />}
+            onPress={() => setThemePreference('dark')}
+          />
+          <View style={styles.divider} />
+          <RadioRow
+            active={themePreference === 'light'}
+            label={t('settings.themeLight')}
+            icon={<Sun size={18} color={T.textMuted} strokeWidth={1.7} />}
+            onPress={() => setThemePreference('light')}
+          />
+        </Section>
+
         {/* Language */}
         <Section title={t('settings.language')}>
-          <LangRow code="en" label={t('settings.languageEn')} />
+          <RadioRow
+            active={currentLang === 'en'}
+            label={t('settings.languageEn')}
+            icon={<Globe size={18} color={T.textMuted} strokeWidth={1.7} />}
+            onPress={() => handleSelectLanguage('en')}
+          />
           <View style={styles.divider} />
-          <LangRow code="de" label={t('settings.languageDe')} />
+          <RadioRow
+            active={currentLang === 'de'}
+            label={t('settings.languageDe')}
+            icon={<Globe size={18} color={T.textMuted} strokeWidth={1.7} />}
+            onPress={() => handleSelectLanguage('de')}
+          />
         </Section>
 
         {/* Coaching goals */}
         <Section title={t('settings.coachingGoals')}>
           <Row
-            icon={<Pencil size={18} color={C.textMuted} strokeWidth={1.7} />}
+            icon={<Pencil size={18} color={T.textMuted} strokeWidth={1.7} />}
             label={t('settings.editGoals')}
             onPress={handleEditGoals}
           />
@@ -174,17 +270,17 @@ const SettingsScreen: React.FC = () => {
         {/* Subscription */}
         <Section title={t('settings.subscription')}>
           <Row
-            icon={<Star size={18} color={isSubscribed ? C.success : C.textFaint} strokeWidth={1.7} />}
+            icon={<Star size={18} color={isSubscribed ? T.success : T.textFaint} strokeWidth={1.7} />}
             label={isSubscribed ? t('settings.subscriptionPremium') : t('settings.subscriptionFree')}
             right={
-              <Text style={[styles.rowValue, { color: isSubscribed ? C.success : C.textFaint }]}>
+              <Text style={[styles.rowValue, { color: isSubscribed ? T.success : T.textFaint }]}>
                 {isSubscribed ? t('settings.statusActive') : t('settings.statusFree')}
               </Text>
             }
           />
           <View style={styles.divider} />
           <Row
-            icon={<CreditCard size={18} color={C.textMuted} strokeWidth={1.7} />}
+            icon={<CreditCard size={18} color={T.textMuted} strokeWidth={1.7} />}
             label={t('settings.manageSubscription')}
             onPress={handleManageSubscription}
           />
@@ -193,7 +289,7 @@ const SettingsScreen: React.FC = () => {
         {/* App version */}
         <Section title={t('settings.appVersion')}>
           <Row
-            icon={<Info size={18} color={C.textFaint} strokeWidth={1.7} />}
+            icon={<Info size={18} color={T.textFaint} strokeWidth={1.7} />}
             label={t('settings.version', { version: APP_VERSION })}
           />
         </Section>
@@ -205,7 +301,7 @@ const SettingsScreen: React.FC = () => {
           disabled={signingOut}
           activeOpacity={0.8}
         >
-          <LogOut size={18} color={C.error} strokeWidth={1.7} />
+          <LogOut size={18} color={T.error} strokeWidth={1.7} />
           <Text style={styles.signOutText}>
             {signingOut ? t('common.loading') : t('settings.signOut')}
           </Text>
@@ -215,70 +311,5 @@ const SettingsScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: C.bg },
-  scroll:  { paddingHorizontal: S.screen, paddingTop: S.s4, paddingBottom: S.s6 },
-  pageTitle: {
-    fontFamily: F.xBold, fontSize: 34, fontWeight: '800',
-    color: C.text, letterSpacing: -1.02, marginBottom: S.s5,
-  },
-  profileCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.surface, borderRadius: R.lg,
-    padding: S.s4, marginBottom: S.s5,
-    borderWidth: 1, borderColor: C.hairline, gap: S.s3,
-  },
-  avatar: {
-    width: 48, height: 48, borderRadius: R.sm,
-    backgroundColor: C.surface2, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: C.hairline,
-  },
-  avatarText:   { fontFamily: F.bold, fontSize: 17, fontWeight: '700', color: C.text },
-  profileInfo:  { flex: 1 },
-  profileName:  { fontFamily: F.semiBold, fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 2 },
-  profileEmail: { fontFamily: F.regular,  fontSize: 12, color: C.textFaint },
-  tierPill: {
-    borderRadius: R.pill, paddingHorizontal: S.s3, paddingVertical: 5,
-    borderWidth: 1, borderColor: C.hairline,
-  },
-  tierPillText: { fontFamily: F.semiBold, fontSize: 11, fontWeight: '700' },
-  section: { marginBottom: S.s5 },
-  sectionLabel: {
-    fontFamily: F.semiBold, fontSize: 10, fontWeight: '600',
-    color: C.textFaint, letterSpacing: 1.5, textTransform: 'uppercase',
-    marginBottom: S.s2, marginLeft: 2,
-  },
-  sectionCard: {
-    backgroundColor: C.surface, borderRadius: R.lg,
-    borderWidth: 1, borderColor: C.hairline, overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: S.s4, paddingVertical: S.s4, gap: S.s3,
-  },
-  rowIcon:  { width: 20, alignItems: 'center' },
-  rowLabel: { flex: 1, fontFamily: F.medium, fontSize: 15, fontWeight: '500', color: C.text },
-  rowRight: { flexDirection: 'row', alignItems: 'center' },
-  rowValue: { fontFamily: F.medium, fontSize: 13, fontWeight: '500', marginRight: 4 },
-  divider:  { height: 1, backgroundColor: C.line, marginLeft: S.s4 + 20 + S.s3 },
-  radioFilled: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: C.accent,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  radioEmpty: {
-    width: 22, height: 22, borderRadius: 11,
-    borderWidth: 1.5, borderColor: C.hairline,
-  },
-  signOut: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: C.errorBg, borderRadius: R.md,
-    paddingVertical: S.s4, marginTop: S.s2,
-    borderWidth: 1, borderColor: C.error,
-    gap: S.s3,
-  },
-  signOutText: { fontFamily: F.semiBold, fontSize: 15, fontWeight: '600', color: C.error },
-});
 
 export default SettingsScreen;

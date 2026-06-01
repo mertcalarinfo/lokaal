@@ -251,7 +251,11 @@
     "coachingGoals": "Coaching Goals",
     "goalLabel": "Goal",
     "focusLabel": "Focus",
-    "editGoals": "Edit Goals"
+    "editGoals": "Edit Goals",
+    "appearance": "Appearance",
+    "themeSystem": "System",
+    "themeDark": "Dark",
+    "themeLight": "Light"
   },
   "paywall": {
     "title": "Go Premium",

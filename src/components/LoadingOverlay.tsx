@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,8 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-
-const COLORS = {
-  background: '#000000',
-  surface: '#0a0f1e',
-  primary: '#3B7FE8',
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.7)',
-};
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors, F, R } from '../theme';
 
 interface LoadingOverlayProps {
   visible: boolean;
@@ -21,11 +15,43 @@ interface LoadingOverlayProps {
   transparent?: boolean;
 }
 
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  overlay: {
+    flex:            1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+  overlayTransparent: {
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  container: {
+    backgroundColor: T.surface,
+    borderRadius:    R.lg,
+    padding:         32,
+    alignItems:      'center',
+    minWidth:        120,
+    borderWidth:     1,
+    borderColor:     T.hairline,
+  },
+  message: {
+    marginTop:  16,
+    fontFamily: F.regular,
+    fontSize:   14,
+    color:      T.textMuted,
+    textAlign:  'center',
+    maxWidth:   200,
+  },
+});
+
 const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   visible,
   message,
   transparent = false,
 }) => {
+  const { T } = useTheme();
+  const styles = useMemo(() => createStyles(T), [T]);
+
   if (!visible) return null;
 
   return (
@@ -37,38 +63,12 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     >
       <View style={[styles.overlay, transparent && styles.overlayTransparent]}>
         <View style={styles.container}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={T.accent} />
           {message ? <Text style={styles.message}>{message}</Text> : null}
         </View>
       </View>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 10, 15, 0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overlayTransparent: {
-    backgroundColor: 'rgba(10, 10, 15, 0.6)',
-  },
-  container: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 32,
-    alignItems: 'center',
-    minWidth: 120,
-  },
-  message: {
-    marginTop: 16,
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    maxWidth: 200,
-  },
-});
 
 export default LoadingOverlay;

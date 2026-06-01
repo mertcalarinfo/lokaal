@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,10 +18,11 @@ import { Upload, Video, Infinity, BarChart2, CheckCircle2 } from 'lucide-react-n
 import { HomeStackParamList, OnboardingAnswers } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
+import { useTheme } from '../../contexts/ThemeContext';
 import Button from '../../components/Button';
 import VideoThumbnail from '../../components/VideoThumbnail';
 import PrezenceLogo from '../../components/PrezenceLogo';
-import { C, F, R, S } from '../../theme';
+import { ThemeColors, F, R, S } from '../../theme';
 
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -35,11 +36,171 @@ function getVideoDurationSeconds(raw?: number | null): number | undefined {
   return seconds;
 }
 
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: T.bg,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: S.screen,
+    paddingBottom: S.s8,
+  },
+  header: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+    paddingVertical: S.s4,
+  },
+  usagePill: {
+    flexDirection:   'row',
+    alignItems:      'center',
+    backgroundColor: T.surface,
+    borderRadius:    R.pill,
+    paddingHorizontal: S.s3,
+    paddingVertical:   6,
+    borderWidth:     1,
+    borderColor:     T.hairline,
+    gap:             5,
+  },
+  usagePillText: {
+    fontFamily: F.semiBold,
+    fontSize:   11,
+    fontWeight: '600',
+  },
+  // ── Hero — frei, kein Surface-Container (§04) ──
+  hero: {
+    borderTopWidth: 1,
+    borderTopColor: T.hairline,
+    paddingTop:     S.s5,
+    paddingBottom:  S.s6,
+    marginBottom:   0,
+  },
+  heroEyebrow: {
+    fontFamily:    F.semiBold,
+    fontSize:      10,
+    fontWeight:    '600',
+    color:         T.textMuted,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    marginBottom:  S.s3,
+  },
+  heroTitle: {
+    fontFamily:    F.xBold,
+    fontSize:      38,
+    fontWeight:    '800',
+    color:         T.text,
+    lineHeight:    40,
+    letterSpacing: -1.33,
+    marginBottom:  S.s3,
+  },
+  heroBody: {
+    fontFamily: F.regular,
+    fontSize:   14.5,
+    color:      T.textMuted,
+    lineHeight: 22,
+  },
+  // ── Upload — gestapelte Hairline-Reihen (§04 + Don'ts) ──
+  uploadList: {
+    borderTopWidth:    1,
+    borderTopColor:    T.hairline,
+    borderBottomWidth: 1,
+    borderBottomColor: T.hairline,
+    marginBottom:      S.s5,
+  },
+  uploadRow: {
+    flexDirection:   'row',
+    alignItems:      'center',
+    paddingVertical: S.s4,
+    gap:             S.s3,
+    borderBottomWidth: 1,
+    borderBottomColor: T.line,
+  },
+  uploadIconCircle: {
+    width:          40,
+    height:         40,
+    borderRadius:   20,
+    borderWidth:    1,
+    borderColor:    T.hairline,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  uploadText:  { flex: 1 },
+  uploadTitle: {
+    fontFamily:   F.semiBold,
+    fontSize:     15,
+    fontWeight:   '600',
+    color:        T.text,
+    marginBottom: 2,
+  },
+  uploadSub: {
+    fontFamily: F.regular,
+    fontSize:   12,
+    color:      T.textFaint,
+  },
+  // Leerer Outline-Radio (§04 Radio — ungefüllt = nicht ausgewählt)
+  radioOutline: {
+    width:        22,
+    height:       22,
+    borderRadius: 11,
+    borderWidth:  1.5,
+    borderColor:  T.hairline,
+  },
+  previewCard: {
+    backgroundColor: T.surface,
+    borderRadius:    R.lg,
+    padding:         S.s4,
+    marginBottom:    S.s5,
+    borderWidth:     1,
+    borderColor:     T.hairline,
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    marginBottom:  S.s3,
+    gap:           S.s2,
+  },
+  previewLabel: {
+    fontFamily: F.semiBold,
+    fontSize:   14,
+    fontWeight: '600',
+    color:      T.success,
+  },
+  duration: {
+    fontFamily: F.regular,
+    fontSize:   12,
+    color:      T.textFaint,
+    marginTop:  S.s2,
+    textAlign:  'center',
+  },
+  upgradeCard: {
+    backgroundColor: T.surface,
+    borderRadius:    R.md,
+    padding:         S.s5,
+    marginBottom:    S.s5,
+    alignItems:      'center',
+    borderWidth:     1,
+    borderColor:     T.errorBg,
+  },
+  upgradeText: {
+    fontFamily: F.regular,
+    fontSize:   14,
+    color:      T.textMuted,
+    textAlign:  'center',
+    lineHeight: 20,
+  },
+  cta: {
+    marginTop: S.s2,
+  },
+});
+
 const HomeScreen: React.FC = () => {
-  const { t } = useTranslation();
-  const navigation = useNavigation<HomeNavigationProp>();
-  const { user } = useAuth();
+  const { t }       = useTranslation();
+  const navigation  = useNavigation<HomeNavigationProp>();
+  const { user }    = useAuth();
   const { subscription, canAnalyze, isSubscribed } = useSubscription(user?.uid || null);
+  const { T }       = useTheme();
+  const styles      = useMemo(() => createStyles(T), [T]);
 
   const [selectedVideo, setSelectedVideo] = useState<{ uri: string; duration?: number } | null>(null);
 
@@ -133,8 +294,8 @@ const HomeScreen: React.FC = () => {
     if (isSubscribed) {
       return (
         <View style={styles.usagePill}>
-          <Infinity size={14} color={C.success} strokeWidth={1.7} />
-          <Text style={[styles.usagePillText, { color: C.success }]} numberOfLines={1}>
+          <Infinity size={14} color={T.success} strokeWidth={1.7} />
+          <Text style={[styles.usagePillText, { color: T.success }]} numberOfLines={1}>
             {t('home.usageUnlimited')}
           </Text>
         </View>
@@ -144,8 +305,8 @@ const HomeScreen: React.FC = () => {
     const over = used >= 1;
     return (
       <View style={styles.usagePill}>
-        <BarChart2 size={13} color={over ? C.error : C.textMuted} strokeWidth={1.7} />
-        <Text style={[styles.usagePillText, { color: over ? C.error : C.textMuted }]} numberOfLines={1}>
+        <BarChart2 size={13} color={over ? T.error : T.textMuted} strokeWidth={1.7} />
+        <Text style={[styles.usagePillText, { color: over ? T.error : T.textMuted }]} numberOfLines={1}>
           {t('home.usageFree', { used, total: 1 })}
         </Text>
       </View>
@@ -173,7 +334,7 @@ const HomeScreen: React.FC = () => {
         {selectedVideo ? (
           <View style={styles.previewCard}>
             <View style={styles.previewHeader}>
-              <CheckCircle2 size={17} color={C.success} strokeWidth={1.7} />
+              <CheckCircle2 size={17} color={T.success} strokeWidth={1.7} />
               <Text style={styles.previewLabel}>{t('home.videoSelected')}</Text>
             </View>
             <VideoThumbnail
@@ -198,13 +359,13 @@ const HomeScreen: React.FC = () => {
               <TouchableOpacity key={idx} style={styles.uploadRow} onPress={onPress} activeOpacity={0.8}>
                 {/* Outline-Icon-Kreis links (§04) */}
                 <View style={styles.uploadIconCircle}>
-                  <Icon size={20} color={C.textMuted} strokeWidth={1.7} />
+                  <Icon size={20} color={T.textMuted} strokeWidth={1.7} />
                 </View>
                 <View style={styles.uploadText}>
                   <Text style={styles.uploadTitle}>{label}</Text>
                   <Text style={styles.uploadSub}>{sub}</Text>
                 </View>
-                {/* Leerer Outline-Radio rechts — wird zu gefülltem Sand wenn ausgewählt (§04 Radio) */}
+                {/* Leerer Outline-Radio rechts */}
                 <View style={styles.radioOutline} />
               </TouchableOpacity>
             ))}
@@ -240,163 +401,5 @@ const HomeScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: C.bg,
-  },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: S.screen,
-    paddingBottom: S.s8,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: S.s4,
-  },
-  usagePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.surface,
-    borderRadius: R.pill,
-    paddingHorizontal: S.s3,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: C.hairline,
-    gap: 5,
-  },
-  usagePillText: {
-    fontFamily: F.semiBold,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  // ── Hero — frei, kein Surface-Container (§04) ──
-  hero: {
-    borderTopWidth: 1,
-    borderTopColor: C.hairline,
-    paddingTop: S.s5,
-    paddingBottom: S.s6,
-    marginBottom: 0,
-  },
-  heroEyebrow: {
-    fontFamily:    F.semiBold,
-    fontSize:      10,
-    fontWeight:    '600',
-    color:         C.textMuted,
-    letterSpacing: 3,               // 0.3em of 10px
-    textTransform: 'uppercase',
-    marginBottom:  S.s3,
-  },
-  heroTitle: {
-    fontFamily:    F.xBold,
-    fontSize:      38,
-    fontWeight:    '800',
-    color:         C.text,
-    lineHeight:    40,
-    letterSpacing: -1.33,           // −.035em of 38px
-    marginBottom:  S.s3,
-  },
-  heroBody: {
-    fontFamily: F.regular,
-    fontSize:   14.5,
-    color:      C.textMuted,
-    lineHeight: 22,
-  },
-  // ── Upload — gestapelte Hairline-Reihen (§04 + Don'ts) ──
-  uploadList: {
-    borderTopWidth:    1,
-    borderTopColor:    C.hairline,
-    borderBottomWidth: 1,
-    borderBottomColor: C.hairline,
-    marginBottom:      S.s5,
-  },
-  uploadRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    paddingVertical: S.s4,
-    gap:            S.s3,
-    borderBottomWidth: 1,
-    borderBottomColor: C.line,
-  },
-  uploadIconCircle: {
-    width:           40,
-    height:          40,
-    borderRadius:    20,
-    borderWidth:     1,
-    borderColor:     C.hairline,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  uploadText: { flex: 1 },
-  uploadTitle: {
-    fontFamily: F.semiBold,
-    fontSize:   15,
-    fontWeight: '600',
-    color:      C.text,
-    marginBottom: 2,
-  },
-  uploadSub: {
-    fontFamily: F.regular,
-    fontSize:   12,
-    color:      C.textFaint,
-  },
-  // Leerer Outline-Radio (§04 Radio — ungefüllt = nicht ausgewählt)
-  radioOutline: {
-    width:        22,
-    height:       22,
-    borderRadius: 11,
-    borderWidth:  1.5,
-    borderColor:  C.hairline,
-  },
-  previewCard: {
-    backgroundColor: C.surface,
-    borderRadius: R.lg,
-    padding: S.s4,
-    marginBottom: S.s5,
-    borderWidth: 1,
-    borderColor: C.hairline,
-  },
-  previewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: S.s3,
-    gap: S.s2,
-  },
-  previewLabel: {
-    fontFamily: F.semiBold,
-    fontSize: 14,
-    fontWeight: '600',
-    color: C.success,
-  },
-  duration: {
-    fontFamily: F.regular,
-    fontSize: 12,
-    color: C.textFaint,
-    marginTop: S.s2,
-    textAlign: 'center',
-  },
-  upgradeCard: {
-    backgroundColor: C.surface,
-    borderRadius: R.md,
-    padding: S.s5,
-    marginBottom: S.s5,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: C.errorBg,
-  },
-  upgradeText: {
-    fontFamily: F.regular,
-    fontSize: 14,
-    color: C.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  cta: {
-    marginTop: S.s2,
-  },
-});
 
 export default HomeScreen;

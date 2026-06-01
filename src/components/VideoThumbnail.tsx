@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,17 +6,9 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-const COLORS = {
-  surface: '#0a0f1e',
-  surfaceElevated: '#111827',
-  primary: '#3B7FE8',
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.7)',
-  textMuted: 'rgba(255,255,255,0.35)',
-  border: '#1a2235',
-};
+import { Video as VideoIcon, X } from 'lucide-react-native';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors, F, R } from '../theme';
 
 interface VideoThumbnailProps {
   uri: string;
@@ -33,6 +25,72 @@ const formatDuration = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  container: {
+    position:     'relative',
+    borderRadius: R.sm,
+    overflow:     'hidden',
+  },
+  touchable: {
+    flex: 1,
+  },
+  thumbnail: {
+    width:      '100%',
+    height:     '100%',
+    resizeMode: 'cover',
+  },
+  placeholder: {
+    flex:            1,
+    backgroundColor: T.surface2,
+    alignItems:      'center',
+    justifyContent:  'center',
+    borderWidth:     1,
+    borderColor:     T.hairline,
+    borderRadius:    R.sm,
+  },
+  playOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems:      'center',
+    justifyContent:  'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  playButton: {
+    width:           36,
+    height:          36,
+    borderRadius:    18,
+    backgroundColor: T.accent,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+  durationBadge: {
+    position:          'absolute',
+    bottom:            6,
+    right:             6,
+    backgroundColor:   'rgba(0,0,0,0.7)',
+    borderRadius:      R.xs,
+    paddingHorizontal: 6,
+    paddingVertical:   2,
+  },
+  durationText: {
+    fontFamily: F.monoMd,
+    color:      '#FFFFFF',
+    fontSize:   10,
+    fontWeight: '600',
+  },
+  removeButton: {
+    position:        'absolute',
+    top:             -4,
+    right:           -4,
+    zIndex:          10,
+    backgroundColor: T.error,
+    borderRadius:    10,
+    width:           20,
+    height:          20,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+});
+
 const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
   uri,
   thumbnailUri,
@@ -41,11 +99,13 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
   onRemove,
   size = 'md',
 }) => {
+  const { T } = useTheme();
+  const styles = useMemo(() => createStyles(T), [T]);
   const [imageError, setImageError] = useState(false);
 
   const dimensions = {
-    sm: { width: 80, height: 60 },
-    md: { width: 160, height: 110 },
+    sm: { width: 80,     height: 60  },
+    md: { width: 160,    height: 110 },
     lg: { width: '100%' as any, height: 200 },
   };
 
@@ -67,7 +127,11 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
           />
         ) : (
           <View style={styles.placeholder}>
-            <Ionicons name="videocam" size={size === 'sm' ? 20 : 32} color={COLORS.primary} />
+            <VideoIcon
+              size={size === 'sm' ? 20 : 32}
+              color={T.textMuted}
+              strokeWidth={1.7}
+            />
           </View>
         )}
 
@@ -75,7 +139,8 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
         {onPress && (
           <View style={styles.playOverlay}>
             <View style={styles.playButton}>
-              <Ionicons name="play" size={16} color={COLORS.textPrimary} />
+              {/* Filled play triangle per spec §05 */}
+              <VideoIcon size={16} color={T.onAccent} strokeWidth={1.7} />
             </View>
           </View>
         )}
@@ -91,70 +156,11 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
       {/* Remove button */}
       {onRemove && (
         <TouchableOpacity style={styles.removeButton} onPress={onRemove} activeOpacity={0.8}>
-          <Ionicons name="close-circle" size={20} color={COLORS.textPrimary} />
+          <X size={12} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'relative',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  touchable: {
-    flex: 1,
-  },
-  thumbnail: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  placeholder: {
-    flex: 1,
-    backgroundColor: COLORS.surfaceElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-  },
-  playOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  playButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(59, 127, 232, 0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  durationBadge: {
-    position: 'absolute',
-    bottom: 6,
-    right: 6,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  durationText: {
-    color: COLORS.textPrimary,
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  removeButton: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    zIndex: 10,
-  },
-});
 
 export default VideoThumbnail;

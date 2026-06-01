@@ -251,7 +251,11 @@
     "coachingGoals": "Coaching-Ziele",
     "goalLabel": "Ziel",
     "focusLabel": "Schwerpunkt",
-    "editGoals": "Ziele bearbeiten"
+    "editGoals": "Ziele bearbeiten",
+    "appearance": "Darstellung",
+    "themeSystem": "System",
+    "themeDark": "Dunkel",
+    "themeLight": "Hell"
   },
   "paywall": {
     "title": "Premium werden",

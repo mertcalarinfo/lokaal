@@ -14,53 +14,58 @@ import SettingsScreen from '../screens/main/SettingsScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import PaywallScreen from '../screens/paywall/PaywallScreen';
 import { HomeStackParamList } from '../types';
-import { C, F, R, S } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { F } from '../theme';
 
-const Tab  = createBottomTabNavigator<MainTabParamList>();
+const Tab      = createBottomTabNavigator<MainTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const MainStack = createNativeStackNavigator<MainStackParamList>();
 
-const HomeStackNavigator: React.FC = () => (
-  <HomeStack.Navigator
-    screenOptions={{
-      headerShown: false,
-      contentStyle: { backgroundColor: C.bg },
-      animation: 'slide_from_right',
-    }}
-  >
-    <HomeStack.Screen name="Home"           component={HomeScreen} />
-    <HomeStack.Screen name="Onboarding"     component={OnboardingScreen} />
-    <HomeStack.Screen
-      name="AnalysisLoading"
-      component={AnalysisLoadingScreen}
-      options={{ gestureEnabled: false }}
-    />
-    <HomeStack.Screen name="Report"         component={ReportScreen} />
-  </HomeStack.Navigator>
-);
+const HomeStackNavigator: React.FC = () => {
+  const { T } = useTheme();
 
-// Tab navigator is a separate component so useSafeAreaInsets works as a hook.
+  return (
+    <HomeStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: T.bg },
+        animation: 'slide_from_right',
+      }}
+    >
+      <HomeStack.Screen name="Home"           component={HomeScreen} />
+      <HomeStack.Screen name="Onboarding"     component={OnboardingScreen} />
+      <HomeStack.Screen
+        name="AnalysisLoading"
+        component={AnalysisLoadingScreen}
+        options={{ gestureEnabled: false }}
+      />
+      <HomeStack.Screen name="Report"         component={ReportScreen} />
+    </HomeStack.Navigator>
+  );
+};
+
+// Tab navigator ist ein separates Component, damit useSafeAreaInsets als Hook funktioniert.
 const TabNavigator: React.FC = () => {
-  const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
+  const { t }    = useTranslation();
+  const insets   = useSafeAreaInsets();
+  const { T }    = useTheme();
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
 
-        // ── Tab Bar — exact spec from DESIGN_SYSTEM.html ──────────────────
+        // ── Tab Bar — exakt aus DESIGN_SYSTEM.html ──────────────────────────
         tabBarStyle: {
-          backgroundColor: C.bgDeep,
-          borderTopColor: C.line,
-          borderTopWidth: 1,
-          // Height: icon (22) + label + paddingTop (12) + paddingBottom (14) + system inset
-          height: 60 + insets.bottom,
-          paddingTop: 12,
-          paddingBottom: insets.bottom + 14,
+          backgroundColor: T.bgDeep,
+          borderTopColor:  T.line,
+          borderTopWidth:  1,
+          height:          60 + insets.bottom,
+          paddingTop:      12,
+          paddingBottom:   insets.bottom + 14,
         },
-        tabBarActiveTintColor:   C.accent,
-        tabBarInactiveTintColor: C.textFaint,
+        tabBarActiveTintColor:   T.accent,
+        tabBarInactiveTintColor: T.textFaint,
         tabBarLabelStyle: {
           fontSize:   10.5,
           fontWeight: '500',
@@ -68,16 +73,12 @@ const TabNavigator: React.FC = () => {
           marginTop:  4,
         },
 
-        // ── Icons — Lucide, stroke 1.7, round ────────────────────────────
-        tabBarIcon: ({ focused, color }) => {
+        // ── Icons — Lucide, stroke 1.7, round ──────────────────────────────
+        tabBarIcon: ({ color }) => {
           const s = 1.7;
-          if (route.name === 'HomeTab') {
-            return <Mic size={22} color={color} strokeWidth={s} />;
-          }
-          if (route.name === 'ProgressTab') {
-            return <TrendingUp size={22} color={color} strokeWidth={s} />;
-          }
-          return <Settings2 size={22} color={color} strokeWidth={s} />;
+          if (route.name === 'HomeTab')     return <Mic        size={22} color={color} strokeWidth={s} />;
+          if (route.name === 'ProgressTab') return <TrendingUp size={22} color={color} strokeWidth={s} />;
+          return                                   <Settings2  size={22} color={color} strokeWidth={s} />;
         },
       })}
     >
@@ -100,21 +101,33 @@ const TabNavigator: React.FC = () => {
   );
 };
 
-// Root stack — Paywall and EditGoals as root-level modals.
-const MainNavigator: React.FC = () => (
-  <MainStack.Navigator screenOptions={{ headerShown: false }}>
-    <MainStack.Screen name="Tabs"      component={TabNavigator} />
-    <MainStack.Screen
-      name="Paywall"
-      component={PaywallScreen}
-      options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-    />
-    <MainStack.Screen
-      name="EditGoals"
-      component={OnboardingScreen}
-      options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-    />
-  </MainStack.Navigator>
-);
+// Root-Stack — Paywall und EditGoals als Root-Level-Modals.
+const MainNavigator: React.FC = () => {
+  const { T } = useTheme();
+
+  return (
+    <MainStack.Navigator screenOptions={{ headerShown: false }}>
+      <MainStack.Screen name="Tabs"      component={TabNavigator} />
+      <MainStack.Screen
+        name="Paywall"
+        component={PaywallScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+          contentStyle: { backgroundColor: T.bg },
+        }}
+      />
+      <MainStack.Screen
+        name="EditGoals"
+        component={OnboardingScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+          contentStyle: { backgroundColor: T.bg },
+        }}
+      />
+    </MainStack.Navigator>
+  );
+};
 
 export default MainNavigator;

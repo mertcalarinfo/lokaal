@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Dimensions, RefreshControl,
@@ -15,23 +15,98 @@ import { LineChart } from 'react-native-chart-kit';
 
 import { AnalysisReport, HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getUserReports } from '../../services/storage';
 import ScoreRing from '../../components/ScoreRing';
 import Button from '../../components/Button';
-import { C, F, R, S } from '../../theme';
+import { ThemeColors, F, R, S } from '../../theme';
 
 type ProgressNav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 const { width: SW } = Dimensions.get('window');
 
-const ProgressScreen: React.FC = () => {
-  const { t }          = useTranslation();
-  const navigation     = useNavigation<ProgressNav>();
-  const { user }       = useAuth();
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe:        { flex: 1, backgroundColor: T.bg },
+  loadingBox:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { fontFamily: F.regular, fontSize: 15, color: T.textFaint },
+  scroll:      { flexGrow: 1, paddingHorizontal: S.screen, paddingTop: S.s4, paddingBottom: S.s6 },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: S.s5 },
+  headerTitle: { fontFamily: F.xBold, fontSize: 34, fontWeight: '800', color: T.text, letterSpacing: -1.02 },
+  compareBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: T.surface, borderRadius: R.pill,
+    paddingHorizontal: S.s3, paddingVertical: 7,
+    borderWidth: 1, borderColor: T.hairline,
+  },
+  compareBtnText: { fontFamily: F.semiBold, fontSize: 12, color: T.textMuted },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
+  emptyIcon: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: T.surface, alignItems: 'center', justifyContent: 'center',
+    marginBottom: S.s5, borderWidth: 1, borderColor: T.hairline,
+  },
+  emptyTitle: { fontFamily: F.bold, fontSize: 20, fontWeight: '700', color: T.text, marginBottom: S.s2, textAlign: 'center' },
+  emptySub:   { fontFamily: F.regular, fontSize: 14.5, color: T.textMuted, textAlign: 'center', lineHeight: 22, paddingHorizontal: S.s5 },
+  chartCard: {
+    backgroundColor: T.surface, borderRadius: R.lg,
+    padding: S.s4, marginBottom: S.s5,
+    borderWidth: 1, borderColor: T.hairline,
+  },
+  chartLabel:  { fontFamily: F.semiBold, fontSize: 10, fontWeight: '600', color: T.textMuted, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: S.s3 },
+  listSection: { marginBottom: S.s4 },
+  listLabel:   { fontFamily: F.monoMd, fontSize: 11, color: T.textFaint, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: S.s3 },
+  reportCard: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: T.surface, borderRadius: R.md,
+    padding: S.s4, marginBottom: S.s2,
+    borderWidth: 1, borderColor: T.line,
+    gap: S.s4,
+  },
+  cardContent: { flex: 1 },
+  cardDate:    { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.text, marginBottom: 2 },
+  cardPurpose: { fontFamily: F.regular,  fontSize: 12, color: T.textFaint, marginBottom: 8 },
+  miniChip: {
+    width: 26, height: 26, borderRadius: R.xs,
+    backgroundColor: T.surface2, alignItems: 'center', justifyContent: 'center', marginRight: 5,
+    borderWidth: 1, borderColor: T.line,
+  },
+  miniChipVal: { fontFamily: F.monoMd, fontSize: 11, color: T.textMuted },
+  modal:       { flex: 1, backgroundColor: T.bg, paddingHorizontal: S.screen, paddingTop: S.s6 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: S.s5 },
+  modalTitle:  { fontFamily: F.bold, fontSize: 20, fontWeight: '700', color: T.text },
+  selectHint:  { fontFamily: F.regular, fontSize: 14, color: T.textMuted, marginBottom: S.s4 },
+  compareListItem: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: T.surface, borderRadius: R.md,
+    padding: S.s4, marginBottom: S.s2,
+    borderWidth: 1.5, borderColor: T.hairline, gap: S.s3,
+  },
+  compareListItemSel:  { borderColor: T.accent },
+  compareListContent:  { flex: 1 },
+  compareListDate:     { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.text, marginBottom: 2 },
+  compareListPurpose:  { fontFamily: F.regular,  fontSize: 12, color: T.textFaint },
+  compareHead:         { flexDirection: 'row', marginBottom: 4, paddingBottom: S.s3, borderBottomWidth: 1, borderBottomColor: T.line },
+  compareHeadCell:     { flex: 1, alignItems: 'center' },
+  compareHeadDate:     { fontFamily: F.regular,  fontSize: 12, color: T.textMuted, marginBottom: 3, textAlign: 'center' },
+  compareHeadScore:    { fontFamily: F.bold,     fontSize: 16, fontWeight: '700', color: T.accent },
+  compareRow:          { flexDirection: 'row', paddingVertical: 10, alignItems: 'center', borderRadius: R.xs },
+  compareCell:         { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
+  compareCellLabel:    { fontFamily: F.regular, fontSize: 12, color: T.textMuted, textAlign: 'center', lineHeight: 16 },
+  compareCellScore:    { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.text },
+  compareDiff:         { fontFamily: F.bold, fontSize: 11, fontWeight: '700', marginTop: 2 },
+  modalFooter:         { paddingVertical: S.s5 },
+});
 
-  const [reports,           setReports]          = useState<AnalysisReport[]>([]);
-  const [loading,           setLoading]           = useState(true);
-  const [refreshing,        setRefreshing]         = useState(false);
-  const [showCompare,       setShowCompare]        = useState(false);
+const ProgressScreen: React.FC = () => {
+  const { t }      = useTranslation();
+  const navigation = useNavigation<ProgressNav>();
+  const { user }   = useAuth();
+  const { T }      = useTheme();
+  const styles     = useMemo(() => createStyles(T), [T]);
+
+  const [reports,            setReports]            = useState<AnalysisReport[]>([]);
+  const [loading,            setLoading]            = useState(true);
+  const [refreshing,         setRefreshing]         = useState(false);
+  const [showCompare,        setShowCompare]        = useState(false);
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
 
   const fetchReports = useCallback(async () => {
@@ -49,18 +124,9 @@ const ProgressScreen: React.FC = () => {
 
   useFocusEffect(useCallback(() => { fetchReports(); }, [fetchReports]));
 
-  const fmtShort = (d: Date | string) => {
-    const date = d instanceof Date ? d : new Date(d);
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  };
-  const fmtFull = (d: Date | string) => {
-    const date = d instanceof Date ? d : new Date(d);
-    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  };
-  const fmtDateTime = (d: Date | string) => {
-    const date = d instanceof Date ? d : new Date(d);
-    return `${fmtFull(d)} · ${date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
-  };
+  const fmtShort    = (d: Date | string) => { const date = d instanceof Date ? d : new Date(d); return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
+  const fmtFull     = (d: Date | string) => { const date = d instanceof Date ? d : new Date(d); return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); };
+  const fmtDateTime = (d: Date | string) => { const date = d instanceof Date ? d : new Date(d); return `${fmtFull(d)} · ${date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`; };
 
   // Chart — last 3 months, max 10 points
   const threeMonthsAgo = new Date();
@@ -102,7 +168,7 @@ const ProgressScreen: React.FC = () => {
           const sB = b.categories[i]?.score ?? 0;
           const d  = sB - sA;
           return (
-            <View key={cat.name} style={[styles.compareRow, i % 2 === 0 && { backgroundColor: 'rgba(255,255,255,.02)' }]}>
+            <View key={cat.name} style={[styles.compareRow, i % 2 === 0 && { backgroundColor: T.surfaceAlt }]}>
               <View style={styles.compareCell}>
                 <Text style={styles.compareCellLabel} numberOfLines={2}>
                   {t(`report.categoryNames.${cat.name}`, { defaultValue: cat.name })}
@@ -112,7 +178,7 @@ const ProgressScreen: React.FC = () => {
               <View style={styles.compareCell}>
                 <Text style={styles.compareCellScore}>{sB}/10</Text>
                 {d !== 0 && (
-                  <Text style={[styles.compareDiff, { color: d > 0 ? C.success : C.error }]}>
+                  <Text style={[styles.compareDiff, { color: d > 0 ? T.success : T.error }]}>
                     {d > 0 ? `+${d}` : `${d}`}
                   </Text>
                 )}
@@ -139,7 +205,13 @@ const ProgressScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchReports(); }} tintColor={C.accent} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); fetchReports(); }}
+            tintColor={T.accent}
+          />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -149,7 +221,7 @@ const ProgressScreen: React.FC = () => {
               style={styles.compareBtn}
               onPress={() => { setSelectedForCompare([]); setShowCompare(true); }}
             >
-              <GitCompare size={16} color={C.textMuted} strokeWidth={1.7} />
+              <GitCompare size={16} color={T.textMuted} strokeWidth={1.7} />
               <Text style={styles.compareBtnText}>{t('progress.compareButton')}</Text>
             </TouchableOpacity>
           )}
@@ -158,7 +230,7 @@ const ProgressScreen: React.FC = () => {
         {reports.length === 0 ? (
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
-              <TrendingUp size={36} color={C.textFaint} strokeWidth={1.7} />
+              <TrendingUp size={36} color={T.textFaint} strokeWidth={1.7} />
             </View>
             <Text style={styles.emptyTitle}>{t('progress.noData')}</Text>
             <Text style={styles.emptySub}>{t('progress.noDataSub')}</Text>
@@ -177,7 +249,7 @@ const ProgressScreen: React.FC = () => {
                 <LineChart
                   data={{
                     labels: chartLabels,
-                    datasets: [{ data: chartData, color: () => C.accent, strokeWidth: 2 }],
+                    datasets: [{ data: chartData, color: () => T.accent, strokeWidth: 2 }],
                   }}
                   width={SW - S.screen * 2 - S.s4 * 2}
                   height={160}
@@ -186,14 +258,14 @@ const ProgressScreen: React.FC = () => {
                   fromZero
                   formatYLabel={(y) => String(Math.round(Number(y)))}
                   chartConfig={{
-                    backgroundColor:       C.surface,
-                    backgroundGradientFrom: C.surface,
-                    backgroundGradientTo:   C.surface,
+                    backgroundColor:        T.surface,
+                    backgroundGradientFrom: T.surface,
+                    backgroundGradientTo:   T.surface,
                     decimalPlaces:          0,
-                    color:        (o = 1) => `rgba(226,211,176,${o})`,
-                    labelColor:   ()      => C.textFaint,
-                    propsForDots: { r: '4', strokeWidth: '2', stroke: C.accentDim },
-                    propsForBackgroundLines: { strokeDasharray: '', stroke: C.line },
+                    color:        (o = 1) => `rgba(${T.accentRgb},${o})`,
+                    labelColor:   ()      => T.textFaint,
+                    propsForDots: { r: '4', strokeWidth: '2', stroke: T.accentDim },
+                    propsForBackgroundLines: { strokeDasharray: '', stroke: T.line },
                   }}
                   bezier
                   style={{ borderRadius: R.sm, marginLeft: -8 }}
@@ -227,7 +299,7 @@ const ProgressScreen: React.FC = () => {
                       ))}
                     </ScrollView>
                   </View>
-                  <ChevronRight size={16} color={C.textFaint} strokeWidth={1.7} />
+                  <ChevronRight size={16} color={T.textFaint} strokeWidth={1.7} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -236,12 +308,17 @@ const ProgressScreen: React.FC = () => {
       </ScrollView>
 
       {/* Compare Modal */}
-      <Modal visible={showCompare} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowCompare(false)}>
+      <Modal
+        visible={showCompare}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCompare(false)}
+      >
         <View style={styles.modal}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t('progress.compareTitle')}</Text>
             <TouchableOpacity onPress={() => setShowCompare(false)}>
-              <X size={22} color={C.textMuted} strokeWidth={1.7} />
+              <X size={22} color={T.textMuted} strokeWidth={1.7} />
             </TouchableOpacity>
           </View>
           {selectedForCompare.length < 2 ? (
@@ -263,7 +340,7 @@ const ProgressScreen: React.FC = () => {
                         <Text style={styles.compareListDate}>{fmtFull(item.createdAt)}</Text>
                         <Text style={styles.compareListPurpose}>{getPurposeLabel(item.onboardingAnswers.purpose)}</Text>
                       </View>
-                      {sel && <CheckCircle2 size={20} color={C.accent} strokeWidth={1.7} />}
+                      {sel && <CheckCircle2 size={20} color={T.accent} strokeWidth={1.7} />}
                     </TouchableOpacity>
                   );
                 }}
@@ -280,77 +357,5 @@ const ProgressScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bg },
-  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { fontFamily: F.regular, fontSize: 15, color: C.textFaint },
-  scroll: { flexGrow: 1, paddingHorizontal: S.screen, paddingTop: S.s4, paddingBottom: S.s6 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: S.s5 },
-  headerTitle: { fontFamily: F.xBold, fontSize: 34, fontWeight: '800', color: C.text, letterSpacing: -1.02 },
-  compareBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: C.surface, borderRadius: R.pill,
-    paddingHorizontal: S.s3, paddingVertical: 7,
-    borderWidth: 1, borderColor: C.hairline,
-  },
-  compareBtnText: { fontFamily: F.semiBold, fontSize: 12, color: C.textMuted },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
-  emptyIcon: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center',
-    marginBottom: S.s5, borderWidth: 1, borderColor: C.hairline,
-  },
-  emptyTitle: { fontFamily: F.bold, fontSize: 20, fontWeight: '700', color: C.text, marginBottom: S.s2, textAlign: 'center' },
-  emptySub:   { fontFamily: F.regular, fontSize: 14.5, color: C.textMuted, textAlign: 'center', lineHeight: 22, paddingHorizontal: S.s5 },
-  chartCard: {
-    backgroundColor: C.surface, borderRadius: R.lg,
-    padding: S.s4, marginBottom: S.s5,
-    borderWidth: 1, borderColor: C.hairline,
-  },
-  chartLabel: { fontFamily: F.semiBold, fontSize: 10, fontWeight: '600', color: C.textMuted, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: S.s3 },
-  listSection: { marginBottom: S.s4 },
-  listLabel:   { fontFamily: F.monoMd, fontSize: 11, color: C.textFaint, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: S.s3 },
-  reportCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.surface, borderRadius: R.md,
-    padding: S.s4, marginBottom: S.s2,
-    borderWidth: 1, borderColor: C.line,
-    gap: S.s4,
-  },
-  cardContent: { flex: 1 },
-  cardDate:    { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: C.text, marginBottom: 2 },
-  cardPurpose: { fontFamily: F.regular,  fontSize: 12, color: C.textFaint, marginBottom: 8 },
-  miniChip: {
-    width: 26, height: 26, borderRadius: R.xs,
-    backgroundColor: C.surface2, alignItems: 'center', justifyContent: 'center', marginRight: 5,
-    borderWidth: 1, borderColor: C.line,
-  },
-  miniChipVal: { fontFamily: F.monoMd, fontSize: 11, color: C.textMuted },
-  modal:        { flex: 1, backgroundColor: C.bg, paddingHorizontal: S.screen, paddingTop: S.s6 },
-  modalHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: S.s5 },
-  modalTitle:   { fontFamily: F.bold, fontSize: 20, fontWeight: '700', color: C.text },
-  selectHint:   { fontFamily: F.regular, fontSize: 14, color: C.textMuted, marginBottom: S.s4 },
-  compareListItem: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.surface, borderRadius: R.md,
-    padding: S.s4, marginBottom: S.s2,
-    borderWidth: 1.5, borderColor: C.hairline, gap: S.s3,
-  },
-  compareListItemSel: { borderColor: C.accent },
-  compareListContent: { flex: 1 },
-  compareListDate:    { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: C.text, marginBottom: 2 },
-  compareListPurpose: { fontFamily: F.regular,  fontSize: 12, color: C.textFaint },
-  compareHead:        { flexDirection: 'row', marginBottom: 4, paddingBottom: S.s3, borderBottomWidth: 1, borderBottomColor: C.line },
-  compareHeadCell:    { flex: 1, alignItems: 'center' },
-  compareHeadDate:    { fontFamily: F.regular,  fontSize: 12, color: C.textMuted, marginBottom: 3, textAlign: 'center' },
-  compareHeadScore:   { fontFamily: F.bold,     fontSize: 16, fontWeight: '700', color: C.accent },
-  compareRow:         { flexDirection: 'row', paddingVertical: 10, alignItems: 'center', borderRadius: R.xs },
-  compareCell:        { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
-  compareCellLabel:   { fontFamily: F.regular, fontSize: 12, color: C.textMuted, textAlign: 'center', lineHeight: 16 },
-  compareCellScore:   { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: C.text },
-  compareDiff:        { fontFamily: F.bold, fontSize: 11, fontWeight: '700', marginTop: 2 },
-  modalFooter:        { paddingVertical: S.s5 },
-});
 
 export default ProgressScreen;

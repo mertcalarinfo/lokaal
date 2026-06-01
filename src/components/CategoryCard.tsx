@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,8 @@ import { ChevronDown, ChevronUp, Zap } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { CategoryResult } from '../types';
 import RichText from './RichText';
-import { C, F, S } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors, F, S } from '../theme';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -23,7 +24,106 @@ interface CategoryCardProps {
   index: number;
 }
 
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  card: {
+    borderBottomWidth: 1,
+    borderBottomColor: T.line,
+  },
+  header: {
+    flexDirection:    'row',
+    alignItems:       'baseline',
+    gap:              12,
+    paddingVertical:  15,
+    paddingHorizontal: 2,
+  },
+  index: {
+    fontFamily: F.monoMd,
+    fontSize:   11,
+    color:      T.textFaint,
+    width:      20,
+  },
+  name: {
+    fontFamily: F.semiBold,
+    fontSize:   15,
+    fontWeight: '600',
+    color:      T.text,
+    flex:       1,
+  },
+  score: {
+    fontFamily:    F.xBold,
+    fontSize:      18,
+    fontWeight:    '800',
+    color:         T.accent,
+    letterSpacing: -0.36,
+  },
+  outOf: {
+    fontFamily: F.regular,
+    fontSize:   11,
+    fontWeight: '400',
+    color:      T.textMuted,
+  },
+  chev: {
+    marginLeft: 4,
+  },
+  barTrack: {
+    height:           2,
+    backgroundColor:  T.line,
+    marginHorizontal: 2,
+  },
+  barFill: {
+    height:          4,
+    marginTop:       -1,
+    backgroundColor: T.accent,
+    borderRadius:    2,
+  },
+  expanded: {
+    paddingHorizontal: 2,
+    paddingTop:        12,
+    paddingBottom:     16,
+  },
+  block: {
+    marginBottom: 14,
+  },
+  blockLabel: {
+    fontFamily:    F.semiBold,
+    fontSize:      10,
+    fontWeight:    '600',
+    color:         T.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom:  10,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    marginBottom:  8,
+    alignItems:    'flex-start',
+  },
+  bullet: {
+    width:           5,
+    height:          5,
+    borderRadius:    3,
+    backgroundColor: T.textFaint,
+    marginTop:       5,
+    marginRight:     10,
+    flexShrink:      0,
+  },
+  zapIcon: {
+    marginTop:   2,
+    marginRight: 8,
+    flexShrink:  0,
+  },
+  bulletText: {
+    flex:       1,
+    fontFamily: F.regular,
+    fontSize:   13,
+    color:      T.textMuted,
+    lineHeight: 20,
+  },
+});
+
 const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
+  const { T } = useTheme();
+  const styles = useMemo(() => createStyles(T), [T]);
   const [expanded, setExpanded] = useState(false);
   const { t } = useTranslation();
 
@@ -48,8 +148,8 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
           <Text style={styles.outOf}>/10</Text>
         </Text>
         {expanded
-          ? <ChevronUp   size={16} color={C.textFaint} strokeWidth={1.7} style={styles.chev} />
-          : <ChevronDown size={16} color={C.textFaint} strokeWidth={1.7} style={styles.chev} />
+          ? <ChevronUp   size={16} color={T.textFaint} strokeWidth={1.7} style={styles.chev} />
+          : <ChevronDown size={16} color={T.textFaint} strokeWidth={1.7} style={styles.chev} />
         }
       </TouchableOpacity>
 
@@ -76,7 +176,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
               <Text style={styles.blockLabel}>{t('report.tips')}</Text>
               {category.tips.map((tip, i) => (
                 <View key={i} style={styles.bulletRow}>
-                  <Zap size={13} color={C.accent} strokeWidth={1.7} style={styles.zapIcon} />
+                  <Zap size={13} color={T.accent} strokeWidth={1.7} style={styles.zapIcon} />
                   <RichText text={tip} style={styles.bulletText} />
                 </View>
               ))}
@@ -87,102 +187,5 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderBottomWidth: 1,
-    borderBottomColor: C.line,
-  },
-  header: {
-    flexDirection:  'row',
-    alignItems:     'baseline',
-    gap:            12,
-    paddingVertical: 15,
-    paddingHorizontal: 2,
-  },
-  index: {
-    fontFamily: F.monoMd,
-    fontSize:   11,
-    color:      C.textFaint,
-    width:      20,
-  },
-  name: {
-    fontFamily: F.semiBold,
-    fontSize:   15,
-    fontWeight: '600',
-    color:      C.text,
-    flex:       1,
-  },
-  score: {
-    fontFamily:    F.xBold,
-    fontSize:      18,
-    fontWeight:    '800',
-    color:         C.accent,
-    letterSpacing: -0.36,
-  },
-  outOf: {
-    fontFamily: F.regular,
-    fontSize:   11,
-    fontWeight: '400',
-    color:      C.textMuted,
-  },
-  chev: {
-    marginLeft: 4,
-  },
-  barTrack: {
-    height:          2,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    marginHorizontal: 2,
-  },
-  barFill: {
-    height:          4,
-    marginTop:       -1,
-    backgroundColor: C.accent,
-    borderRadius:    2,
-  },
-  expanded: {
-    paddingHorizontal: 2,
-    paddingTop:        12,
-    paddingBottom:     16,
-  },
-  block: {
-    marginBottom: 14,
-  },
-  blockLabel: {
-    fontFamily:    F.semiBold,
-    fontSize:      10,
-    fontWeight:    '600',
-    color:         C.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom:  10,
-  },
-  bulletRow: {
-    flexDirection: 'row',
-    marginBottom:  8,
-    alignItems:    'flex-start',
-  },
-  bullet: {
-    width:        5,
-    height:       5,
-    borderRadius: 3,
-    backgroundColor: C.textFaint,
-    marginTop:    5,
-    marginRight:  10,
-    flexShrink:   0,
-  },
-  zapIcon: {
-    marginTop:  2,
-    marginRight: 8,
-    flexShrink:  0,
-  },
-  bulletText: {
-    flex:       1,
-    fontFamily: F.regular,
-    fontSize:   13,
-    color:      C.textMuted,
-    lineHeight: 20,
-  },
-});
 
 export default CategoryCard;

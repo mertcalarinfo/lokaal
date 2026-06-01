@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -8,20 +8,147 @@ import { Upload, Sparkles } from 'lucide-react-native';
 
 import { HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import Button from '../../components/Button';
-import { C, F, R, S } from '../../theme';
+import { ThemeColors, F, R, S } from '../../theme';
 
 type LoadingRoute = RouteProp<HomeStackParamList, 'AnalysisLoading'>;
 type LoadingNav   = NativeStackNavigationProp<HomeStackParamList, 'AnalysisLoading'>;
 
 const TIP_INTERVAL_MS = 4000;
 
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: T.bg,
+  },
+  container: {
+    flex:              1,
+    paddingHorizontal: S.s8,
+    justifyContent:    'center',
+    alignItems:        'center',
+    paddingVertical:   S.s10,
+  },
+  logoSection: {
+    alignItems:   'center',
+    marginBottom: S.s6,
+  },
+  logoImg: {
+    width:        56,
+    height:       56,
+    marginBottom: S.s3,
+  },
+  wordmark: {
+    fontFamily:    F.xBold,
+    fontSize:      16,
+    fontWeight:    '800',
+    color:         T.text,
+    letterSpacing: 5,
+  },
+  titleSection: {
+    alignItems:   'center',
+    marginBottom: S.s6,
+  },
+  title: {
+    fontFamily:    F.bold,
+    fontSize:      20,
+    fontWeight:    '700',
+    color:         T.text,
+    marginBottom:  S.s2,
+    textAlign:     'center',
+    letterSpacing: -0.4,
+  },
+  subtitle: {
+    fontFamily: F.regular,
+    fontSize:   14.5,
+    color:      T.textMuted,
+    textAlign:  'center',
+    lineHeight: 21,
+  },
+  barSection: {
+    width:        '100%',
+    marginBottom: S.s8,
+  },
+  barTrack: {
+    height:          2,
+    backgroundColor: T.line,
+    borderRadius:    2,
+    overflow:        'hidden',
+    marginBottom:    S.s2,
+  },
+  barFill: {
+    height:          4,
+    marginTop:       -1,
+    backgroundColor: T.accent,
+    borderRadius:    2,
+  },
+  barLabels: {
+    flexDirection:  'row',
+    justifyContent: 'space-between',
+  },
+  barPct: {
+    fontFamily: F.semiBold,
+    fontSize:   13,
+    fontWeight: '600',
+    color:      T.accent,
+  },
+  barEta: {
+    fontFamily: F.regular,
+    fontSize:   12,
+    color:      T.textFaint,
+  },
+  tipCard: {
+    flexDirection:   'row',
+    alignItems:      'center',
+    backgroundColor: T.surface,
+    borderRadius:    R.md,
+    padding:         S.s4,
+    marginBottom:    S.s6,
+    width:           '100%',
+    borderWidth:     1,
+    borderColor:     T.hairline,
+    minHeight:       52,
+  },
+  tipDot: {
+    width:           6,
+    height:          6,
+    borderRadius:    3,
+    backgroundColor: T.accent,
+    marginRight:     S.s3,
+    flexShrink:      0,
+  },
+  tipText: {
+    flex:       1,
+    fontFamily: F.regular,
+    fontSize:   14,
+    color:      T.textMuted,
+    lineHeight: 20,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           6,
+    minHeight:     24,
+    marginBottom:  S.s4,
+  },
+  statusText: {
+    fontFamily: F.regular,
+    fontSize:   12,
+    color:      T.textFaint,
+  },
+  cancelBtn: {
+    marginTop: S.s4,
+  },
+});
+
 const AnalysisLoadingScreen: React.FC = () => {
-  const { t }          = useTranslation();
-  const navigation     = useNavigation<LoadingNav>();
-  const route          = useRoute<LoadingRoute>();
-  const { user }       = useAuth();
+  const { t }      = useTranslation();
+  const navigation = useNavigation<LoadingNav>();
+  const route      = useRoute<LoadingRoute>();
+  const { user }   = useAuth();
+  const { T }      = useTheme();
+  const styles     = useMemo(() => createStyles(T), [T]);
   const { videoUri, answers } = route.params;
 
   const {
@@ -29,8 +156,8 @@ const AnalysisLoadingScreen: React.FC = () => {
     report, error, rawError, startAnalysis, cancel,
   } = useAnalysis();
 
-  const [tipIndex,    setTipIndex]    = useState(0);
-  const [displayPct,  setDisplayPct]  = useState(0);
+  const [tipIndex,   setTipIndex]   = useState(0);
+  const [displayPct, setDisplayPct] = useState(0);
   const pulseAnim  = useRef(new Animated.Value(1)).current;
   const hasStarted = useRef(false);
 
@@ -90,7 +217,7 @@ const AnalysisLoadingScreen: React.FC = () => {
   // Error alert
   useEffect(() => {
     if (state === 'error' && error) {
-      const msg = t(`analysis.errors.${error}`, { defaultValue: t('analysis.errors.generic') });
+      const msg  = t(`analysis.errors.${error}`, { defaultValue: t('analysis.errors.generic') });
       const full = rawError ? `${msg}\n\n— Debug —\n${rawError}` : msg;
       Alert.alert(t('common.error'), full, [{ text: t('common.ok'), onPress: () => navigation.goBack() }]);
     }
@@ -144,13 +271,13 @@ const AnalysisLoadingScreen: React.FC = () => {
         <View style={styles.statusRow}>
           {state === 'uploading' && (
             <>
-              <Upload size={14} color={C.textFaint} strokeWidth={1.7} />
+              <Upload size={14} color={T.textFaint} strokeWidth={1.7} />
               <Text style={styles.statusText}>Uploading… {uploadProgress}%</Text>
             </>
           )}
           {state === 'analyzing' && (
             <>
-              <Sparkles size={14} color={C.accent} strokeWidth={1.7} />
+              <Sparkles size={14} color={T.accent} strokeWidth={1.7} />
               <Text style={styles.statusText}>AI analysiert…</Text>
             </>
           )}
@@ -169,129 +296,5 @@ const AnalysisLoadingScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: C.bg,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: S.s8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: S.s10,
-  },
-  logoSection: {
-    alignItems: 'center',
-    marginBottom: S.s6,
-  },
-  logoImg: {
-    width: 56,
-    height: 56,
-    marginBottom: S.s3,
-  },
-  wordmark: {
-    fontFamily:    F.xBold,
-    fontSize:      16,
-    fontWeight:    '800',
-    color:         C.text,
-    letterSpacing: 5,
-  },
-  titleSection: {
-    alignItems: 'center',
-    marginBottom: S.s6,
-  },
-  title: {
-    fontFamily:  F.bold,
-    fontSize:    20,
-    fontWeight:  '700',
-    color:       C.text,
-    marginBottom: S.s2,
-    textAlign:   'center',
-    letterSpacing: -0.4,
-  },
-  subtitle: {
-    fontFamily: F.regular,
-    fontSize:   14.5,
-    color:      C.textMuted,
-    textAlign:  'center',
-    lineHeight: 21,
-  },
-  barSection: {
-    width: '100%',
-    marginBottom: S.s8,
-  },
-  barTrack: {
-    height:          2,
-    backgroundColor: C.line,
-    borderRadius:    2,
-    overflow:        'hidden',
-    marginBottom:    S.s2,
-  },
-  barFill: {
-    height:          4,
-    marginTop:       -1,
-    backgroundColor: C.accent,
-    borderRadius:    2,
-  },
-  barLabels: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-  },
-  barPct: {
-    fontFamily: F.semiBold,
-    fontSize:   13,
-    fontWeight: '600',
-    color:      C.accent,
-  },
-  barEta: {
-    fontFamily: F.regular,
-    fontSize:   12,
-    color:      C.textFaint,
-  },
-  tipCard: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    backgroundColor: C.surface,
-    borderRadius:  R.md,
-    padding:       S.s4,
-    marginBottom:  S.s6,
-    width:         '100%',
-    borderWidth:   1,
-    borderColor:   C.hairline,
-    minHeight:     52,
-  },
-  tipDot: {
-    width:        6,
-    height:       6,
-    borderRadius: 3,
-    backgroundColor: C.accent,
-    marginRight:  S.s3,
-    flexShrink:   0,
-  },
-  tipText: {
-    flex:       1,
-    fontFamily: F.regular,
-    fontSize:   14,
-    color:      C.textMuted,
-    lineHeight: 20,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           6,
-    minHeight:     24,
-    marginBottom:  S.s4,
-  },
-  statusText: {
-    fontFamily: F.regular,
-    fontSize:   12,
-    color:      C.textFaint,
-  },
-  cancelBtn: {
-    marginTop: S.s4,
-  },
-});
 
 export default AnalysisLoadingScreen;

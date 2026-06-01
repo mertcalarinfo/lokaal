@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { C, F } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors, F } from '../theme';
 
-// Design system rule: score color is ALWAYS --accent (#E2D3B0).
+// Design system rule: score color is ALWAYS --accent (Sand / Bronze per Theme).
 // No colour-coding per value (no red/green). No gradient.
 
 interface ScoreRingProps {
@@ -15,6 +16,30 @@ interface ScoreRingProps {
   animate?: boolean;
 }
 
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  container: {
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  labelContainer: {
+    position:       'absolute',
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  scoreText: {
+    fontFamily:    F.xBold,
+    fontWeight:    '800',
+    letterSpacing: -1,
+    color:         T.accent,
+  },
+  subText: {
+    fontFamily: F.regular,
+    fontWeight: '400',
+    color:      T.textMuted,
+    marginTop:  2,
+  },
+});
+
 const ScoreRing: React.FC<ScoreRingProps> = ({
   score,
   size        = 120,
@@ -23,6 +48,9 @@ const ScoreRing: React.FC<ScoreRingProps> = ({
   labelText,
   animate     = true,
 }) => {
+  const { T } = useTheme();
+  const styles = useMemo(() => createStyles(T), [T]);
+
   const animatedValue = useRef(new Animated.Value(0)).current;
   const radius        = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -52,7 +80,7 @@ const ScoreRing: React.FC<ScoreRingProps> = ({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={C.hairline}
+          stroke={T.hairline}
           strokeWidth={strokeWidth}
         />
         {/* Fill — always --accent */}
@@ -61,7 +89,7 @@ const ScoreRing: React.FC<ScoreRingProps> = ({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={C.accent}
+          stroke={T.accent}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={staticOffset}
@@ -87,29 +115,5 @@ const ScoreRing: React.FC<ScoreRingProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  labelContainer: {
-    position:        'absolute',
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  scoreText: {
-    fontFamily:    F.xBold,
-    fontWeight:    '800',
-    letterSpacing: -1,
-    color:         C.accent,
-  },
-  subText: {
-    fontFamily: F.regular,
-    fontWeight: '400',
-    color:      C.textMuted,
-    marginTop:  2,
-  },
-});
 
 export default ScoreRing;

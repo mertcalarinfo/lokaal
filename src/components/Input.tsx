@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
-import { C, F, R } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors, F, R } from '../theme';
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -19,6 +20,54 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   onRightIconPress?: () => void;
 }
 
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  container: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize:      10,
+    fontWeight:    '600',
+    fontFamily:    F.semiBold,
+    color:         T.textMuted,
+    letterSpacing: 2,           // 0.2em of 10px
+    textTransform: 'uppercase',
+    marginBottom:  8,
+  },
+  inputWrapper: {
+    flexDirection:    'row',
+    alignItems:       'center',
+    backgroundColor:  T.surface,
+    borderWidth:      1,
+    borderColor:      T.hairline,
+    borderRadius:     R.md,
+    paddingHorizontal: 16,
+  },
+  inputWrapperFocused: {
+    borderColor: T.accent,
+  },
+  inputWrapperError: {
+    borderColor: T.error,
+  },
+  input: {
+    flex:           1,
+    paddingVertical: 15,
+    fontSize:       15,
+    fontFamily:     F.regular,
+    color:          T.text,
+  },
+  iconButton: {
+    padding:    4,
+    marginLeft: 8,
+  },
+  errorText: {
+    fontSize:   12,
+    fontFamily: F.regular,
+    color:      T.error,
+    marginTop:  6,
+    marginLeft: 4,
+  },
+});
+
 const Input: React.FC<InputProps> = ({
   label,
   error,
@@ -27,6 +76,8 @@ const Input: React.FC<InputProps> = ({
   onRightIconPress,
   ...textInputProps
 }) => {
+  const { T } = useTheme();
+  const styles = useMemo(() => createStyles(T), [T]);
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused]       = useState(false);
 
@@ -43,7 +94,7 @@ const Input: React.FC<InputProps> = ({
         <TextInput
           {...textInputProps}
           style={styles.input}
-          placeholderTextColor={C.textFaint}
+          placeholderTextColor={T.textFaint}
           secureTextEntry={isPassword && !showPassword}
           onFocus={(e) => { setIsFocused(true);  textInputProps.onFocus?.(e); }}
           onBlur={(e)  => { setIsFocused(false); textInputProps.onBlur?.(e);  }}
@@ -55,8 +106,8 @@ const Input: React.FC<InputProps> = ({
             activeOpacity={0.7}
           >
             {showPassword
-              ? <EyeOff size={20} color={C.textMuted} strokeWidth={1.7} />
-              : <Eye    size={20} color={C.textMuted} strokeWidth={1.7} />
+              ? <EyeOff size={20} color={T.textMuted} strokeWidth={1.7} />
+              : <Eye    size={20} color={T.textMuted} strokeWidth={1.7} />
             }
           </TouchableOpacity>
         )}
@@ -65,53 +116,5 @@ const Input: React.FC<InputProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize:      10,
-    fontWeight:    '600',
-    fontFamily:    F.semiBold,
-    color:         C.textMuted,
-    letterSpacing: 2,           // 0.2em of 10px
-    textTransform: 'uppercase',
-    marginBottom:  8,
-  },
-  inputWrapper: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    backgroundColor: C.surface,
-    borderWidth:     1,
-    borderColor:     C.hairline,
-    borderRadius:    R.md,
-    paddingHorizontal: 16,
-  },
-  inputWrapperFocused: {
-    borderColor: C.accent,
-  },
-  inputWrapperError: {
-    borderColor: C.error,
-  },
-  input: {
-    flex:       1,
-    paddingVertical: 15,
-    fontSize:   15,
-    fontFamily: F.regular,
-    color:      C.text,
-  },
-  iconButton: {
-    padding:    4,
-    marginLeft: 8,
-  },
-  errorText: {
-    fontSize:   12,
-    fontFamily: F.regular,
-    color:      C.error,
-    marginTop:  6,
-    marginLeft: 4,
-  },
-});
 
 export default Input;

@@ -9,11 +9,11 @@ if (typeof global.crypto === 'undefined' || typeof global.crypto.getRandomValues
 }
 
 import React, { useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Text } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import {
   HankenGrotesk_400Regular,
@@ -38,7 +38,10 @@ import { initRevenueCat } from './src/services/revenuecat';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { C } from './src/theme';
+
+// ─── Firebase-Banner (benötigt keinen Theme-Kontext) ─────────────────────────
 
 const FirebaseNotConfiguredBanner: React.FC = () => (
   <View style={bannerStyles.banner}>
@@ -64,6 +67,37 @@ const bannerStyles = StyleSheet.create({
   },
 });
 
+// ─── Inner App — hat Zugriff auf ThemeContext ─────────────────────────────────
+
+const AppContent: React.FC = () => {
+  const { T, isDark } = useTheme();
+
+  const firebaseConfigured = isConfigured;
+
+  return (
+    <NavigationContainer
+      theme={{
+        dark: isDark,
+        colors: {
+          primary:      T.accent,
+          background:   T.bg,
+          card:         T.surface,
+          text:         T.text,
+          border:       T.hairline,
+          notification: T.error,
+        },
+      }}
+    >
+      {/* StatusBar: hell auf dunklem Theme, dunkel auf hellem Theme */}
+      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={T.bg} />
+      {!firebaseConfigured && <FirebaseNotConfiguredBanner />}
+      <AppNavigator />
+    </NavigationContainer>
+  );
+};
+
+// ─── Root ─────────────────────────────────────────────────────────────────────
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     HankenGrotesk_400Regular,
@@ -85,30 +119,14 @@ export default function App() {
     return null;
   }
 
-  const firebaseConfigured = isConfigured;
-
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <NavigationContainer
-            theme={{
-              dark: true,
-              colors: {
-                primary:      C.accent,
-                background:   C.bg,
-                card:         C.surface,
-                text:         C.text,
-                border:       C.hairline,
-                notification: C.error,
-              },
-            }}
-          >
-            <StatusBar style="light" backgroundColor={C.bg} />
-            {!firebaseConfigured && <FirebaseNotConfiguredBanner />}
-            <AppNavigator />
-          </NavigationContainer>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -117,6 +135,5 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: C.bg,
   },
 });

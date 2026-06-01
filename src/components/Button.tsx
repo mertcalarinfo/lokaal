@@ -6,7 +6,8 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { C, F, R } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { F, R } from '../theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 
@@ -33,6 +34,7 @@ const Button: React.FC<ButtonProps> = ({
   textStyle,
   size = 'md',
 }) => {
+  const { T } = useTheme();
   const isDisabled = disabled || loading;
 
   const getContainerStyle = (): ViewStyle => {
@@ -45,14 +47,14 @@ const Button: React.FC<ButtonProps> = ({
 
     const variantBg: Record<ButtonVariant, ViewStyle> = {
       // Primary: --text surface, dark label (Design System spec)
-      primary:   { backgroundColor: isDisabled ? C.textFaint  : C.text },
+      primary:   { backgroundColor: isDisabled ? T.textFaint : T.text },
       // Secondary: --surface-2 + hairline border
-      secondary: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.hairline },
+      secondary: { backgroundColor: T.surface2, borderWidth: 1, borderColor: T.hairline },
       // Outline / Ghost: transparent + hairline
-      outline:   { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.hairline },
+      outline:   { backgroundColor: 'transparent', borderWidth: 1, borderColor: T.hairline },
       ghost:     { backgroundColor: 'transparent' },
       // Danger: error surface
-      danger:    { backgroundColor: isDisabled ? C.errorBg : C.error },
+      danger:    { backgroundColor: isDisabled ? T.errorBg : T.error },
     };
 
     return {
@@ -69,10 +71,10 @@ const Button: React.FC<ButtonProps> = ({
 
   const getTextStyle = (): TextStyle => {
     const variantTextColor: Record<ButtonVariant, string> = {
-      primary:   isDisabled ? C.textMuted : '#101A28',  // dark on warm-white
-      secondary: C.text,
-      outline:   C.text,
-      ghost:     C.textMuted,
+      primary:   isDisabled ? T.textMuted : '#101A28',  // dark on warm-white / cream
+      secondary: T.text,
+      outline:   T.text,
+      ghost:     T.textMuted,
       danger:    '#101A28',
     };
 
@@ -96,7 +98,7 @@ const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' || variant === 'danger' ? '#101A28' : C.textMuted}
+          color={variant === 'primary' || variant === 'danger' ? '#101A28' : T.textMuted}
           style={{ marginRight: 8 }}
         />
       ) : null}

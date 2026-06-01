@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   KeyboardAvoidingView, Platform, TouchableOpacity, Alert,
@@ -11,17 +11,46 @@ import { ChevronLeft } from 'lucide-react-native';
 
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import PrezenceLogo from '../../components/PrezenceLogo';
-import { C, F, R, S } from '../../theme';
+import { ThemeColors, F, R, S } from '../../theme';
 
 type RegisterNav = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe:     { flex: 1, backgroundColor: T.bg },
+  scroll:   { flexGrow: 1, paddingHorizontal: S.screen, paddingVertical: S.s6 },
+  backBtn:  { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', marginBottom: S.s4 },
+  logoWrap: { marginBottom: S.s6 },
+  card: {
+    backgroundColor: T.surface, borderRadius: R.xl,
+    padding: S.s6, borderWidth: 1, borderColor: T.hairline,
+  },
+  cardTitle: { fontFamily: F.bold, fontSize: 24, fontWeight: '700', color: T.text, letterSpacing: -0.48, marginBottom: 4 },
+  cardSub:   { fontFamily: F.regular, fontSize: 14.5, color: T.textMuted, marginBottom: S.s6 },
+  divider:     { flexDirection: 'row', alignItems: 'center', marginVertical: S.s5 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: T.line },
+  dividerText: { fontFamily: F.regular, fontSize: 13, color: T.textFaint, marginHorizontal: S.s3 },
+  googleBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: T.surface2, borderWidth: 1, borderColor: T.hairline,
+    borderRadius: R.sm, paddingVertical: S.s4,
+  },
+  googleG:    { fontSize: 15, fontWeight: '800', color: '#4285F4', marginRight: S.s2 },
+  googleText: { fontFamily: F.semiBold, fontSize: 14.5, fontWeight: '600', color: T.text },
+  footerRow:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: S.s6 },
+  footerText: { fontFamily: F.regular, fontSize: 14, color: T.textMuted },
+  footerLink: { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.accent },
+});
+
 const RegisterScreen: React.FC = () => {
-  const { t }        = useTranslation();
-  const navigation   = useNavigation<RegisterNav>();
-  const { signUp }   = useAuth();
+  const { t }      = useTranslation();
+  const navigation = useNavigation<RegisterNav>();
+  const { signUp } = useAuth();
+  const { T }      = useTheme();
+  const styles     = useMemo(() => createStyles(T), [T]);
 
   const [name,            setName]            = useState('');
   const [email,           setEmail]           = useState('');
@@ -68,7 +97,7 @@ const RegisterScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <ChevronLeft size={22} color={C.text} strokeWidth={1.8} />
+            <ChevronLeft size={22} color={T.text} strokeWidth={1.8} />
           </TouchableOpacity>
 
           <View style={styles.logoWrap}>
@@ -124,31 +153,5 @@ const RegisterScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: C.bg },
-  scroll:  { flexGrow: 1, paddingHorizontal: S.screen, paddingVertical: S.s6 },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', marginBottom: S.s4 },
-  logoWrap: { marginBottom: S.s6 },
-  card: {
-    backgroundColor: C.surface, borderRadius: R.xl,
-    padding: S.s6, borderWidth: 1, borderColor: C.hairline,
-  },
-  cardTitle: { fontFamily: F.bold, fontSize: 24, fontWeight: '700', color: C.text, letterSpacing: -0.48, marginBottom: 4 },
-  cardSub:   { fontFamily: F.regular, fontSize: 14.5, color: C.textMuted, marginBottom: S.s6 },
-  divider:   { flexDirection: 'row', alignItems: 'center', marginVertical: S.s5 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: C.line },
-  dividerText: { fontFamily: F.regular, fontSize: 13, color: C.textFaint, marginHorizontal: S.s3 },
-  googleBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: C.surface2, borderWidth: 1, borderColor: C.hairline,
-    borderRadius: R.sm, paddingVertical: S.s4,
-  },
-  googleG:    { fontSize: 15, fontWeight: '800', color: '#4285F4', marginRight: S.s2 },
-  googleText: { fontFamily: F.semiBold, fontSize: 14.5, fontWeight: '600', color: C.text },
-  footerRow:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: S.s6 },
-  footerText: { fontFamily: F.regular, fontSize: 14, color: C.textMuted },
-  footerLink: { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: C.accent },
-});
 
 export default RegisterScreen;

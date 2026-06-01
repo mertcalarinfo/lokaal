@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Alert,
@@ -12,13 +12,72 @@ import {
 } from 'lucide-react-native';
 
 import { getOfferings, purchasePackage, restorePurchases } from '../../services/revenuecat';
+import { useTheme } from '../../contexts/ThemeContext';
 import Button from '../../components/Button';
 import PrezenceLogo from '../../components/PrezenceLogo';
-import { C, F, R, S } from '../../theme';
+import { ThemeColors, F, R, S } from '../../theme';
+
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe:  { flex: 1, backgroundColor: T.bg },
+  closeBtn: {
+    position: 'absolute', top: 56, right: S.screen, zIndex: 10,
+    width: 34, height: 34, borderRadius: R.pill,
+    backgroundColor: T.surface2, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: T.hairline,
+  },
+  scroll: { paddingHorizontal: S.screen, paddingTop: 60, paddingBottom: S.s10 },
+  header: { alignItems: 'center', marginBottom: S.s8 },
+  premiumPill: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: T.surfaceAccent, borderRadius: R.pill,
+    paddingHorizontal: S.s3, paddingVertical: 5,
+    borderWidth: 1, borderColor: T.hairline, gap: 5, marginBottom: S.s4,
+  },
+  premiumPillText: { fontFamily: F.xBold, fontSize: 11, fontWeight: '800', color: T.accent, letterSpacing: 2 },
+  title: {
+    fontFamily: F.xBold, fontSize: 28, fontWeight: '800',
+    color: T.text, marginBottom: S.s2, textAlign: 'center', letterSpacing: -0.56,
+  },
+  subtitle: {
+    fontFamily: F.regular, fontSize: 14.5, color: T.textMuted,
+    textAlign: 'center', lineHeight: 22, paddingHorizontal: S.s4,
+  },
+  featuresCard: {
+    backgroundColor: T.surface, borderRadius: R.lg,
+    padding: S.s5, marginBottom: S.s5,
+    borderWidth: 1, borderColor: T.hairline,
+  },
+  featureRow:     { flexDirection: 'row', alignItems: 'center', paddingVertical: S.s3 },
+  featureIconWrap: {
+    width: 34, height: 34, borderRadius: R.sm,
+    alignItems: 'center', justifyContent: 'center', marginRight: S.s3,
+  },
+  featureText: { flex: 1, fontFamily: F.medium, fontSize: 14.5, fontWeight: '500', color: T.text },
+  pricingCard: {
+    borderRadius: R.lg, padding: S.s5, marginBottom: S.s6,
+    borderWidth: 1.5, borderColor: T.accent, alignItems: 'center',
+  },
+  pricingTag: {
+    fontFamily: F.xBold, fontSize: 10, fontWeight: '800',
+    color: T.accent, letterSpacing: 2.5, marginBottom: S.s2,
+  },
+  priceNum: {
+    fontFamily: F.xBold, fontSize: 38, fontWeight: '800',
+    color: T.text, letterSpacing: -1, marginBottom: 3,
+  },
+  priceSub:    { fontFamily: F.regular, fontSize: 13, color: T.textFaint },
+  cta:         { alignItems: 'center' },
+  disclaimer:  { fontFamily: F.regular, fontSize: 13, color: T.textFaint, textAlign: 'center', marginBottom: S.s4 },
+  restoreBtn:  { paddingVertical: S.s2, marginBottom: S.s3 },
+  restoreText: { fontFamily: F.medium, fontSize: 14, color: T.textMuted, textDecorationLine: 'underline' },
+  terms:       { fontFamily: F.regular, fontSize: 11, color: T.textFaint, textAlign: 'center', lineHeight: 16, paddingHorizontal: S.s4 },
+});
 
 const PaywallScreen: React.FC = () => {
   const { t }      = useTranslation();
   const navigation = useNavigation();
+  const { T }      = useTheme();
+  const styles     = useMemo(() => createStyles(T), [T]);
 
   const [loading,   setLoading]   = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -62,18 +121,18 @@ const PaywallScreen: React.FC = () => {
   };
 
   const features = [
-    { key: 'unlimited', Icon: Infinity,    color: C.accent },
-    { key: 'detailed',  Icon: Sparkles,    color: C.textMuted },
-    { key: 'progress',  Icon: TrendingUp,  color: C.success },
-    { key: 'exercises', Icon: Dumbbell,    color: C.textMuted },
-    { key: 'compare',   Icon: GitCompare,  color: C.textMuted },
+    { key: 'unlimited', Icon: Infinity,   color: T.accent   },
+    { key: 'detailed',  Icon: Sparkles,   color: T.textMuted },
+    { key: 'progress',  Icon: TrendingUp, color: T.success  },
+    { key: 'exercises', Icon: Dumbbell,   color: T.textMuted },
+    { key: 'compare',   Icon: GitCompare, color: T.textMuted },
   ] as const;
 
   return (
     <SafeAreaView style={styles.safe}>
       {/* Close */}
       <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
-        <X size={20} color={C.textMuted} strokeWidth={1.7} />
+        <X size={20} color={T.textMuted} strokeWidth={1.7} />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -81,7 +140,7 @@ const PaywallScreen: React.FC = () => {
         <View style={styles.header}>
           <PrezenceLogo size="md" showTagline={false} style={{ marginBottom: S.s4 }} />
           <View style={styles.premiumPill}>
-            <Star size={13} color={C.accent} strokeWidth={1.7} />
+            <Star size={13} color={T.accent} strokeWidth={1.7} />
             <Text style={styles.premiumPillText}>PREMIUM</Text>
           </View>
           <Text style={styles.title}>{t('paywall.title')}</Text>
@@ -96,7 +155,7 @@ const PaywallScreen: React.FC = () => {
                 <Icon size={17} color={color} strokeWidth={1.7} />
               </View>
               <Text style={styles.featureText}>{t(`paywall.features.${key}`)}</Text>
-              <CheckCircle2 size={17} color={C.success} strokeWidth={1.7} />
+              <CheckCircle2 size={17} color={T.success} strokeWidth={1.7} />
             </View>
           ))}
         </View>
@@ -130,61 +189,5 @@ const PaywallScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safe:  { flex: 1, backgroundColor: C.bg },
-  closeBtn: {
-    position: 'absolute', top: 56, right: S.screen, zIndex: 10,
-    width: 34, height: 34, borderRadius: R.pill,
-    backgroundColor: C.surface2, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: C.hairline,
-  },
-  scroll: { paddingHorizontal: S.screen, paddingTop: 60, paddingBottom: S.s10 },
-  header: { alignItems: 'center', marginBottom: S.s8 },
-  premiumPill: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.surfaceAccent, borderRadius: R.pill,
-    paddingHorizontal: S.s3, paddingVertical: 5,
-    borderWidth: 1, borderColor: C.hairline, gap: 5, marginBottom: S.s4,
-  },
-  premiumPillText: { fontFamily: F.xBold, fontSize: 11, fontWeight: '800', color: C.accent, letterSpacing: 2 },
-  title: {
-    fontFamily: F.xBold, fontSize: 28, fontWeight: '800',
-    color: C.text, marginBottom: S.s2, textAlign: 'center', letterSpacing: -0.56,
-  },
-  subtitle: {
-    fontFamily: F.regular, fontSize: 14.5, color: C.textMuted,
-    textAlign: 'center', lineHeight: 22, paddingHorizontal: S.s4,
-  },
-  featuresCard: {
-    backgroundColor: C.surface, borderRadius: R.lg,
-    padding: S.s5, marginBottom: S.s5,
-    borderWidth: 1, borderColor: C.hairline,
-  },
-  featureRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: S.s3 },
-  featureIconWrap: {
-    width: 34, height: 34, borderRadius: R.sm,
-    alignItems: 'center', justifyContent: 'center', marginRight: S.s3,
-  },
-  featureText: { flex: 1, fontFamily: F.medium, fontSize: 14.5, fontWeight: '500', color: C.text },
-  pricingCard: {
-    borderRadius: R.lg, padding: S.s5, marginBottom: S.s6,
-    borderWidth: 1.5, borderColor: C.accent, alignItems: 'center',
-  },
-  pricingTag: {
-    fontFamily: F.xBold, fontSize: 10, fontWeight: '800',
-    color: C.accent, letterSpacing: 2.5, marginBottom: S.s2,
-  },
-  priceNum: {
-    fontFamily: F.xBold, fontSize: 38, fontWeight: '800',
-    color: C.text, letterSpacing: -1, marginBottom: 3,
-  },
-  priceSub:    { fontFamily: F.regular, fontSize: 13, color: C.textFaint },
-  cta:         { alignItems: 'center' },
-  disclaimer:  { fontFamily: F.regular, fontSize: 13, color: C.textFaint, textAlign: 'center', marginBottom: S.s4 },
-  restoreBtn:  { paddingVertical: S.s2, marginBottom: S.s3 },
-  restoreText: { fontFamily: F.medium, fontSize: 14, color: C.textMuted, textDecorationLine: 'underline' },
-  terms:       { fontFamily: F.regular, fontSize: 11, color: C.textFaint, textAlign: 'center', lineHeight: 16, paddingHorizontal: S.s4 },
-});
 
 export default PaywallScreen;

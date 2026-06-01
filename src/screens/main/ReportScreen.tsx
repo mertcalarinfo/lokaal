@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Share, Alert,
@@ -12,20 +12,223 @@ import { Video, ResizeMode } from 'expo-av';
 
 import { HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../contexts/ThemeContext';
 import { saveReport } from '../../services/storage';
 import CategoryCard from '../../components/CategoryCard';
 import Button from '../../components/Button';
 import RichText from '../../components/RichText';
-import { C, F, R, S } from '../../theme';
+import { ThemeColors, F, R, S } from '../../theme';
 
 type ReportRoute = RouteProp<HomeStackParamList, 'Report'>;
 type ReportNav   = NativeStackNavigationProp<HomeStackParamList, 'Report'>;
 
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: T.bg,
+  },
+  header: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    paddingHorizontal: S.s5,
+    paddingVertical:   S.s3,
+    borderBottomWidth: 1,
+    borderBottomColor: T.line,
+  },
+  iconBtn: {
+    width:          34,
+    height:         34,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily:    F.semiBold,
+    fontSize:      16,
+    fontWeight:    '600',
+    color:         T.text,
+    letterSpacing: 0.3,
+  },
+  scroll:        { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: S.screen,
+    paddingTop:        S.s5,
+    paddingBottom:     S.s4,
+    flexGrow:          1,
+  },
+  videoCard: {
+    backgroundColor: '#000',
+    borderRadius:    R.md,
+    overflow:        'hidden',
+    marginBottom:    S.s4,
+    borderWidth:     1,
+    borderColor:     T.hairline,
+  },
+  video: {
+    width:           '100%',
+    aspectRatio:     16 / 9,
+    backgroundColor: '#000',
+  },
+  // ── Gesamtscore — frei, kein Surface-Container (§04) ──
+  scoreBlock: {
+    alignItems:      'center',
+    paddingVertical: S.s8,
+    borderTopWidth:  1,
+    borderTopColor:  T.hairline,
+    marginBottom:    S.s2,
+  },
+  scoreEyebrow: {
+    fontFamily:    F.semiBold,
+    fontSize:      10,
+    fontWeight:    '600',
+    color:         T.textMuted,
+    letterSpacing: 3.4,
+    textTransform: 'uppercase',
+    marginBottom:  S.s3,
+  },
+  scoreNum: {
+    fontFamily:    F.xBold,
+    fontSize:      96,
+    fontWeight:    '800',
+    color:         T.accent,
+    lineHeight:    83,
+    letterSpacing: -3.84,
+  },
+  scoreNumSub: {
+    fontFamily: F.regular,
+    fontSize:   24,
+    fontWeight: '300',
+    color:      T.textMuted,
+  },
+  scoreVerdict: {
+    fontFamily: F.semiBold,
+    fontSize:   14,
+    fontWeight: '600',
+    color:      T.text,
+    marginTop:  S.s3,
+    textAlign:  'center',
+  },
+  scoreDate: {
+    fontFamily: F.regular,
+    fontSize:   11.5,
+    color:      T.textFaint,
+    marginTop:  S.s2,
+  },
+  // ── Categories ──
+  section: {
+    marginBottom: S.s5,
+  },
+  sectionLabel: {
+    fontFamily:    F.semiBold,
+    fontSize:      10,
+    fontWeight:    '600',
+    color:         T.textMuted,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom:  S.s3,
+  },
+  categoriesContainer: {
+    borderTopWidth: 1,
+    borderTopColor: T.line,
+  },
+  // ── Summary ──
+  summaryCard: {
+    backgroundColor: T.surface,
+    borderRadius:    R.lg,
+    padding:         S.s4,
+    marginBottom:    S.s5,
+    borderWidth:     1,
+    borderColor:     T.hairline,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    marginBottom:  S.s3,
+    gap:           S.s2,
+  },
+  summaryTitle: {
+    fontFamily: F.bold,
+    fontSize:   15,
+    fontWeight: '700',
+    color:      T.text,
+  },
+  summaryText: {
+    fontFamily: F.regular,
+    fontSize:   14.5,
+    color:      T.textMuted,
+    lineHeight: 22,
+  },
+  // ── Exercises ──
+  exerciseCard: {
+    flexDirection:   'row',
+    backgroundColor: T.surface,
+    borderRadius:    R.md,
+    padding:         S.s4,
+    marginBottom:    S.s2,
+    borderWidth:     1,
+    borderColor:     T.hairline,
+    alignItems:      'flex-start',
+  },
+  exBadge: {
+    width:           26,
+    height:          26,
+    borderRadius:    R.xs,
+    backgroundColor: T.surfaceAccent,
+    alignItems:      'center',
+    justifyContent:  'center',
+    marginRight:     S.s3,
+    flexShrink:      0,
+    marginTop:       1,
+  },
+  exBadgeNum: {
+    fontFamily: F.bold,
+    fontSize:   13,
+    fontWeight: '700',
+    color:      T.accent,
+  },
+  exContent: { flex: 1 },
+  exLabel: {
+    fontFamily:    F.semiBold,
+    fontSize:      10,
+    fontWeight:    '600',
+    color:         T.textFaint,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom:  5,
+  },
+  exText: {
+    fontFamily: F.regular,
+    fontSize:   14,
+    color:      T.textMuted,
+    lineHeight: 20,
+  },
+  // ── Actions ──
+  actions: {
+    marginTop: 'auto',
+    paddingTop: S.s3,
+  },
+  savedRow: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'center',
+    marginBottom:   S.s3,
+    gap:            S.s2,
+  },
+  savedText: {
+    fontFamily: F.semiBold,
+    fontSize:   14,
+    fontWeight: '600',
+    color:      T.success,
+  },
+});
+
 const ReportScreen: React.FC = () => {
-  const { t }        = useTranslation();
-  const navigation   = useNavigation<ReportNav>();
-  const route        = useRoute<ReportRoute>();
-  const { user }     = useAuth();
+  const { t }      = useTranslation();
+  const navigation = useNavigation<ReportNav>();
+  const route      = useRoute<ReportRoute>();
+  const { user }   = useAuth();
+  const { T }      = useTheme();
+  const styles     = useMemo(() => createStyles(T), [T]);
   const { report, saved } = route.params;
 
   const [isSaved,       setIsSaved]       = useState(!!saved);
@@ -77,11 +280,11 @@ const ReportScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
-          <ChevronLeft size={20} color={C.text} strokeWidth={1.8} />
+          <ChevronLeft size={20} color={T.text} strokeWidth={1.8} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('report.title')}</Text>
         <TouchableOpacity style={styles.iconBtn} onPress={handleShare}>
-          <Share2 size={18} color={C.textMuted} strokeWidth={1.7} />
+          <Share2 size={18} color={T.textMuted} strokeWidth={1.7} />
         </TouchableOpacity>
       </View>
 
@@ -128,7 +331,7 @@ const ReportScreen: React.FC = () => {
         {/* Summary */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryHeader}>
-            <UserCircle size={20} color={C.textMuted} strokeWidth={1.7} />
+            <UserCircle size={20} color={T.textMuted} strokeWidth={1.7} />
             <Text style={styles.summaryTitle}>{t('report.summary')}</Text>
           </View>
           <RichText text={report.summary} style={styles.summaryText} />
@@ -164,7 +367,7 @@ const ReportScreen: React.FC = () => {
           )}
           {isSaved && (
             <View style={styles.savedRow}>
-              <CheckCircle2 size={17} color={C.success} strokeWidth={1.7} />
+              <CheckCircle2 size={17} color={T.success} strokeWidth={1.7} />
               <Text style={styles.savedText}>{t('report.saved')}</Text>
             </View>
           )}
@@ -180,205 +383,5 @@ const ReportScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: C.bg,
-  },
-  header: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: S.s5,
-    paddingVertical:   S.s3,
-    borderBottomWidth: 1,
-    borderBottomColor: C.line,
-  },
-  iconBtn: {
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontFamily:    F.semiBold,
-    fontSize:      16,
-    fontWeight:    '600',
-    color:         C.text,
-    letterSpacing: 0.3,
-  },
-  scroll: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: S.screen,
-    paddingTop:   S.s5,
-    paddingBottom: S.s4,
-    flexGrow: 1,
-  },
-  videoCard: {
-    backgroundColor: '#000',
-    borderRadius:    R.md,
-    overflow:        'hidden',
-    marginBottom:    S.s4,
-    borderWidth:     1,
-    borderColor:     C.hairline,
-  },
-  video: {
-    width:       '100%',
-    aspectRatio: 16 / 9,
-    backgroundColor: '#000',
-  },
-  // ── Gesamtscore — frei, kein Surface-Container (§04) ──
-  scoreBlock: {
-    alignItems:      'center',
-    paddingVertical: S.s8,
-    borderTopWidth:  1,
-    borderTopColor:  C.hairline,
-    marginBottom:    S.s2,
-  },
-  scoreEyebrow: {
-    fontFamily:    F.semiBold,
-    fontSize:      10,
-    fontWeight:    '600',
-    color:         C.textMuted,
-    letterSpacing: 3.4,
-    textTransform: 'uppercase',
-    marginBottom:  S.s3,
-  },
-  scoreNum: {
-    fontFamily:    F.xBold,
-    fontSize:      96,
-    fontWeight:    '800',
-    color:         C.accent,
-    lineHeight:    83,
-    letterSpacing: -3.84,
-  },
-  scoreNumSub: {
-    fontFamily: F.regular,
-    fontSize:   24,
-    fontWeight: '300',
-    color:      C.textMuted,
-  },
-  scoreVerdict: {
-    fontFamily:  F.semiBold,
-    fontSize:    14,
-    fontWeight:  '600',
-    color:       C.text,
-    marginTop:   S.s3,
-    textAlign:   'center',
-  },
-  scoreDate: {
-    fontFamily: F.regular,
-    fontSize:   11.5,
-    color:      C.textFaint,
-    marginTop:  S.s2,
-  },
-  // ── Categories ──
-  section: {
-    marginBottom: S.s5,
-  },
-  sectionLabel: {
-    fontFamily:    F.semiBold,
-    fontSize:      10,
-    fontWeight:    '600',
-    color:         C.textMuted,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginBottom:  S.s3,
-  },
-  categoriesContainer: {
-    borderTopWidth: 1,
-    borderTopColor: C.line,
-  },
-  // ── Summary ──
-  summaryCard: {
-    backgroundColor: C.surface,
-    borderRadius:    R.lg,
-    padding:         S.s4,
-    marginBottom:    S.s5,
-    borderWidth:     1,
-    borderColor:     C.hairline,
-  },
-  summaryHeader: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    marginBottom:  S.s3,
-    gap:           S.s2,
-  },
-  summaryTitle: {
-    fontFamily: F.bold,
-    fontSize:   15,
-    fontWeight: '700',
-    color:      C.text,
-  },
-  summaryText: {
-    fontFamily: F.regular,
-    fontSize:   14.5,
-    color:      C.textMuted,
-    lineHeight: 22,
-  },
-  // ── Exercises ──
-  exerciseCard: {
-    flexDirection:   'row',
-    backgroundColor: C.surface,
-    borderRadius:    R.md,
-    padding:         S.s4,
-    marginBottom:    S.s2,
-    borderWidth:     1,
-    borderColor:     C.hairline,
-    alignItems:      'flex-start',
-  },
-  exBadge: {
-    width:           26,
-    height:          26,
-    borderRadius:    R.xs,
-    backgroundColor: C.surfaceAccent,
-    alignItems:      'center',
-    justifyContent:  'center',
-    marginRight:     S.s3,
-    flexShrink:      0,
-    marginTop:       1,
-  },
-  exBadgeNum: {
-    fontFamily: F.bold,
-    fontSize:   13,
-    fontWeight: '700',
-    color:      C.accent,
-  },
-  exContent: { flex: 1 },
-  exLabel: {
-    fontFamily:    F.semiBold,
-    fontSize:      10,
-    fontWeight:    '600',
-    color:         C.textFaint,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom:  5,
-  },
-  exText: {
-    fontFamily: F.regular,
-    fontSize:   14,
-    color:      C.textMuted,
-    lineHeight: 20,
-  },
-  // ── Actions ──
-  actions: {
-    marginTop: 'auto',
-    paddingTop: S.s3,
-  },
-  savedRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'center',
-    marginBottom:   S.s3,
-    gap:            S.s2,
-  },
-  savedText: {
-    fontFamily: F.semiBold,
-    fontSize:   14,
-    fontWeight: '600',
-    color:      C.success,
-  },
-});
 
 export default ReportScreen;
