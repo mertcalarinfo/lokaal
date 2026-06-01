@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prezence — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   PREZENCE — DESIGN TOKENS  (Source of Truth)
+   ============================================================ */
+:root{
+  /* — Backgrounds — */
+  --bg:#0A1422;            /* App canvas / screen background        */
+  --bg-deep:#070F1B;       /* Bottom nav, scrims, deepest layer     */
+  --surface:#121C2B;       /* Cards, panels (solid)                 */
+  --surface-2:#17222F;     /* Pressed / hover surface               */
+  --surface-accent:rgba(226,211,176,.12); /* accent tint (icon chips, fills) */
+
+  /* — Lines — */
+  --hairline:rgba(255,255,255,.12); /* strong dividers, card borders */
+  --line:rgba(255,255,255,.07);     /* subtle inner dividers         */
+
+  /* — Text — */
+  --text:#F2EFE9;          /* Primary — warm white                  */
+  --text-muted:#8B93A1;    /* Secondary — body, descriptions        */
+  --text-faint:#5D6573;    /* Tertiary — captions, timestamps       */
+
+  /* — Accent (Sand) — semantics: SCORE / PROGRESS / ACTIVE — */
+  --accent:#E2D3B0;        /* Scores, active nav, progress, selection */
+  --accent-dim:#CAB88F;    /* Pressed accent / alt bar fill         */
+  --on-accent:#1A1305;     /* Text/icon on accent surfaces          */
+
+  /* — Status — */
+  --success:#76C49B;       --success-bg:rgba(118,196,155,.12);
+  --error:#E8927C;         --error-bg:rgba(232,146,124,.10);
+
+  /* — Brand (LOGO ONLY — not a UI color) — */
+  --brand-blue:#2AA6EE;    /* Splashscreen / app icon / marketing only */
+
+  /* — Radius — */
+  --r-xs:6px; --r-sm:10px; --r-md:14px; --r-lg:16px; --r-xl:22px; --r-pill:999px;
+
+  /* — Spacing scale (4-based) — */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px;
+  --screen-pad:22px;       /* horizontal screen padding             */
+
+  /* — Type families — */
+  --font-ui:'Hanken Grotesk',system-ui,sans-serif;  /* everything */
+  --font-mono:'JetBrains Mono',monospace;           /* indices, timestamps, technical labels */
+
+  /* — Elevation (used sparingly — depth comes from surface + hairline) — */
+  --shadow-modal:0 24px 60px -20px rgba(0,0,0,.7);
+}
+
+/* ============================================================
+   DOC CHROME (not part of the app — page styling only)
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#05080E;color:var(--text);font-family:var(--font-ui);line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  background:radial-gradient(130% 70% at 50% 0%,#0d1626,#05080e 68%);padding:0 0 120px}
+.page{max-width:1080px;margin:0 auto;padding:0 40px}
+.doc-head{padding:72px 0 34px}
+.doc-head .badge{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;color:var(--accent);
+  border:1px solid rgba(226,211,176,.4);border-radius:var(--r-pill);padding:6px 13px;display:inline-block}
+.doc-head h1{font-weight:800;letter-spacing:-.035em;font-size:50px;line-height:.98;margin-top:22px;display:flex;align-items:baseline;gap:4px}
+.doc-head h1 .p{font-family:'Great Vibes',cursive;font-size:74px;line-height:0;position:relative;top:10px;color:var(--text);margin-right:4px}
+.doc-head .sub{color:var(--text-muted);font-size:17px;margin-top:18px;max-width:70ch}
+.doc-head .callout{margin-top:24px;border-left:2px solid var(--accent);padding:4px 0 4px 18px;color:var(--text);font-size:14px;max-width:74ch}
+.doc-head .callout b{font-weight:700}
+
+section{padding:46px 0;border-top:1px solid var(--hairline)}
+.sec-no{font-family:var(--font-mono);font-size:12px;color:var(--text-faint);letter-spacing:.1em}
+.sec-t{font-weight:800;font-size:26px;letter-spacing:-.02em;margin:6px 0 4px}
+.sec-d{color:var(--text-muted);font-size:14.5px;max-width:72ch;margin-bottom:30px}
+
+.grid{display:grid;gap:14px}
+.cols-2{grid-template-columns:1fr 1fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+
+/* swatches */
+.sw{border:1px solid var(--hairline);border-radius:var(--r-md);overflow:hidden;background:var(--surface)}
+.sw .chip{height:78px;display:flex;align-items:flex-end;justify-content:flex-end;padding:8px}
+.sw .chip code{font-family:var(--font-mono);font-size:10px;background:rgba(0,0,0,.35);color:#fff;padding:3px 6px;border-radius:5px}
+.sw .meta{padding:11px 13px}
+.sw .meta b{font-size:13px;font-weight:700;display:block}
+.sw .meta span{font-size:11.5px;color:var(--text-muted);display:block;margin-top:2px;line-height:1.4}
+.sw .meta .tok{font-family:var(--font-mono);font-size:10.5px;color:var(--accent);margin-top:5px;display:block}
+
+/* token table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);font-weight:600;padding:0 14px 12px;border-bottom:1px solid var(--line)}
+td{padding:12px 14px;border-bottom:1px solid var(--line);color:var(--text-muted);vertical-align:middle}
+td b{color:var(--text);font-weight:600}
+td code{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+.box{display:inline-block;background:var(--accent);border-radius:4px;vertical-align:middle}
+
+/* type specimens */
+.spec{border:1px solid var(--hairline);border-radius:var(--r-lg);padding:22px 24px;background:var(--surface);margin-bottom:12px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.spec .meta{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);white-space:nowrap;text-align:right;line-height:1.7}
+.spec .meta b{color:var(--accent);font-weight:500}
+
+/* component stage */
+.stage{border:1px solid var(--hairline);border-radius:var(--r-lg);background:var(--bg);padding:30px;position:relative}
+.stage.tight{padding:22px}
+.lbl-tag{position:absolute;top:-10px;left:18px;background:var(--surface-2);border:1px solid var(--hairline);
+  font-family:var(--font-mono);font-size:10.5px;color:var(--text-muted);padding:3px 10px;border-radius:var(--r-pill)}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:14px}
+.cap{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);margin-top:10px;text-align:center}
+
+/* ============================================================
+   APP COMPONENTS — EXACT SPEC (copy these values)
+   ============================================================ */
+/* Buttons */
+.btn{font-family:var(--font-ui);border:none;cursor:default;font-weight:700;font-size:14px;letter-spacing:.14em;
+  text-transform:uppercase;padding:17px 26px;border-radius:var(--r-sm);text-align:center}
+.btn-primary{background:var(--text);color:#101A28}
+.btn-secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--hairline)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--hairline)}
+
+/* Inputs */
+.field{display:flex;flex-direction:column;gap:8px}
+.field label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted);font-weight:600}
+.input{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-md);
+  padding:15px 16px;color:var(--text);font-family:var(--font-ui);font-size:15px}
+.input.ph{color:var(--text-faint)}
+.input.focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(226,211,176,.18)}
+.input.err{border-color:var(--error);box-shadow:0 0 0 3px var(--error-bg)}
+.field .hint{font-size:12px;color:var(--text-muted)}
+.field .hint.err{color:var(--error)}
+
+/* Score Card (category, 1 of 9) */
+.scard{border-bottom:1px solid var(--line)}
+.scard .top{display:flex;align-items:baseline;gap:12px;padding:15px 2px 8px}
+.scard .kno{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);width:16px}
+.scard .knm{font-size:15px;font-weight:600;flex:1}
+.scard .ksc{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-.02em}
+.scard .ksc small{font-size:11px;color:var(--text-muted);font-weight:400}
+.scard .chev{color:var(--text-faint);width:16px;height:16px}
+.bar{height:2px;background:rgba(255,255,255,.1);position:relative;margin:0 2px}
+.bar i{position:absolute;left:0;top:-1px;height:4px;background:var(--accent);border-radius:2px}
+
+/* Gesamtscore */
+.gscore{text-align:center;padding:30px 0 22px}
+.gscore .lbl{font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--text-muted);font-weight:600}
+.gscore .num{font-size:96px;line-height:.86;font-weight:800;letter-spacing:-.04em;color:var(--accent);margin-top:12px}
+.gscore .num sub{font-size:24px;color:var(--text-muted);vertical-align:baseline;font-weight:300}
+.gscore .verdict{font-size:14px;font-weight:600;margin-top:10px}
+.gscore .date{font-size:11.5px;color:var(--text-faint);margin-top:4px}
+
+/* Score ring */
+.ring{width:64px;height:64px;position:relative;display:flex;align-items:center;justify-content:center}
+.ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.ring b{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-.02em}
+
+/* Progress Card */
+.pcard{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface)}
+.pcard .hm b{font-size:14.5px;font-weight:600;display:block}
+.pcard .hm span{font-size:11.5px;color:var(--text-muted);display:block;margin-top:2px}
+.pcard .chips{display:flex;gap:6px;margin-top:9px}
+.pcard .chips i{font-style:normal;font-size:12px;font-weight:700;color:var(--text-muted);border:1px solid var(--line);
+  border-radius:var(--r-xs);width:28px;height:26px;display:flex;align-items:center;justify-content:center}
+.pcard .ar{margin-left:auto;color:var(--text-faint)}
+
+/* Bottom Nav */
+.bnav{display:flex;align-items:center;justify-content:space-around;background:var(--bg-deep);
+  border-top:1px solid var(--line);border-radius:var(--r-md);padding:12px 10px 14px}
+.bnav .it{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10.5px;font-weight:500;color:var(--text-faint)}
+.bnav .it.on{color:var(--accent)}
+.bnav .it svg{width:22px;height:22px}
+
+/* Headers */
+.hdr{display:flex;align-items:center;justify-content:space-between}
+.hdr .ib{width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.hdr .ib svg{width:20px;height:20px}
+.hdr .tt{font-size:16px;font-weight:600}
+.logo{display:flex;align-items:center;font-size:14px;letter-spacing:.34em;font-weight:600;color:var(--text)}
+.logo .p{font-family:'Great Vibes',cursive;font-size:36px;line-height:0;position:relative;top:5px;letter-spacing:0;color:var(--text);margin-right:3px}
+.credit{border:1px solid var(--hairline);border-radius:var(--r-pill);padding:7px 14px;font-size:11.5px;color:var(--text-muted);display:flex;gap:7px;align-items:center}
+.credit svg{width:14px;height:14px}
+
+/* Selection List — Option Rows (Home choice). NO card container — hairline dividers. */
+.optlist{display:flex;flex-direction:column}
+.opt{display:flex;align-items:center;gap:16px;padding:18px 4px;border-top:1px solid var(--hairline)}
+.opt:last-child{border-bottom:1px solid var(--hairline)}
+.opt .ic{width:46px;height:46px;flex:none;border:1px solid var(--hairline);border-radius:var(--r-pill);
+  display:flex;align-items:center;justify-content:center;color:var(--text)}
+.opt .ic svg{width:21px;height:21px}
+.opt .t b{display:block;font-size:17px;font-weight:600}
+.opt .t span{font-size:12px;color:var(--text-muted)}
+.opt .check{margin-left:auto;width:24px;height:24px;border-radius:var(--r-pill);
+  border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center}
+.opt.sel .ic{border-color:var(--accent);color:var(--accent);background:var(--surface-accent)}
+.opt.sel .check{background:var(--accent);border-color:var(--accent)}        /* FILLED when selected */
+.opt.sel .check svg{width:13px;height:13px;color:var(--on-accent)}
+
+/* Settings Radio — identical fill logic */
+.srow{display:flex;align-items:center;gap:14px;padding:16px 18px;background:var(--surface)}
+.srow+.srow{border-top:1px solid var(--line)}
+.srow .ic{width:34px;height:34px;flex:none;border-radius:var(--r-sm);background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--text)}
+.srow .ic svg{width:18px;height:18px}
+.srow .rl{font-size:15px;font-weight:500;flex:1}
+.srow .radio{width:24px;height:24px;border-radius:var(--r-pill);border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center}
+.srow .radio.on{background:var(--accent);border-color:var(--accent)}        /* FILLED when selected */
+.srow .radio.on svg{width:13px;height:13px;color:var(--on-accent)}
+.srowwrap{border:1px solid var(--hairline);border-radius:var(--r-lg);overflow:hidden}
+
+/* Home hero stack (type hierarchy demo) */
+.herostack .eyebrow{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--text-muted);font-weight:600}
+.herostack h1{font-weight:800;font-size:38px;letter-spacing:-.035em;line-height:1.0;margin-top:12px}
+.herostack p{color:var(--text-muted);font-size:14.5px;margin-top:14px;line-height:1.5;max-width:34ch}
+
+/* radius / spacing visuals */
+.rad{height:64px;border:1px solid var(--hairline);background:var(--surface-2)}
+.spc{background:var(--accent);height:18px;border-radius:3px}
+.spc-row{display:flex;align-items:center;gap:14px;margin-bottom:10px;font-family:var(--font-mono);font-size:12px;color:var(--text-muted)}
+.spc-row b{color:var(--text);width:64px}
+
+/* do/don't */
+.dd{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dd .col{border:1px solid var(--hairline);border-radius:var(--r-lg);padding:20px 22px;background:var(--surface)}
+.dd .col h4{font-size:13px;font-weight:700;letter-spacing:.04em;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.dd .do h4{color:var(--success)} .dd .dont h4{color:var(--error)}
+.dd li{list-style:none;font-size:13.5px;color:var(--text-muted);padding:7px 0 7px 22px;position:relative;line-height:1.5}
+.dd .do li::before{content:"+";position:absolute;left:0;color:var(--success);font-weight:700}
+.dd .dont li::before{content:"–";position:absolute;left:0;color:var(--error);font-weight:700}
+
+.icoset{display:flex;gap:20px;flex-wrap:wrap;color:var(--text)}
+.icoset .ico{display:flex;flex-direction:column;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;color:var(--text-faint)}
+.icoset .ico svg{width:26px;height:26px}
+.rule{font-size:13.5px;color:var(--text-muted);line-height:1.7}
+.rule b{color:var(--text);font-weight:600}
+.rule code{font-family:var(--font-mono);font-size:12.5px;color:var(--accent);background:var(--surface);padding:2px 7px;border-radius:5px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ HEAD ============ -->
+  <header class="doc-head">
+    <span class="badge">DESIGN SYSTEM · v1.0</span>
+    <h1><span class="p">P</span>rezence</h1>
+    <p class="sub">Verbindliche UI-Referenz für KI-Coaching zu Auftreten &amp; Sprechen. Dark-Mode, React Native (iOS + Android). „Clean Grotesk" — tiefes Navy, warmweiße Typografie, ein einziger Sand-Akzent, der ausschließlich Bewertung &amp; Fortschritt bedeutet.</p>
+    <div class="callout"><b>Für Claude Code:</b> Diese Datei ist die Quelle der Wahrheit. Verwende ausschließlich die hier definierten Tokens (Farbe, Typo, Spacing, Radius). Erfinde keine neuen Farben, Schattierungen oder Schriftgrößen. Der Sand-Akzent (<code style="font-family:var(--font-mono);color:var(--accent)">--accent</code>) ist reserviert für Scores, Progress und aktive Zustände — nie für dekorative Flächen.</div>
+  </header>
+
+  <!-- ============ 01 COLOR ============ -->
+  <section>
+    <div class="sec-no">01</div>
+    <h2 class="sec-t">Farbpalette</h2>
+    <p class="sec-d">Alle Werte als CSS-Variablen in <code style="font-family:var(--font-mono);color:var(--accent)">:root</code> definiert (siehe Quelltext). Hex-Werte sind RN-fertig. Transparente Linien als rgba übernehmen.</p>
+
+    <div class="grid cols-4" style="margin-bottom:14px">
+      <div class="sw"><div class="chip" style="background:#0A1422"><code>#0A1422</code></div><div class="meta"><b>Background</b><span>App-Canvas, jeder Screen</span><span class="tok">--bg</span></div></div>
+      <div class="sw"><div class="chip" style="background:#070F1B"><code>#070F1B</code></div><div class="meta"><b>Background Deep</b><span>Bottom-Nav, Scrims, Overlays</span><span class="tok">--bg-deep</span></div></div>
+      <div class="sw"><div class="chip" style="background:#121C2B"><code>#121C2B</code></div><div class="meta"><b>Surface</b><span>Cards, Panels, Inputs</span><span class="tok">--surface</span></div></div>
+      <div class="sw"><div class="chip" style="background:#17222F"><code>#17222F</code></div><div class="meta"><b>Surface 2</b><span>Pressed / Hover-Zustand</span><span class="tok">--surface-2</span></div></div>
+    </div>
+    <div class="grid cols-4" style="margin-bottom:14px">
+      <div class="sw"><div class="chip" style="background:#F2EFE9"><code style="background:rgba(0,0,0,.45)">#F2EFE9</code></div><div class="meta"><b>Text</b><span>Primär — warmweiß, Logo im UI</span><span class="tok">--text</span></div></div>
+      <div class="sw"><div class="chip" style="background:#8B93A1"><code>#8B93A1</code></div><div class="meta"><b>Text Muted</b><span>Body, Beschreibungen</span><span class="tok">--text-muted</span></div></div>
+      <div class="sw"><div class="chip" style="background:#5D6573"><code>#5D6573</code></div><div class="meta"><b>Text Faint</b><span>Captions, Timestamps</span><span class="tok">--text-faint</span></div></div>
+      <div class="sw"><div class="chip" style="background:#E2D3B0"><code style="background:rgba(0,0,0,.4)">#E2D3B0</code></div><div class="meta"><b>Accent · Sand</b><span>Scores, Progress, aktiv</span><span class="tok">--accent</span></div></div>
+    </div>
+    <div class="grid cols-4">
+      <div class="sw"><div class="chip" style="background:#CAB88F"><code style="background:rgba(0,0,0,.4)">#CAB88F</code></div><div class="meta"><b>Accent Dim</b><span>Pressed-Accent / Alt-Balken</span><span class="tok">--accent-dim</span></div></div>
+      <div class="sw"><div class="chip" style="background:#76C49B"><code style="background:rgba(0,0,0,.4)">#76C49B</code></div><div class="meta"><b>Success</b><span>„Gespeichert", positive States</span><span class="tok">--success</span></div></div>
+      <div class="sw"><div class="chip" style="background:#E8927C"><code style="background:rgba(0,0,0,.4)">#E8927C</code></div><div class="meta"><b>Error</b><span>Abmelden, Fehler, Destruktiv</span><span class="tok">--error</span></div></div>
+      <div class="sw"><div class="chip" style="background:#2AA6EE"><code style="background:rgba(0,0,0,.4)">#2AA6EE</code></div><div class="meta"><b>Brand Blue</b><span>NUR Splash / Icon / Marketing</span><span class="tok">--brand-blue</span></div></div>
+    </div>
+
+    <div style="margin-top:22px;border:1px solid var(--hairline);border-radius:var(--r-md);overflow:hidden">
+      <table>
+        <thead><tr><th style="width:40px"></th><th>Linien-Token (rgba)</th><th>Wert</th><th>Verwendung</th></tr></thead>
+        <tbody>
+          <tr><td><span class="box" style="width:22px;height:22px;background:rgba(255,255,255,.12)"></span></td><td><b>--hairline</b></td><td><code>rgba(255,255,255,.12)</code></td><td>Card-Ränder, starke Trennlinien</td></tr>
+          <tr><td><span class="box" style="width:22px;height:22px;background:rgba(255,255,255,.07)"></span></td><td><b>--line</b></td><td><code>rgba(255,255,255,.07)</code></td><td>Subtile Trenner in Listen</td></tr>
+          <tr><td><span class="box" style="width:22px;height:22px;background:rgba(226,211,176,.12)"></span></td><td><b>--surface-accent</b></td><td><code>rgba(226,211,176,.12)</code></td><td>Icon-Chips, Accent-Tint-Flächen</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 02 TYPOGRAPHY ============ -->
+  <section>
+    <div class="sec-no">02</div>
+    <h2 class="sec-t">Typografie</h2>
+    <p class="sec-d">Eine Familie für alles: <b style="color:var(--text)">Hanken Grotesk</b> (300–800). <b style="color:var(--text)">JetBrains Mono</b> nur für Indizes, Zeitstempel und technische Labels. Zahlen/Scores sind Hanken Grotesk 800 — nicht Mono.</p>
+
+    <div class="spec"><div style="font-weight:800;font-size:42px;letter-spacing:-.035em;line-height:.98">Analysiere dein Sprechen</div><div class="meta">H1 · Display<br><b>42 / 800</b><br>lh .98 · ls −.035em</div></div>
+    <div class="spec"><div style="font-weight:800;font-size:34px;letter-spacing:-.03em">Fortschritt</div><div class="meta">H2 · Screen-Titel<br><b>34 / 800</b><br>lh 1.0 · ls −.03em</div></div>
+    <div class="spec"><div style="font-weight:700;font-size:24px;letter-spacing:-.02em">Deine Analyse</div><div class="meta">H3 · Sektion<br><b>24 / 700</b><br>ls −.02em</div></div>
+    <div class="spec"><div style="font-weight:600;font-size:17px">Video hochladen</div><div class="meta">H4 · Card-Titel<br><b>17 / 600</b></div></div>
+    <div class="spec"><div style="font-weight:400;font-size:14.5px;color:var(--text-muted);max-width:42ch;line-height:1.5">Lade ein Video hoch oder nimm eines auf und erhalte persönliches KI-Coaching.</div><div class="meta">Body<br><b>14.5 / 400</b><br>lh 1.5 · muted</div></div>
+    <div class="spec"><div style="font-weight:600;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--text-muted)">Gesamtbewertung</div><div class="meta">Label / Eyebrow<br><b>10 / 600</b><br>UPPER · ls .3em</div></div>
+    <div class="spec"><div style="font-size:11.5px;color:var(--text-faint)">31. Mai 2026 · 16:28</div><div class="meta">Caption<br><b>11.5 / 400</b><br>faint</div></div>
+    <div class="spec"><div style="font-weight:700;font-size:14px;letter-spacing:.14em;text-transform:uppercase">Analysieren</div><div class="meta">Button-Label<br><b>14 / 700</b><br>UPPER · ls .14em</div></div>
+    <div class="spec"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">01 · 4.9/10</div><div class="meta">Mono · technisch<br><b>11 / 500</b><br>JetBrains Mono</div></div>
+  </section>
+
+  <!-- ============ 03 SPACING & RADIUS ============ -->
+  <section>
+    <div class="sec-no">03</div>
+    <h2 class="sec-t">Spacing &amp; Radius</h2>
+    <p class="sec-d">4-basierte Spacing-Skala. Screen-Padding horizontal immer <code style="font-family:var(--font-mono);color:var(--accent)">22px</code>. Tiefe entsteht durch Surface + Hairline, nicht durch Schatten.</p>
+
+    <div class="grid cols-2" style="gap:30px">
+      <div>
+        <div class="spc-row"><b>--s1</b><div class="spc" style="width:4px"></div>4px</div>
+        <div class="spc-row"><b>--s2</b><div class="spc" style="width:8px"></div>8px</div>
+        <div class="spc-row"><b>--s3</b><div class="spc" style="width:12px"></div>12px</div>
+        <div class="spc-row"><b>--s4</b><div class="spc" style="width:16px"></div>16px</div>
+        <div class="spc-row"><b>--s5</b><div class="spc" style="width:20px"></div>20px</div>
+        <div class="spc-row"><b>--s6</b><div class="spc" style="width:24px"></div>24px</div>
+        <div class="spc-row"><b>--s8</b><div class="spc" style="width:32px"></div>32px</div>
+        <div class="spc-row"><b>--s10</b><div class="spc" style="width:40px"></div>40px</div>
+      </div>
+      <div class="grid cols-2" style="grid-template-columns:1fr 1fr;align-content:start">
+        <div><div class="rad" style="border-radius:6px"></div><div class="cap">--r-xs · 6px · Chips</div></div>
+        <div><div class="rad" style="border-radius:10px"></div><div class="cap">--r-sm · 10px · Buttons</div></div>
+        <div><div class="rad" style="border-radius:14px"></div><div class="cap">--r-md · 14px · Inputs / kl. Cards</div></div>
+        <div><div class="rad" style="border-radius:16px"></div><div class="cap">--r-lg · 16px · Cards / Panels</div></div>
+        <div><div class="rad" style="border-radius:22px"></div><div class="cap">--r-xl · 22px · große Container</div></div>
+        <div><div class="rad" style="border-radius:999px;height:64px"></div><div class="cap">--r-pill · 999 · Credits/Tags</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 COMPONENTS ============ -->
+  <section>
+    <div class="sec-no">04</div>
+    <h2 class="sec-t">Komponenten</h2>
+    <p class="sec-d">Visuell gerendert mit exakten Werten. Klassen-CSS im Quelltext unter „APP COMPONENTS".</p>
+
+    <!-- Buttons -->
+    <div class="stage" style="margin-bottom:26px">
+      <span class="lbl-tag">Buttons</span>
+      <div class="row">
+        <button class="btn btn-primary">Analysieren</button>
+        <button class="btn btn-secondary">Neue Analyse</button>
+        <button class="btn btn-ghost">Abbrechen</button>
+      </div>
+      <div class="cap" style="text-align:left;margin-top:16px">Primary: <code style="font-family:var(--font-mono);color:var(--accent)">--text</code>-Fläche, Text #101A28 · Secondary: <code style="font-family:var(--font-mono);color:var(--accent)">--surface-2</code> + Hairline · Ghost: nur Hairline · alle 17px v / r-sm / UPPER 14·700 · ls .14em</div>
+    </div>
+
+    <!-- Inputs -->
+    <div class="stage" style="margin-bottom:26px">
+      <span class="lbl-tag">Input Field — Default / Focused / Error</span>
+      <div class="stack">
+        <div class="field"><label>E-Mail</label><div class="input ph"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="2e404f434b6e4c4b475d5e474b42004a4b">[email&#160;protected]</a></div><div class="hint">Wir senden dir keine Werbung.</div></div>
+        <div class="field"><label>E-Mail</label><div class="input focus"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5d30382f39321d2d2f382738333e38733c2d2d">[email&#160;protected]</a></div><div class="hint">Fokus: Border <code style="font-family:var(--font-mono);color:var(--accent)">--accent</code> + 3px Glow .18</div></div>
+        <div class="field"><label>E-Mail</label><div class="input err">merdo@</div><div class="hint err">Bitte gib eine gültige E-Mail ein.</div></div>
+      </div>
+    </div>
+
+    <!-- Home Hero + Selection List -->
+    <div class="stage" style="margin-bottom:26px">
+      <span class="lbl-tag">Analyze-Hero + Auswahl-Liste · KRITISCH</span>
+      <div class="herostack">
+        <div class="eyebrow">Heutige Session</div>
+        <h1>Analysiere dein Sprechen.</h1>
+        <p>Lade ein Video hoch oder nimm eines auf — und erhalte persönliches KI-Coaching.</p>
+      </div>
+      <div class="optlist" style="margin-top:26px">
+        <div class="opt sel">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4m0 0L8 8m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg></div>
+          <div class="t"><b>Video hochladen</b><span>Aus Bibliothek wählen</span></div>
+          <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></div>
+        </div>
+        <div class="opt">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3"/></svg></div>
+          <div class="t"><b>Jetzt aufnehmen</b><span>Kamera verwenden</span></div>
+          <div class="check"></div>
+        </div>
+      </div>
+      <div class="cap" style="text-align:left;margin-top:16px"><b style="color:var(--text)">Kein Card-Container.</b> Reihen werden nur durch Hairlines (oben/unten) getrennt — NICHT als zwei nebeneinander geboxte Kacheln. Hierarchie: Eyebrow 10/600 UPPER · H1 38/800 · Body 14.5/400 muted. Icon im Kreis (r-pill, Outline) — selektiert: Sand-Outline + Tint. Häkchen rechts = <b style="color:var(--text)">gefüllter Sand-Kreis</b> mit dunklem Check, inaktiv = leerer Outline-Kreis.</div>
+    </div>
+
+    <!-- Settings Radio -->
+    <div class="stage" style="margin-bottom:26px">
+      <span class="lbl-tag">Settings-Row · Radio (gefüllt)</span>
+      <div class="srowwrap">
+        <div class="srow">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h12M9 3v2M5 5c0 5 3 9 7 11M12 5c0 4-3 8-7 10M14 20l4-9 4 9M15.5 17h5"/></svg></div>
+          <div class="rl">English</div>
+          <div class="radio"></div>
+        </div>
+        <div class="srow">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h12M9 3v2M5 5c0 5 3 9 7 11M12 5c0 4-3 8-7 10M14 20l4-9 4 9M15.5 17h5"/></svg></div>
+          <div class="rl">Deutsch</div>
+          <div class="radio on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></div>
+        </div>
+      </div>
+      <div class="cap" style="text-align:left;margin-top:14px">Ausgewählt = <b style="color:var(--text)">gefüllter Sand-Kreis</b> + dunkler Check (<code style="font-family:var(--font-mono);color:var(--accent)">--on-accent</code>). Nicht ausgewählt = leerer Outline-Kreis. Identische Logik wie die Auswahl-Häkchen oben — nie nur ein umrandeter Kreis mit Check.</div>
+    </div>
+
+    <!-- Score Card + Gesamtscore -->
+    <div class="grid cols-2" style="gap:18px;margin-bottom:26px">
+      <div class="stage tight">
+        <span class="lbl-tag">Score Card · Kategorie (1/9)</span>
+        <div style="margin-top:6px">
+          <div class="scard"><div class="top"><span class="kno">03</span><span class="knm">Pausen-Einsatz</span><span class="ksc">4<small>/10</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div><div class="bar"><i style="width:40%"></i></div></div>
+          <div class="scard"><div class="top"><span class="kno">04</span><span class="knm">Blickkontakt</span><span class="ksc">6<small>/10</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div><div class="bar"><i style="width:60%"></i></div></div>
+        </div>
+        <div class="cap" style="text-align:left">Tap → expandiert Feedback. Score immer <code style="font-family:var(--font-mono);color:var(--accent)">--accent</code>, Balken 4px.</div>
+      </div>
+      <div class="stage tight">
+        <span class="lbl-tag">Gesamtscore · KEIN Container</span>
+        <div class="gscore">
+          <div class="lbl">Gesamtbewertung</div>
+          <div class="num">4.9<sub>/10</sub></div>
+          <div class="verdict">Solide Basis mit klarem Potenzial</div>
+          <div class="date">31. Mai 2026 · 16:28</div>
+        </div>
+        <div class="cap" style="text-align:left">Frei auf dem Screen — NICHT in eine Card boxen. Reihenfolge fix: Eyebrow · Zahl 96/800 · <b style="color:var(--text)">Verdict-Zeile (Pflicht)</b> 14/600 · Datum 11.5 faint. Verdict ist eine kurze Einordnung je Score-Bereich.</div>
+      </div>
+    </div>
+
+    <!-- Progress Card -->
+    <div class="stage" style="margin-bottom:26px">
+      <span class="lbl-tag">Progress Card · Fortschritt-Tab</span>
+      <div class="pcard">
+        <div class="ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="83 170"/></svg><b>4.9</b></div>
+        <div class="hm"><b>31. Mai 2026 · 16:28</b><span>Ziel: Persönliche Weiterentwicklung</span><div class="chips"><i>5</i><i>6</i><i>4</i><i>6</i><i>4</i></div></div>
+        <div class="ar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="grid cols-2" style="gap:18px;margin-bottom:26px">
+      <div class="stage">
+        <span class="lbl-tag">Header · Home</span>
+        <div class="hdr">
+          <div class="logo"><span class="p">P</span>REZENCE</div>
+          <div class="credit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17l5-5 4 3 7-8"/></svg>0/1 frei</div>
+        </div>
+      </div>
+      <div class="stage">
+        <span class="lbl-tag">Header · Detail</span>
+        <div class="hdr">
+          <div class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+          <div class="tt">Deine Analyse</div>
+          <div class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L8 8m4-4l4 4M5 16v3a2 2 0 002 2h10a2 2 0 002-2v-3"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="stage">
+      <span class="lbl-tag">Bottom Navigation</span>
+      <div class="bnav">
+        <div class="it on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg><span>Analyze</span></div>
+        <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-8"/></svg><span>Fortschritt</span></div>
+        <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Einstellungen</span></div>
+      </div>
+      <div class="cap" style="text-align:left">3 Tabs · aktiv = <code style="font-family:var(--font-mono);color:var(--accent)">--accent</code>, inaktiv = <code style="font-family:var(--font-mono);color:var(--accent)">--text-faint</code> · Hintergrund <code style="font-family:var(--font-mono);color:var(--accent)">--bg-deep</code> · Top-Border --line</div>
+    </div>
+  </section>
+
+  <!-- ============ 05 ICONOGRAPHY ============ -->
+  <section>
+    <div class="sec-no">05</div>
+    <h2 class="sec-t">Ikonographie &amp; Stil-Regeln</h2>
+    <p class="sec-d">Library: <b style="color:var(--text)">Lucide</b> (<code style="font-family:var(--font-mono);color:var(--accent)">lucide-react-native</code>). Konsistent line-only, kein Mix mit gefüllten Sets.</p>
+
+    <div class="stage" style="margin-bottom:22px">
+      <span class="lbl-tag">Lucide · stroke 1.7 · round caps</span>
+      <div class="icoset">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>mic</div>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4m0 0L8 8m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>upload</div>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3"/></svg>video</div>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-8"/></svg>trend</div>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>settings</div>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>back</div>
+        <div class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg>play*</div>
+      </div>
+    </div>
+    <p class="rule">
+      <b>Stroke:</b> <code>1.7</code> Standard · <code>1.8</code> nur Header-Back · <code>2.2</code> Mikro-Glyphen im Credit-Pill.<br>
+      <b>Caps/Joins:</b> immer <code>round</code>. &nbsp;<b>Größen:</b> Nav <code>22</code> · Header/Card <code>20</code> · inline <code>18</code> · Mikro <code>14–16</code>.<br>
+      <b>Farbe:</b> erbt <code>--text</code>; aktiv/selektiert <code>--accent</code>; destruktiv <code>--error</code>. &nbsp;<b>Gefüllt</b> (*) nur Play-Dreieck &amp; Selektions-Häkchen — sonst nie.
+    </p>
+  </section>
+
+  <!-- ============ 5b VERDICT MAP ============ -->
+  <section>
+    <div class="sec-no">05b</div>
+    <h2 class="sec-t">Verdict-Zeile unter dem Gesamtscore</h2>
+    <p class="sec-d">Pflicht-Zeile zwischen Score-Zahl und Datum. Kurze, ermutigende Einordnung je nach Score-Bereich — nie wertend-negativ. 14px / 600 / <code style="font-family:var(--font-mono);color:var(--accent)">--text</code>.</p>
+    <div style="border:1px solid var(--hairline);border-radius:var(--r-md);overflow:hidden">
+      <table>
+        <thead><tr><th style="width:120px">Score</th><th>Verdict-Text</th></tr></thead>
+        <tbody>
+          <tr><td><b>0.0 – 2.9</b></td><td>Erste Schritte — viel Raum nach oben</td></tr>
+          <tr><td><b>3.0 – 4.9</b></td><td>Solide Basis mit klarem Potenzial</td></tr>
+          <tr><td><b>5.0 – 6.9</b></td><td>Guter Stand — gezielt verfeinern</td></tr>
+          <tr><td><b>7.0 – 8.4</b></td><td>Starkes Auftreten, sicher und klar</td></tr>
+          <tr><td><b>8.5 – 10</b></td><td>Herausragende Präsenz</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 06 DO / DON'T ============ -->
+  <section>
+    <div class="sec-no">06</div>
+    <h2 class="sec-t">Do's &amp; Don'ts</h2>
+    <div class="dd">
+      <div class="col do">
+        <h4>DO</h4>
+        <ul>
+          <li>Sand-Akzent nur für Scores, Progress-Balken/Ringe und aktive Nav/Selektion einsetzen.</li>
+          <li>Tiefe über <code style="font-family:var(--font-mono);color:var(--accent)">--surface</code> + Hairline-Rand erzeugen, nicht über Schatten.</li>
+          <li>Zahlen &amp; Scores in Hanken Grotesk 800 setzen — groß und selbstbewusst.</li>
+          <li>Screen-Padding horizontal konstant 22px halten; vertikal großzügig atmen lassen.</li>
+          <li>Logo im UI immer warmweiß (<code style="font-family:var(--font-mono);color:var(--accent)">--text</code>).</li>
+          <li>Listen mit <code style="font-family:var(--font-mono);color:var(--accent)">--line</code> trennen statt jede Zeile zu boxen.</li>
+          <li>Hero-Text &amp; Gesamtscore frei auf dem Screen — nur durch Hairlines getrennt, ohne umschließende Card.</li>
+          <li>Auswahl-/Radio-Häkchen <b style="color:var(--text)">gefüllt</b> (Sand-Kreis + dunkler Check), wenn aktiv.</li>
+          <li>Auf Analyze die Typo-Hierarchie zeigen: Eyebrow → fette H1 → muted Body.</li>
+          <li>Verdict-Zeile unter jedem Gesamtscore ausgeben (siehe 05b).</li>
+        </ul>
+      </div>
+      <div class="col dont">
+        <h4>DON'T</h4>
+        <ul>
+          <li>Kein Gold/Gelb und kein Marken-Blau als UI-Akzent — Blau bleibt Splash/Icon.</li>
+          <li>Keine Verläufe als Flächen, keine Glows außer dem Input-Focus-Ring.</li>
+          <li>Keine neuen Farben, Grautöne oder Schriftgrößen außerhalb der Tokens.</li>
+          <li>Score-Farbe nicht nach Wert einfärben (kein rot/grün) — immer Sand.</li>
+          <li>Icons nicht mischen (kein Filled-Set), keine Emoji in der UI.</li>
+          <li>Keine vollflächigen weißen Cards — Surfaces bleiben dunkel.</li>
+          <li>Hero-Text und Score NICHT in umrandete/getintete Cards boxen.</li>
+          <li>Auswahl- und Radio-Häkchen nicht als leeren Outline-Kreis mit Check zeigen — aktiv = gefüllt.</li>
+          <li>Auf Analyze die Auswahl nicht als zwei nebeneinander geboxte Kacheln bauen — gestapelte Hairline-Reihen.</li>
+          <li>Gesamtscore nie nur mit Datum zeigen — Verdict-Zeile ist Pflicht.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>
