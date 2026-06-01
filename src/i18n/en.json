@@ -129,7 +129,8 @@
   },
   "home": {
     "title": "PREZENCE",
-    "analyzeTitle": "Analyze Your Speaking",
+    "analyzeEyebrow": "AI Coaching",
+    "analyzeTitle": "Analyze Your Speaking.",
     "analyzeSubtitle": "Upload or record a video and get personalized coaching from AI",
     "uploadVideo": "Upload Video",
     "uploadVideoSub": "Choose from library",
@@ -180,6 +181,13 @@
     "summary": "Coach's Summary",
     "exercises": "This Week's Exercises",
     "exercise": "Exercise {{number}}",
+    "verdict": {
+      "excellent":  "Exceptional Presence",
+      "great":      "Strong Foundation with Potential",
+      "good":       "Good Progress, Keep Going",
+      "solid":      "Solid Base with Clear Potential",
+      "developing": "Great Room for Improvement"
+    },
     "saveReport": "Save Report",
     "saved": "Report saved!",
     "share": "Share",

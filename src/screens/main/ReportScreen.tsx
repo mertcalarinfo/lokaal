@@ -33,6 +33,15 @@ const ReportScreen: React.FC = () => {
 
   const hasVideo = !!report.videoUrl && report.videoUrl.length > 0;
 
+  // Verdict-Zeile — abhängig vom Score (§05b-Tabelle)
+  const getVerdict = (score: number): string => {
+    if (score >= 9.0) return t('report.verdict.excellent');
+    if (score >= 7.0) return t('report.verdict.great');
+    if (score >= 5.0) return t('report.verdict.good');
+    if (score >= 3.0) return t('report.verdict.solid');
+    return t('report.verdict.developing');
+  };
+
   const formatDate = (d: Date | string) => {
     const date = d instanceof Date ? d : new Date(d);
     return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -94,13 +103,15 @@ const ReportScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Overall score — big number per design system */}
-        <View style={styles.scoreCard}>
+        {/* Gesamtscore — frei auf dem Screen, kein Container (§04) */}
+        <View style={styles.scoreBlock}>
           <Text style={styles.scoreEyebrow}>{t('report.overallScore')}</Text>
           <Text style={styles.scoreNum}>
             {report.averageScore.toFixed(1)}
             <Text style={styles.scoreNumSub}>/10</Text>
           </Text>
+          {/* Verdict-Zeile — Pflicht zwischen Score und Datum (§05b) */}
+          <Text style={styles.scoreVerdict}>{getVerdict(report.averageScore)}</Text>
           <Text style={styles.scoreDate}>{formatDate(report.createdAt)}</Text>
         </View>
 
@@ -217,15 +228,13 @@ const styles = StyleSheet.create({
     aspectRatio: 16 / 9,
     backgroundColor: '#000',
   },
-  // ── Gesamtscore — big number per design system ──
-  scoreCard: {
-    backgroundColor: C.surface,
-    borderRadius:    R.xl,
-    padding:         S.s8,
+  // ── Gesamtscore — frei, kein Surface-Container (§04) ──
+  scoreBlock: {
     alignItems:      'center',
-    marginBottom:    S.s5,
-    borderWidth:     1,
-    borderColor:     C.hairline,
+    paddingVertical: S.s8,
+    borderTopWidth:  1,
+    borderTopColor:  C.hairline,
+    marginBottom:    S.s2,
   },
   scoreEyebrow: {
     fontFamily:    F.semiBold,
@@ -250,11 +259,19 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     color:      C.textMuted,
   },
+  scoreVerdict: {
+    fontFamily:  F.semiBold,
+    fontSize:    14,
+    fontWeight:  '600',
+    color:       C.text,
+    marginTop:   S.s3,
+    textAlign:   'center',
+  },
   scoreDate: {
     fontFamily: F.regular,
     fontSize:   11.5,
     color:      C.textFaint,
-    marginTop:  S.s3,
+    marginTop:  S.s2,
   },
   // ── Categories ──
   section: {

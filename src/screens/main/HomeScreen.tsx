@@ -162,8 +162,9 @@ const HomeScreen: React.FC = () => {
           {renderUsagePill()}
         </View>
 
-        {/* Hero */}
+        {/* Hero — frei auf dem Screen, kein Container/Card (§04) */}
         <View style={styles.hero}>
+          <Text style={styles.heroEyebrow}>{t('home.analyzeEyebrow')}</Text>
           <Text style={styles.heroTitle}>{t('home.analyzeTitle')}</Text>
           <Text style={styles.heroBody}>{t('home.analyzeSubtitle')}</Text>
         </View>
@@ -188,21 +189,25 @@ const HomeScreen: React.FC = () => {
             )}
           </View>
         ) : (
-          <View style={styles.uploadRow}>
-            <TouchableOpacity style={styles.uploadCard} onPress={handlePickVideo} activeOpacity={0.8}>
-              <View style={styles.uploadIconWrap}>
-                <Upload size={26} color={C.text} strokeWidth={1.7} />
-              </View>
-              <Text style={styles.uploadTitle}>{t('home.uploadVideo')}</Text>
-              <Text style={styles.uploadSub}>{t('home.uploadVideoSub')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.uploadCard} onPress={handleRecordVideo} activeOpacity={0.8}>
-              <View style={styles.uploadIconWrap}>
-                <Video size={26} color={C.text} strokeWidth={1.7} />
-              </View>
-              <Text style={styles.uploadTitle}>{t('home.recordNow')}</Text>
-              <Text style={styles.uploadSub}>{t('home.recordNowSub')}</Text>
-            </TouchableOpacity>
+          /* Gestapelte Hairline-Reihen statt nebeneinander geboxte Kacheln (§04 + Don'ts) */
+          <View style={styles.uploadList}>
+            {[
+              { onPress: handlePickVideo,   Icon: Upload, label: t('home.uploadVideo'), sub: t('home.uploadVideoSub') },
+              { onPress: handleRecordVideo, Icon: Video,  label: t('home.recordNow'),   sub: t('home.recordNowSub')   },
+            ].map(({ onPress, Icon, label, sub }, idx) => (
+              <TouchableOpacity key={idx} style={styles.uploadRow} onPress={onPress} activeOpacity={0.8}>
+                {/* Outline-Icon-Kreis links (§04) */}
+                <View style={styles.uploadIconCircle}>
+                  <Icon size={20} color={C.textMuted} strokeWidth={1.7} />
+                </View>
+                <View style={styles.uploadText}>
+                  <Text style={styles.uploadTitle}>{label}</Text>
+                  <Text style={styles.uploadSub}>{sub}</Text>
+                </View>
+                {/* Leerer Outline-Radio rechts — wird zu gefülltem Sand wenn ausgewählt (§04 Radio) */}
+                <View style={styles.radioOutline} />
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -268,67 +273,83 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  // ── Hero — frei, kein Surface-Container (§04) ──
   hero: {
-    borderRadius: R.xl,
-    padding: S.s5,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.hairline,
-    marginBottom: S.s5,
+    borderTopWidth: 1,
+    borderTopColor: C.hairline,
+    paddingTop: S.s5,
+    paddingBottom: S.s6,
+    marginBottom: 0,
+  },
+  heroEyebrow: {
+    fontFamily:    F.semiBold,
+    fontSize:      10,
+    fontWeight:    '600',
+    color:         C.textMuted,
+    letterSpacing: 3,               // 0.3em of 10px
+    textTransform: 'uppercase',
+    marginBottom:  S.s3,
   },
   heroTitle: {
-    fontFamily: F.xBold,
-    fontSize: 28,
-    fontWeight: '800',
-    color: C.text,
-    lineHeight: 32,
-    letterSpacing: -0.98,
-    marginBottom: S.s2,
+    fontFamily:    F.xBold,
+    fontSize:      38,
+    fontWeight:    '800',
+    color:         C.text,
+    lineHeight:    40,
+    letterSpacing: -1.33,           // −.035em of 38px
+    marginBottom:  S.s3,
   },
   heroBody: {
     fontFamily: F.regular,
-    fontSize: 14.5,
-    color: C.textMuted,
-    lineHeight: 21,
+    fontSize:   14.5,
+    color:      C.textMuted,
+    lineHeight: 22,
+  },
+  // ── Upload — gestapelte Hairline-Reihen (§04 + Don'ts) ──
+  uploadList: {
+    borderTopWidth:    1,
+    borderTopColor:    C.hairline,
+    borderBottomWidth: 1,
+    borderBottomColor: C.hairline,
+    marginBottom:      S.s5,
   },
   uploadRow: {
-    flexDirection: 'row',
-    gap: S.s3,
-    marginBottom: S.s5,
+    flexDirection:  'row',
+    alignItems:     'center',
+    paddingVertical: S.s4,
+    gap:            S.s3,
+    borderBottomWidth: 1,
+    borderBottomColor: C.line,
   },
-  uploadCard: {
-    flex: 1,
-    backgroundColor: C.surface,
-    borderRadius: R.lg,
-    padding: S.s5,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: C.hairline,
-    minHeight: 136,
-    justifyContent: 'center',
+  uploadIconCircle: {
+    width:           40,
+    height:          40,
+    borderRadius:    20,
+    borderWidth:     1,
+    borderColor:     C.hairline,
+    alignItems:      'center',
+    justifyContent:  'center',
   },
-  uploadIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: R.md,
-    backgroundColor: C.surfaceAccent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: S.s3,
-  },
+  uploadText: { flex: 1 },
   uploadTitle: {
     fontFamily: F.semiBold,
-    fontSize: 14,
+    fontSize:   15,
     fontWeight: '600',
-    color: C.text,
-    marginBottom: 3,
-    textAlign: 'center',
+    color:      C.text,
+    marginBottom: 2,
   },
   uploadSub: {
     fontFamily: F.regular,
-    fontSize: 12,
-    color: C.textFaint,
-    textAlign: 'center',
+    fontSize:   12,
+    color:      C.textFaint,
+  },
+  // Leerer Outline-Radio (§04 Radio — ungefüllt = nicht ausgewählt)
+  radioOutline: {
+    width:        22,
+    height:       22,
+    borderRadius: 11,
+    borderWidth:  1.5,
+    borderColor:  C.hairline,
   },
   previewCard: {
     backgroundColor: C.surface,

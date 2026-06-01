@@ -101,6 +101,8 @@ const SettingsScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  // Settings-Radio — gefüllter Sand-Kreis mit dunklem Check (aktiv)
+  //                  leerer Outline-Kreis (inaktiv)  (§04 Settings-Radio)
   const LangRow = ({ code, label }: { code: 'en' | 'de'; label: string }) => {
     const active = currentLang === code;
     return (
@@ -113,7 +115,15 @@ const SettingsScreen: React.FC = () => {
         <View style={styles.rowIcon}><Globe size={18} color={C.textMuted} strokeWidth={1.7} /></View>
         <Text style={[styles.rowLabel, active && { color: C.accent }]}>{label}</Text>
         <View style={styles.rowRight}>
-          {active && <CheckCircle2 size={18} color={C.accent} strokeWidth={1.7} />}
+          {active ? (
+            /* Gefüllter Sand-Kreis mit dunklem Häkchen */
+            <View style={styles.radioFilled}>
+              <CheckCircle2 size={11} color="#1A1305" strokeWidth={2.5} />
+            </View>
+          ) : (
+            /* Leerer Outline-Kreis */
+            <View style={styles.radioEmpty} />
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -252,6 +262,15 @@ const styles = StyleSheet.create({
   rowRight: { flexDirection: 'row', alignItems: 'center' },
   rowValue: { fontFamily: F.medium, fontSize: 13, fontWeight: '500', marginRight: 4 },
   divider:  { height: 1, backgroundColor: C.line, marginLeft: S.s4 + 20 + S.s3 },
+  radioFilled: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: C.accent,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  radioEmpty: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 1.5, borderColor: C.hairline,
+  },
   signOut: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: C.errorBg, borderRadius: R.md,

@@ -129,7 +129,8 @@
   },
   "home": {
     "title": "PREZENCE",
-    "analyzeTitle": "Analysiere dein Sprechen",
+    "analyzeEyebrow": "KI-Coaching",
+    "analyzeTitle": "Analysiere dein Sprechen.",
     "analyzeSubtitle": "Lade ein Video hoch oder nimm eines auf und erhalte persönliches KI-Coaching",
     "uploadVideo": "Video hochladen",
     "uploadVideoSub": "Aus Bibliothek wählen",
@@ -180,6 +181,13 @@
     "summary": "Zusammenfassung des Coaches",
     "exercises": "Übungen für diese Woche",
     "exercise": "Übung {{number}}",
+    "verdict": {
+      "excellent":  "Außergewöhnliche Ausstrahlung",
+      "great":      "Starke Basis mit viel Potenzial",
+      "good":       "Gute Entwicklung — weiter so",
+      "solid":      "Solide Basis mit klarem Potenzial",
+      "developing": "Viel Luft nach oben"
+    },
     "saveReport": "Bericht speichern",
     "saved": "Bericht gespeichert!",
     "share": "Teilen",
