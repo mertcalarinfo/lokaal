@@ -10,6 +10,10 @@ import { HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAnalysis } from '../../hooks/useAnalysis';
+
+// Theme-abhängige P-Mark-Quellen (Spec §3 P-Mark)
+const P_DARK  = require('../../../assets/branding/P-warmwhite.png');
+const P_LIGHT = require('../../../assets/branding/P-navy.png');
 import Button from '../../components/Button';
 import { ThemeColors, F, R, S } from '../../theme';
 
@@ -147,10 +151,9 @@ const AnalysisLoadingScreen: React.FC = () => {
   const navigation = useNavigation<LoadingNav>();
   const route      = useRoute<LoadingRoute>();
   const { user }   = useAuth();
-  const { T }      = useTheme();
-  const styles     = useMemo(() => createStyles(T), [T]);
+  const { T, isDark } = useTheme();
+  const styles        = useMemo(() => createStyles(T), [T]);
   const { videoUri, answers } = route.params;
-
   const {
     state, uploadProgress, progress: realProgress,
     report, error, rawError, startAnalysis, cancel,
@@ -237,7 +240,7 @@ const AnalysisLoadingScreen: React.FC = () => {
         {/* Logo */}
         <View style={styles.logoSection}>
           <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-            <Image source={require('../../../assets/logo.png')} style={styles.logoImg} resizeMode="contain" />
+            <Image source={isDark ? P_DARK : P_LIGHT} style={styles.logoImg} resizeMode="contain" />
           </Animated.View>
           <Text style={styles.wordmark}>PREZENCE</Text>
         </View>

@@ -4,16 +4,17 @@
     "slug": "prezence",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/branding/app-icon-1024.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/logo.png",
+      "image": "./assets/branding/P-warmwhite.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#0A1422"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.prezence.app",
+      "icon": "./assets/branding/app-icon-1024.png",
       "infoPlist": {
         "NSCameraUsageDescription": "PREZENCE needs camera access to record your speaking videos.",
         "NSMicrophoneUsageDescription": "PREZENCE needs microphone access to record your speaking videos.",
@@ -22,12 +23,19 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/branding/app-icon-1024.png",
+        "backgroundColor": "#F4F1EA"
       },
       "package": "com.prezence.app",
       "googleServicesFile": "./google-services.json",
       "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -63,6 +71,12 @@
         "projectId": "8e79576a-7a76-44e3-8795-db633e727752"
       }
     },
-    "owner": "mertcalar"
+    "owner": "mertcalar",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8e79576a-7a76-44e3-8795-db633e727752"
+    }
   }
 }

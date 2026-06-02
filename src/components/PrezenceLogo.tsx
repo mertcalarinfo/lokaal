@@ -7,25 +7,14 @@ interface PrezenceLogoProps {
   size?:        'sm' | 'md' | 'lg';
   showTagline?: boolean;
   style?:       ViewStyle;
+  /** Kept for API-Kompatibilität — visuelle Ausrichtung folgt dem Bild-Lockup */
   layout?:      'horizontal' | 'vertical';
 }
 
 const createStyles = (T: ThemeColors) => StyleSheet.create({
-  vertical: {
+  wrapper: {
     alignItems: 'center',
-  },
-  horizontal: {
-    flexDirection: 'row',
-    alignItems:    'center',
-  },
-  logoImage: {
-    marginBottom: 10,
-  },
-  // Logo im UI immer --text (warmweiß auf dunkel, Navy auf hell) — §06 DO
-  wordmark: {
-    fontFamily: F.xBold,
-    fontWeight: '800',
-    color:      T.text,
+    justifyContent: 'center',
   },
   tagline: {
     fontFamily:    F.regular,
@@ -37,48 +26,40 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   },
 });
 
+// Höhe und proportionale Breite für das horizontale Lockup-Bild
+const SIZES: Record<'sm' | 'md' | 'lg', { height: number; width: number }> = {
+  sm: { height: 28, width: 148 },   // Header — Spec: 26–30 px
+  md: { height: 40, width: 212 },   // Auth-Screens, Paywall
+  lg: { height: 56, width: 296 },   // Login-Hero
+};
+
 const PrezenceLogo: React.FC<PrezenceLogoProps> = ({
   size        = 'md',
   showTagline = false,
   style,
-  layout      = 'vertical',
 }) => {
-  const { T } = useTheme();
+  const { T, isDark } = useTheme();
   const styles = useMemo(() => createStyles(T), [T]);
 
-  const imgSizes  = { sm: 28, md: 48, lg: 72 };
-  const textSizes = { sm: 14, md: 22, lg: 32 };
-  const imgSize   = imgSizes[size];
-  const textSize  = textSizes[size];
-  const isH       = layout === 'horizontal';
+  const { height, width } = SIZES[size];
+
+  // Automatische Theme-Wahl:
+  //   Dark  → warmweißes Logo auf dunklem Hintergrund
+  //   Light → navyfarbenes Logo auf hellem Hintergrund
+  const logoSource = isDark
+    ? require('../../assets/branding/logo-full-darkmode.png')
+    : require('../../assets/branding/logo-full-lightmode.png');
 
   return (
-    <View style={[isH ? styles.horizontal : styles.vertical, style]}>
+    <View style={[styles.wrapper, style]}>
       <Image
-        source={require('../../assets/logo.png')}
-        style={[
-          styles.logoImage,
-          { width: imgSize, height: imgSize },
-          isH && { marginRight: 10, marginBottom: 0 },
-        ]}
+        source={logoSource}
+        style={{ height, width }}
         resizeMode="contain"
       />
-      <View>
-        <Text
-          style={[
-            styles.wordmark,
-            {
-              fontSize:      textSize,
-              letterSpacing: textSize * 0.20,
-            },
-          ]}
-        >
-          PREZENCE
-        </Text>
-        {showTagline && (
-          <Text style={styles.tagline}>Your AI Communication Coach</Text>
-        )}
-      </View>
+      {showTagline && (
+        <Text style={styles.tagline}>Your AI Communication Coach</Text>
+      )}
     </View>
   );
 };

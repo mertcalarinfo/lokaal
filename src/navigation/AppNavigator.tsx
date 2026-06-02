@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, StyleSheet, ActivityIndicator, Image, Platform } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Image, Platform } from 'react-native';
 
 import { RootStackParamList } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -9,48 +9,38 @@ import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import LanguageSelectScreen from '../screens/onboarding/LanguageSelectScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
-import { ThemeColors, F } from '../theme';
+import { ThemeColors } from '../theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const createSplashStyles = (T: ThemeColors) => StyleSheet.create({
   container: {
-    flex: 1,
+    flex:            1,
     backgroundColor: T.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems:      'center',
+    justifyContent:  'center',
   },
-  logo: {
-    width: 96,
-    height: 96,
-    marginBottom: 20,
-  },
-  appName: {
-    fontFamily:    F.xBold,
-    fontSize:      28,
-    fontWeight:    '800',
-    color:         T.text,
-    letterSpacing: 5,
+  // P-Mark zentriert — Spec: dark P-warmwhite.png auf #0A1422, light P-navy.png auf #F4F1EA
+  pMark: {
+    width:        120,
+    height:       120,
+    marginBottom: 48,
   },
 });
 
 const SplashScreen: React.FC = () => {
-  const { T } = useTheme();
+  const { T, isDark } = useTheme();
   const styles = useMemo(() => createSplashStyles(T), [T]);
+
+  // Theme-abhängige P-Mark-Datei
+  const pSource = isDark
+    ? require('../../assets/branding/P-warmwhite.png')
+    : require('../../assets/branding/P-navy.png');
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../../assets/logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-      <Text style={styles.appName}>PREZENCE</Text>
-      <ActivityIndicator
-        size="small"
-        color={T.accent}
-        style={{ marginTop: 48 }}
-      />
+      <Image source={pSource} style={styles.pMark} resizeMode="contain" />
+      <ActivityIndicator size="small" color={T.accent} />
     </View>
   );
 };
