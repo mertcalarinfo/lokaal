@@ -50,10 +50,11 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
 
   // ── Header ──────────────────────────────────────────────────────────────────
   header: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
-    paddingVertical: S.s4,
+    flexDirection:    'row',
+    alignItems:       'center',
+    justifyContent:   'space-between',
+    paddingTop:       14,   // etwas mehr Luft für 62px-Logo
+    paddingBottom:    10,
   },
   usagePill: {
     flexDirection:     'row',

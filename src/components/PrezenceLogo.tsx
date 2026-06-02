@@ -27,8 +27,9 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
 });
 
 // Höhe und proportionale Breite für das horizontale Lockup-Bild
+// PNG-Aspect-Ratio: 924 × 540 ≈ 1.71 : 1
 const SIZES: Record<'sm' | 'md' | 'lg', { height: number; width: number }> = {
-  sm: { height: 40, width: 200 },   // Header — klar lesbar
+  sm: { height: 62, width: 106 },   // Header — 62 × 1.71 ≈ 106, Ratio exakt
   md: { height: 40, width: 212 },   // Auth-Screens, Paywall
   lg: { height: 56, width: 296 },   // Login-Hero
 };
