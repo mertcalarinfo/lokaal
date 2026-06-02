@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
-import { Upload, Video, Infinity, BarChart2, CheckCircle2 } from 'lucide-react-native';
+import { Upload, Video, Infinity, BarChart2, CheckCircle2, Check } from 'lucide-react-native';
 
 import { HomeStackParamList, OnboardingAnswers } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -25,6 +25,7 @@ import PrezenceLogo from '../../components/PrezenceLogo';
 import { ThemeColors, F, R, S } from '../../theme';
 
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
+type UploadOption = 'upload' | 'record';
 
 const MAX_VIDEO_DURATION_SECONDS = 300;
 
@@ -68,31 +69,34 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
     fontSize:   11,
     fontWeight: '600',
   },
+
   // ── Hero — frei, kein Surface-Container (§04) ──
+  // Logo-Header → Hero: 40px (S.s10) per Spec
   hero: {
-    borderTopWidth: 1,
-    borderTopColor: T.hairline,
-    paddingTop:     S.s5,
-    paddingBottom:  S.s6,
-    marginBottom:   0,
+    borderTopWidth:  1,
+    borderTopColor:  T.hairline,
+    marginTop:       S.s10,    // 40px Abstand vom Header zur Hairline
+    paddingTop:      S.s4,     // 16px Hairline → Eyebrow
+    paddingBottom:   S.s6,     // 24px Body → Upload-Liste (Spec: ~26px)
+    marginBottom:    0,
   },
   heroEyebrow: {
     fontFamily:    F.semiBold,
     fontSize:      10,
     fontWeight:    '600',
     color:         T.textMuted,
-    letterSpacing: 3,
+    letterSpacing: 3,          // .3em of 10px
     textTransform: 'uppercase',
-    marginBottom:  S.s3,
+    marginBottom:  S.s3,       // 12px Eyebrow → H1 (Spec)
   },
   heroTitle: {
     fontFamily:    F.xBold,
     fontSize:      38,
     fontWeight:    '800',
     color:         T.text,
-    lineHeight:    40,
+    lineHeight:    38,         // 1.0
     letterSpacing: -1.33,
-    marginBottom:  S.s3,
+    marginBottom:  14,         // 14px H1 → Body (Spec)
   },
   heroBody: {
     fontFamily: F.regular,
@@ -100,31 +104,46 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
     color:      T.textMuted,
     lineHeight: 22,
   },
-  // ── Upload — gestapelte Hairline-Reihen (§04 + Don'ts) ──
+
+  // ── Upload-Liste — gestapelte Hairline-Reihen (§04 + Don'ts) ──
   uploadList: {
     borderTopWidth:    1,
     borderTopColor:    T.hairline,
     borderBottomWidth: 1,
     borderBottomColor: T.hairline,
-    marginBottom:      S.s5,
+    marginBottom:      30,     // letzte Option → Button: 30px (Spec)
   },
   uploadRow: {
     flexDirection:   'row',
     alignItems:      'center',
-    paddingVertical: S.s4,
-    gap:             S.s3,
+    paddingVertical: 18,       // je 18px vertikales Padding (Spec)
+    gap:             S.s4,
     borderBottomWidth: 1,
     borderBottomColor: T.line,
   },
+
+  // Icon-Kreis — nicht ausgewählt
   uploadIconCircle: {
-    width:          40,
-    height:         40,
-    borderRadius:   20,
+    width:          46,
+    height:         46,
+    borderRadius:   R.pill,
     borderWidth:    1,
     borderColor:    T.hairline,
     alignItems:     'center',
     justifyContent: 'center',
   },
+  // Icon-Kreis — ausgewählt: Accent-Outline + surfaceAccent Tint (§04 Auswahl-Liste)
+  uploadIconCircleSel: {
+    width:           46,
+    height:          46,
+    borderRadius:    R.pill,
+    borderWidth:     1.5,
+    borderColor:     T.accent,
+    backgroundColor: T.surfaceAccent,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+
   uploadText:  { flex: 1 },
   uploadTitle: {
     fontFamily:   F.semiBold,
@@ -138,14 +157,25 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
     fontSize:   12,
     color:      T.textFaint,
   },
-  // Leerer Outline-Radio (§04 Radio — ungefüllt = nicht ausgewählt)
+
+  // Radio nicht ausgewählt — leerer Outline-Kreis (§04)
   radioOutline: {
-    width:        22,
-    height:       22,
-    borderRadius: 11,
+    width:        24,
+    height:       24,
+    borderRadius: R.pill,
     borderWidth:  1.5,
     borderColor:  T.hairline,
   },
+  // Radio ausgewählt — gefüllter Sand-Kreis + dunkles Häkchen (§04 / §06 DO)
+  radioFilled: {
+    width:           24,
+    height:          24,
+    borderRadius:    R.pill,
+    backgroundColor: T.accent,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+
   previewCard: {
     backgroundColor: T.surface,
     borderRadius:    R.lg,
@@ -189,8 +219,18 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
     textAlign:  'center',
     lineHeight: 20,
   },
+
+  // CTA + Subtext
   cta: {
-    marginTop: S.s2,
+    marginTop: 0,   // Abstand kommt von uploadList.marginBottom
+  },
+  // Subtext unter dem Button: „Eine Aufnahme. Ein ehrliches Urteil." (Spec Punkt 4)
+  ctaSubtext: {
+    fontFamily:  F.regular,
+    fontSize:    11.5,
+    color:       T.textFaint,
+    textAlign:   'center',
+    marginTop:   16,
   },
 });
 
@@ -203,6 +243,8 @@ const HomeScreen: React.FC = () => {
   const styles      = useMemo(() => createStyles(T), [T]);
 
   const [selectedVideo, setSelectedVideo] = useState<{ uri: string; duration?: number } | null>(null);
+  // Vorauswahl: „Video hochladen" ist per Default aktiv (§04 Spec)
+  const [selectedOption, setSelectedOption] = useState<UploadOption>('upload');
 
   const handlePickVideo = useCallback(async () => {
     try {
@@ -313,6 +355,30 @@ const HomeScreen: React.FC = () => {
     );
   };
 
+  // Upload-Optionen mit Selektions-Zustand (§04 Auswahl-Liste)
+  const OPTIONS: Array<{
+    key:     UploadOption;
+    onPress: () => void;
+    Icon:    React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
+    label:   string;
+    sub:     string;
+  }> = [
+    {
+      key:     'upload',
+      onPress: handlePickVideo,
+      Icon:    Upload,
+      label:   t('home.uploadVideo'),
+      sub:     t('home.uploadVideoSub'),
+    },
+    {
+      key:     'record',
+      onPress: handleRecordVideo,
+      Icon:    Video,
+      label:   t('home.recordNow'),
+      sub:     t('home.recordNowSub'),
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -325,6 +391,7 @@ const HomeScreen: React.FC = () => {
 
         {/* Hero — frei auf dem Screen, kein Container/Card (§04) */}
         <View style={styles.hero}>
+          {/* Eyebrow: „Heutige Session" — 10/600, UPPER, ls .3em, --text-muted (§02/§04) */}
           <Text style={styles.heroEyebrow}>{t('home.analyzeEyebrow')}</Text>
           <Text style={styles.heroTitle}>{t('home.analyzeTitle')}</Text>
           <Text style={styles.heroBody}>{t('home.analyzeSubtitle')}</Text>
@@ -350,25 +417,48 @@ const HomeScreen: React.FC = () => {
             )}
           </View>
         ) : (
-          /* Gestapelte Hairline-Reihen statt nebeneinander geboxte Kacheln (§04 + Don'ts) */
+          /*
+           * Gestapelte Hairline-Reihen (§04 + Don'ts).
+           * Ausgewählte Option: Icon-Kreis mit Accent-Outline + Tint;
+           * Häkchen rechts = GEFÜLLTER Accent-Kreis + --on-accent Check (§04 / §06 DO).
+           * Nicht ausgewählt: leerer Outline-Kreis.
+           */
           <View style={styles.uploadList}>
-            {[
-              { onPress: handlePickVideo,   Icon: Upload, label: t('home.uploadVideo'), sub: t('home.uploadVideoSub') },
-              { onPress: handleRecordVideo, Icon: Video,  label: t('home.recordNow'),   sub: t('home.recordNowSub')   },
-            ].map(({ onPress, Icon, label, sub }, idx) => (
-              <TouchableOpacity key={idx} style={styles.uploadRow} onPress={onPress} activeOpacity={0.8}>
-                {/* Outline-Icon-Kreis links (§04) */}
-                <View style={styles.uploadIconCircle}>
-                  <Icon size={20} color={T.textMuted} strokeWidth={1.7} />
-                </View>
-                <View style={styles.uploadText}>
-                  <Text style={styles.uploadTitle}>{label}</Text>
-                  <Text style={styles.uploadSub}>{sub}</Text>
-                </View>
-                {/* Leerer Outline-Radio rechts */}
-                <View style={styles.radioOutline} />
-              </TouchableOpacity>
-            ))}
+            {OPTIONS.map(({ key, onPress, Icon, label, sub }) => {
+              const isSel = selectedOption === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={styles.uploadRow}
+                  onPress={() => { setSelectedOption(key); onPress(); }}
+                  activeOpacity={0.8}
+                >
+                  {/* Icon-Kreis: Accent-Outline + Tint wenn selektiert */}
+                  <View style={isSel ? styles.uploadIconCircleSel : styles.uploadIconCircle}>
+                    <Icon
+                      size={20}
+                      color={isSel ? T.accent : T.textMuted}
+                      strokeWidth={1.7}
+                    />
+                  </View>
+
+                  <View style={styles.uploadText}>
+                    <Text style={styles.uploadTitle}>{label}</Text>
+                    <Text style={styles.uploadSub}>{sub}</Text>
+                  </View>
+
+                  {/* Häkchen: gefüllter Accent-Kreis mit --on-accent Check (selektiert)
+                      oder leerer Outline-Kreis (nicht selektiert) */}
+                  {isSel ? (
+                    <View style={styles.radioFilled}>
+                      <Check size={13} color={T.onAccent} strokeWidth={3} strokeLinecap="round" />
+                    </View>
+                  ) : (
+                    <View style={styles.radioOutline} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
 
@@ -386,15 +476,18 @@ const HomeScreen: React.FC = () => {
           </View>
         )}
 
-        {/* CTA */}
+        {/* CTA — Button aktiv sobald Option gewählt (per Default sofort) */}
         <View style={styles.cta}>
           <Button
             label={t('home.analyzeButton')}
             onPress={handleAnalyze}
-            disabled={!selectedVideo || (!canAnalyze && !isSubscribed)}
             fullWidth
             size="lg"
           />
+          {/* Subtext unter dem Button (§ Punkt 4) */}
+          <Text style={styles.ctaSubtext}>
+            Eine Aufnahme. Ein ehrliches Urteil.
+          </Text>
         </View>
 
       </ScrollView>
