@@ -71,7 +71,8 @@ const Button: React.FC<ButtonProps> = ({
 
   const getTextStyle = (): TextStyle => {
     const variantTextColor: Record<ButtonVariant, string> = {
-      primary:   isDisabled ? T.textMuted : '#101A28',  // dark on warm-white / cream
+      // Primary: T.btnFg = dark on warm-white (dark) / off-white on navy (light)
+      primary:   isDisabled ? T.textMuted : T.btnFg,
       secondary: T.text,
       outline:   T.text,
       ghost:     T.textMuted,

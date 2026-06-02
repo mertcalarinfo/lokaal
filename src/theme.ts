@@ -38,6 +38,10 @@ export const darkPalette = {
   successBg:      'rgba(118,196,155,0.12)',
   error:          '#E8927C',
   errorBg:        'rgba(232,146,124,0.10)',
+
+  // Button-Vordergrund — Label-Farbe auf Primary-Button (T.text-Fläche)
+  // Dark:  warmweißer Button → dunkles Label
+  btnFg:          '#101A28',
 } as const;
 
 export const lightPalette = {
@@ -69,6 +73,10 @@ export const lightPalette = {
   successBg:      'rgba(63,155,110,0.12)',
   error:          '#C75B43',
   errorBg:        'rgba(199,91,67,0.10)',
+
+  // Button-Vordergrund — Label-Farbe auf Primary-Button (T.text-Fläche)
+  // Light: navy Button → off-white Label
+  btnFg:          '#F4F1EA',
 } as const;
 
 /**

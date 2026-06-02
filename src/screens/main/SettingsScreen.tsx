@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import {
   Globe, Pencil, Star, CreditCard, Info, LogOut,
-  ChevronRight, CheckCircle2, Sun, Moon, Smartphone,
+  ChevronRight, Check, Sun, Moon, Smartphone,
 } from 'lucide-react-native';
 
 import { useAuth } from '../../hooks/useAuth';
@@ -66,14 +66,14 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   rowRight: { flexDirection: 'row', alignItems: 'center' },
   rowValue: { fontFamily: F.medium, fontSize: 13, fontWeight: '500', marginRight: 4 },
   divider:  { height: 1, backgroundColor: T.line, marginLeft: S.s4 + 20 + S.s3 },
-  // §04 Settings-Radio — gefüllter Sand-Kreis mit dunklem Check (aktiv)
+  // §04 Settings-Radio — identisch mit HomeScreen (Spec #5): 26×26
   radioFilled: {
-    width: 22, height: 22, borderRadius: 11,
+    width: 26, height: 26, borderRadius: R.pill,
     backgroundColor: T.accent,
     alignItems: 'center', justifyContent: 'center',
   },
   radioEmpty: {
-    width: 22, height: 22, borderRadius: 11,
+    width: 26, height: 26, borderRadius: R.pill,
     borderWidth: 1.5, borderColor: T.hairline,
   },
   signOut: {
@@ -181,8 +181,9 @@ const SettingsScreen: React.FC = () => {
       <Text style={[styles.rowLabel, active && { color: T.accent }]}>{label}</Text>
       <View style={styles.rowRight}>
         {active ? (
+          // Gefüllter Accent-Kreis + --on-accent Häkchen — identisch mit HomeScreen (Spec #5)
           <View style={styles.radioFilled}>
-            <CheckCircle2 size={11} color={T.onAccent} strokeWidth={2.5} />
+            <Check size={13} color={T.onAccent} strokeWidth={3} strokeLinecap="round" />
           </View>
         ) : (
           <View style={styles.radioEmpty} />

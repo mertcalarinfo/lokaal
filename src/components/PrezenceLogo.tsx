@@ -28,7 +28,7 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
 
 // Höhe und proportionale Breite für das horizontale Lockup-Bild
 const SIZES: Record<'sm' | 'md' | 'lg', { height: number; width: number }> = {
-  sm: { height: 28, width: 148 },   // Header — Spec: 26–30 px
+  sm: { height: 40, width: 200 },   // Header — klar lesbar
   md: { height: 40, width: 212 },   // Auth-Screens, Paywall
   lg: { height: 56, width: 296 },   // Login-Hero
 };
