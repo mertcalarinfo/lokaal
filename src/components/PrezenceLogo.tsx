@@ -27,11 +27,11 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
 });
 
 // Höhe und proportionale Breite für das horizontale Lockup-Bild
-// PNG-Aspect-Ratio: 924 × 540 ≈ 1.71 : 1
+// PNG-Aspect-Ratio: 501 × 168 ≈ 2.98 : 1 (transparente PNGs)
 const SIZES: Record<'sm' | 'md' | 'lg', { height: number; width: number }> = {
-  sm: { height: 62, width: 106 },   // Header — 62 × 1.71 ≈ 106, Ratio exakt
-  md: { height: 40, width: 212 },   // Auth-Screens, Paywall
-  lg: { height: 56, width: 296 },   // Login-Hero
+  sm: { height: 44, width: 131 },   // Header — 44 × 2.98 ≈ 131, Ratio exakt
+  md: { height: 44, width: 131 },   // Auth-Screens, Paywall
+  lg: { height: 56, width: 167 },   // Login-Hero — 56 × 2.98 ≈ 167
 };
 
 const PrezenceLogo: React.FC<PrezenceLogoProps> = ({
