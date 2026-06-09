@@ -53,7 +53,7 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
 const LoginScreen: React.FC = () => {
   const { t }        = useTranslation();
   const navigation   = useNavigation<LoginNav>();
-  const { signIn, skipLogin } = useAuth();
+  const { signIn, signInWithGoogle, skipLogin } = useAuth();
   const { T } = useTheme();
   const styles = useMemo(() => createStyles(T), [T]);
 
@@ -62,6 +62,7 @@ const LoginScreen: React.FC = () => {
   const [emailError,    setEmailError]    = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [loading,       setLoading]       = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const validateEmail = (v: string) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) {
@@ -147,7 +148,24 @@ const LoginScreen: React.FC = () => {
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.googleBtn} onPress={() => {}} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={[styles.googleBtn, googleLoading && { opacity: 0.6 }]}
+              onPress={async () => {
+                setGoogleLoading(true);
+                try {
+                  await signInWithGoogle();
+                } catch (err: any) {
+                  const code = err?.code || '';
+                  if (!code.includes('SIGN_IN_CANCELLED')) {
+                    Alert.alert(t('common.error'), t('auth.login.errors.generic'));
+                  }
+                } finally {
+                  setGoogleLoading(false);
+                }
+              }}
+              disabled={googleLoading}
+              activeOpacity={0.8}
+            >
               <Text style={styles.googleG}>G</Text>
               <Text style={styles.googleText}>{t('auth.login.googleButton')}</Text>
             </TouchableOpacity>

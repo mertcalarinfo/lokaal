@@ -2,7 +2,8 @@ import { Platform } from 'react-native';
 
 // Firebase configuration - replace with your actual config
 const firebaseConfig = {
-  apiKey: 'AIzaSyAPdYymYqKSY7l7Jhevpif3kfJbhMgQCDU',
+  // Key aus google-services.json — identisch mit dem nativen Build
+  apiKey: 'AIzaSyADE9biVaDxVHhBo9k8Sr0rSKuQi7zQCFc',
   authDomain: 'prezence-app-1.firebaseapp.com',
   projectId: 'prezence-app-1',
   storageBucket: 'prezence-app-1.firebasestorage.app',

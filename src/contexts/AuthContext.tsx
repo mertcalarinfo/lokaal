@@ -228,7 +228,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       GoogleSignin.configure({
-        webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+        // Web-Client-ID aus google-services.json (client_type: 3)
+        webClientId: '870921496071-c39cqnb9mhh693bdf3rviutshs2km1tj.apps.googleusercontent.com',
       });
 
       await GoogleSignin.hasPlayServices();
