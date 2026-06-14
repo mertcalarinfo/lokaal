@@ -3,6 +3,8 @@ import { Subscription } from '../types';
 import { checkSubscription, presentPaywall as rcPresentPaywall, initRevenueCat, identifyUser } from '../services/revenuecat';
 import { getReportsByMonth } from '../services/storage';
 
+// Temporär deaktiviert für Beta — auf true setzen um Freemium-Limit (1/Monat) wieder zu aktivieren
+const ENFORCE_FREE_TIER_LIMIT = false;
 const FREE_TIER_MONTHLY_LIMIT = 1;
 
 interface SubscriptionHookState {
@@ -109,7 +111,9 @@ export const useSubscription = (
 
   const isSubscribed = subscription.tier === 'premium' && subscription.isActive;
   const canAnalyze =
-    isSubscribed || subscription.analysesThisMonth < FREE_TIER_MONTHLY_LIMIT;
+    !ENFORCE_FREE_TIER_LIMIT ||
+    isSubscribed ||
+    subscription.analysesThisMonth < FREE_TIER_MONTHLY_LIMIT;
 
   return {
     subscription,
