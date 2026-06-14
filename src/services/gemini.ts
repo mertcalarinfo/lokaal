@@ -7,7 +7,7 @@ import { copyAsync, uploadAsync, FileSystemUploadType } from 'expo-file-system/l
 import Constants from 'expo-constants';
 import { Video as VideoCompressor } from 'react-native-compressor';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { OnboardingAnswers, AnalysisReport, CategoryResult } from '../types';
+import { OnboardingAnswers, AnalysisReport, CategoryResult, ComparisonResult, ComparisonCategoryItem } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 // Read the API key injected at build time via app.config.js → extra.geminiApiKey.
@@ -447,6 +447,160 @@ function validateAndNormalizeReport(rawData: any, videoUrl: string, userId: stri
     averageScore,
   };
 }
+
+// ─── Video-Vergleich ─────────────────────────────────────────────────────────
+
+const COMPARE_TIMEOUT_MS = 480_000; // 8 min — zwei Uploads + Processing
+
+/** Maps a 0-1 sub-fraction onto the range [from, to] for the outer progress bar. */
+function subProgress(cb: ProgressCb | undefined, from: number, to: number): ProgressCb {
+  return (p) => cb?.(from + p * (to - from));
+}
+
+function buildComparePrompt(userContext: string): string {
+  const ctx = userContext.trim();
+  return `You are an elite communication coach. The user has submitted TWO speaking videos.
+Video 1 is the EARLIER recording, Video 2 is the MORE RECENT recording.
+
+Your job: compare them and identify meaningful developments in the speaker's communication skills.
+${ctx ? `\nUser context (address this explicitly in contextResponse): "${ctx}"\n` : ''}
+Detect the language the speaker uses and write your ENTIRE response in that language.
+If German, always use informal "du" — never "Sie".
+
+Identify the 2–3 most noteworthy changes across these categories:
+Filler Words · Speaking Pace · Use of Pauses · Eye Contact · Body Language & Gestures ·
+Facial Expression · Voice Modulation · Content Structure · Overall Confidence & Presence
+
+Return ONLY valid JSON — no markdown fences, no extra text:
+{
+  "overallChange": "2-3 sentences describing the overall development",
+  "categoryComparisons": [
+    {
+      "category": "Category name in the speaker's language",
+      "direction": "improved",
+      "observation": "One specific sentence comparing this category between both videos"
+    }
+  ],
+  "contextResponse": "Specific response to user context, or null",
+  "coachComment": "2-3 sentences of honest, motivating closing comment"
+}
+
+Rules:
+- Exactly 2–3 items in categoryComparisons
+- direction must be exactly "improved", "declined", or "same"
+- contextResponse must be null (JSON null, not the string "null") if no user context was given
+- Reference what you actually see — be specific, not generic`;
+}
+
+function validateComparisonResult(raw: any): ComparisonResult {
+  const validDirections = new Set(['improved', 'declined', 'same']);
+  const cats: ComparisonCategoryItem[] = Array.isArray(raw.categoryComparisons)
+    ? raw.categoryComparisons.slice(0, 3).map((c: any) => ({
+        category:    String(c.category   || ''),
+        direction:   validDirections.has(c.direction) ? c.direction : 'same',
+        observation: String(c.observation || ''),
+      }))
+    : [];
+
+  return {
+    overallChange:       typeof raw.overallChange  === 'string' ? raw.overallChange  : '',
+    categoryComparisons: cats,
+    contextResponse:     typeof raw.contextResponse === 'string' && raw.contextResponse
+                           ? raw.contextResponse : null,
+    coachComment:        typeof raw.coachComment   === 'string' ? raw.coachComment   : '',
+  };
+}
+
+export async function compareVideos(
+  videoUri1:   string,
+  videoUri2:   string,
+  userContext: string,
+  onProgress?: ProgressCb,
+): Promise<ComparisonResult> {
+  return Promise.race([
+    doCompareVideos(videoUri1, videoUri2, userContext, onProgress),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT')), COMPARE_TIMEOUT_MS)
+    ),
+  ]);
+}
+
+async function doCompareVideos(
+  videoUri1:   string,
+  videoUri2:   string,
+  userContext: string,
+  onProgress?: ProgressCb,
+): Promise<ComparisonResult> {
+  // API probe
+  console.log('[Gemini Compare] Probing API…');
+  try {
+    const probe = genAI.getGenerativeModel({ model: GEMINI_MODEL, generationConfig: { maxOutputTokens: 8 } });
+    await probe.generateContent('Hello');
+  } catch (err: any) {
+    throw new Error(`GEMINI_API_ERROR: probe failed — ${err.message}`);
+  }
+  onProgress?.(0.04);
+
+  // Upload video 1  (progress 0.04 → 0.40)
+  console.log('[Gemini Compare] Uploading video 1…');
+  let fileUri1: string;
+  try {
+    fileUri1 = await uploadVideoToGeminiFiles(videoUri1, subProgress(onProgress, 0.04, 0.40));
+  } catch (err: any) {
+    throw new Error(`UPLOAD_FAILED_V1: ${err.message}`);
+  }
+
+  // Upload video 2  (progress 0.40 → 0.76)
+  console.log('[Gemini Compare] Uploading video 2…');
+  let fileUri2: string;
+  try {
+    fileUri2 = await uploadVideoToGeminiFiles(videoUri2, subProgress(onProgress, 0.40, 0.76));
+  } catch (err: any) {
+    throw new Error(`UPLOAD_FAILED_V2: ${err.message}`);
+  }
+
+  // generateContent with both files  (progress 0.76 → 0.95)
+  onProgress?.(0.76);
+  console.log('[Gemini Compare] Sending both videos for comparison…');
+
+  const model = genAI.getGenerativeModel({
+    model: GEMINI_MODEL,
+    generationConfig: {
+      temperature:       0.4,
+      topP:              0.95,
+      maxOutputTokens:   4096,
+      responseMimeType:  'application/json',
+    },
+  });
+
+  let sdkResponse: any;
+  try {
+    sdkResponse = await model.generateContent([
+      { fileData: { mimeType: 'video/mp4', fileUri: fileUri1 } },
+      { fileData: { mimeType: 'video/mp4', fileUri: fileUri2 } },
+      buildComparePrompt(userContext),
+    ]);
+  } catch (err: any) {
+    throw new Error(`GEMINI_API_ERROR: ${err.message}`);
+  }
+  onProgress?.(0.95);
+
+  const text = sdkResponse.response.text();
+  if (!text) throw new Error('Empty response from Gemini');
+
+  let raw: any;
+  try {
+    raw = extractJsonFromText(text);
+  } catch (err: any) {
+    throw new Error(`PARSE_ERROR: ${err.message}`);
+  }
+
+  const result = validateComparisonResult(raw);
+  onProgress?.(1);
+  return result;
+}
+
+// ─── Single-video analysis ────────────────────────────────────────────────────
 
 export async function analyzeVideo(
   videoUri: string,

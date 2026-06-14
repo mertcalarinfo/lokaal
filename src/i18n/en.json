@@ -182,10 +182,10 @@
     "exercises": "This Week's Exercises",
     "exercise": "Exercise {{number}}",
     "verdict": {
-      "excellent":  "Exceptional Presence",
-      "great":      "Strong Foundation with Potential",
-      "good":       "Good Progress, Keep Going",
-      "solid":      "Solid Base with Clear Potential",
+      "excellent": "Exceptional Presence",
+      "great": "Strong Foundation with Potential",
+      "good": "Good Progress, Keep Going",
+      "solid": "Solid Base with Clear Potential",
       "developing": "Great Room for Improvement"
     },
     "saveReport": "Save Report",
@@ -280,5 +280,37 @@
       "notAvailable": "Subscriptions aren't available right now. Please make sure you're on a production build and try again later.",
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "compare": {
+    "title": "Compare",
+    "subtitle": "Pick two recordings and see how you have improved.",
+    "video1Label": "VIDEO 1",
+    "video2Label": "VIDEO 2",
+    "fromAnalysis": "Select from saved analysis",
+    "fromGallery": "Upload from gallery",
+    "contextLabel": "Context (optional)",
+    "contextPlaceholder": "e.g. In the first video I kept using filler words. I then did the exercises you suggested. Can you see a difference in video 2?",
+    "compareButton": "Compare",
+    "selectBothVideos": "Please select both videos.",
+    "loadingEyebrow": "AI Analysis",
+    "loadingTitle": "Analyzing videos",
+    "loadingSubtitle": "Both recordings are being compressed, uploaded and compared.",
+    "loadingVideo1": "Uploading video 1…",
+    "loadingVideo2": "Uploading video 2…",
+    "loadingAnalyzing": "Gemini is comparing both videos…",
+    "resultTitle": "Your Comparison",
+    "overallLabel": "Overall Development",
+    "categoriesLabel": "Notable Differences",
+    "contextResponseLabel": "About Your Context",
+    "coachLabel": "Coach Comment",
+    "improved": "Improved",
+    "declined": "Declined",
+    "same": "No change",
+    "newComparison": "New Comparison",
+    "selectReport": "Select Analysis",
+    "selectReportHint": "Select the analysis whose video you want to use for the comparison.",
+    "noReports": "No saved analyses yet.",
+    "errorTitle": "Comparison failed",
+    "errorRetry": "Try again"
   }
 }

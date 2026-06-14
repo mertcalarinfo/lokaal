@@ -87,10 +87,27 @@ export type MainStackParamList = {
 };
 
 export type MainTabParamList = {
-  HomeTab: undefined;
+  HomeTab:     undefined;
   ProgressTab: undefined;
+  CompareTab:  undefined;
   SettingsTab: undefined;
 };
+
+// ── Video-Vergleich (ephemeral — wird nicht in Firestore gespeichert) ─────────
+
+export interface ComparisonCategoryItem {
+  category:    string;
+  direction:   'improved' | 'declined' | 'same';
+  observation: string;
+}
+
+export interface ComparisonResult {
+  overallChange:        string;
+  categoryComparisons:  ComparisonCategoryItem[];
+  /** null wenn der Nutzer keinen Kontext eingegeben hat */
+  contextResponse:      string | null;
+  coachComment:         string;
+}
 
 export type HomeStackParamList = {
   Home: undefined;

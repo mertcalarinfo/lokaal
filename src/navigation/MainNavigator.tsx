@@ -3,13 +3,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Mic, TrendingUp, Settings2 } from 'lucide-react-native';
+import { Mic, TrendingUp, Settings2, GitCompare } from 'lucide-react-native';
 
 import { MainTabParamList, MainStackParamList } from '../types';
 import HomeScreen from '../screens/main/HomeScreen';
 import AnalysisLoadingScreen from '../screens/main/AnalysisLoadingScreen';
 import ReportScreen from '../screens/main/ReportScreen';
 import ProgressScreen from '../screens/main/ProgressScreen';
+import CompareScreen from '../screens/main/CompareScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import PaywallScreen from '../screens/paywall/PaywallScreen';
@@ -73,30 +74,21 @@ const TabNavigator: React.FC = () => {
           marginTop:  4,
         },
 
-        // ── Icons — Lucide, stroke 1.7, round ──────────────────────────────
+        // ── Icons — Lucide, stroke 1.7, round; 4 Tabs → keine Labels ──────
+        tabBarShowLabel: false,
         tabBarIcon: ({ color }) => {
           const s = 1.7;
           if (route.name === 'HomeTab')     return <Mic        size={22} color={color} strokeWidth={s} />;
           if (route.name === 'ProgressTab') return <TrendingUp size={22} color={color} strokeWidth={s} />;
+          if (route.name === 'CompareTab')  return <GitCompare size={22} color={color} strokeWidth={s} />;
           return                                   <Settings2  size={22} color={color} strokeWidth={s} />;
         },
       })}
     >
-      <Tab.Screen
-        name="HomeTab"
-        component={HomeStackNavigator}
-        options={{ tabBarLabel: 'Analyze' }}
-      />
-      <Tab.Screen
-        name="ProgressTab"
-        component={ProgressScreen}
-        options={{ tabBarLabel: t('progress.title') }}
-      />
-      <Tab.Screen
-        name="SettingsTab"
-        component={SettingsScreen}
-        options={{ tabBarLabel: t('settings.title') }}
-      />
+      <Tab.Screen name="HomeTab"     component={HomeStackNavigator} />
+      <Tab.Screen name="ProgressTab" component={ProgressScreen} />
+      <Tab.Screen name="CompareTab"  component={CompareScreen} />
+      <Tab.Screen name="SettingsTab" component={SettingsScreen} />
     </Tab.Navigator>
   );
 };

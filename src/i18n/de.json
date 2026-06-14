@@ -182,10 +182,10 @@
     "exercises": "Übungen für diese Woche",
     "exercise": "Übung {{number}}",
     "verdict": {
-      "excellent":  "Außergewöhnliche Ausstrahlung",
-      "great":      "Starke Basis mit viel Potenzial",
-      "good":       "Gute Entwicklung — weiter so",
-      "solid":      "Solide Basis mit klarem Potenzial",
+      "excellent": "Außergewöhnliche Ausstrahlung",
+      "great": "Starke Basis mit viel Potenzial",
+      "good": "Gute Entwicklung — weiter so",
+      "solid": "Solide Basis mit klarem Potenzial",
       "developing": "Viel Luft nach oben"
     },
     "saveReport": "Bericht speichern",
@@ -280,5 +280,37 @@
       "notAvailable": "Abonnements sind derzeit nicht verfügbar. Bitte stelle sicher, dass du einen Produktions-Build verwendest, und versuche es später erneut.",
       "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
     }
+  },
+  "compare": {
+    "title": "Vergleich",
+    "subtitle": "Wähle zwei Aufnahmen und sieh, wie du dich entwickelt hast.",
+    "video1Label": "VIDEO 1",
+    "video2Label": "VIDEO 2",
+    "fromAnalysis": "Aus gespeicherter Analyse wählen",
+    "fromGallery": "Aus Galerie hochladen",
+    "contextLabel": "Kontext (optional)",
+    "contextPlaceholder": "z.B. Im ersten Video hab ich mich oft verplappert. Danach hab ich die vorgeschlagenen Übungen gemacht. Wie siehst du den Unterschied im zweiten Video?",
+    "compareButton": "Vergleichen",
+    "selectBothVideos": "Bitte wähle beide Videos aus.",
+    "loadingEyebrow": "KI-Analyse",
+    "loadingTitle": "Videos werden analysiert",
+    "loadingSubtitle": "Beide Aufnahmen werden komprimiert, hochgeladen und verglichen.",
+    "loadingVideo1": "Video 1 wird hochgeladen…",
+    "loadingVideo2": "Video 2 wird hochgeladen…",
+    "loadingAnalyzing": "Gemini vergleicht beide Videos…",
+    "resultTitle": "Dein Vergleich",
+    "overallLabel": "Gesamtentwicklung",
+    "categoriesLabel": "Konkrete Unterschiede",
+    "contextResponseLabel": "Zu deinem Kontext",
+    "coachLabel": "Coach-Kommentar",
+    "improved": "Verbessert",
+    "declined": "Rückgang",
+    "same": "Gleichbleibend",
+    "newComparison": "Neuer Vergleich",
+    "selectReport": "Analyse auswählen",
+    "selectReportHint": "Wähle die Analyse, deren Video du für den Vergleich nutzen möchtest.",
+    "noReports": "Noch keine gespeicherten Analysen.",
+    "errorTitle": "Vergleich fehlgeschlagen",
+    "errorRetry": "Erneut versuchen"
   }
 }
