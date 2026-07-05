@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/branding/app-icon-1024.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/branding/P-warmwhite.png",
       "resizeMode": "contain",
@@ -13,9 +13,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.prezence.app",
+      "bundleIdentifier": "com.prezence.ios",
       "icon": "./assets/branding/app-icon-1024.png",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "PREZENCE needs camera access to record your speaking videos.",
         "NSMicrophoneUsageDescription": "PREZENCE needs microphone access to record your speaking videos.",
         "NSPhotoLibraryUsageDescription": "PREZENCE needs photo library access to upload your speaking videos."
@@ -29,13 +30,6 @@
       "package": "com.prezence.app",
       "googleServicesFile": "./google-services.json",
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.READ_MEDIA_VIDEO",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
