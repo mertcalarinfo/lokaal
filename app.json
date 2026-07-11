@@ -41,6 +41,21 @@
       ]
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBAuth",
+              "RNFBFirestore",
+              "RNFBFunctions",
+              "RNFBStorage"
+            ]
+          }
+        }
+      ],
       "expo-dev-client",
       "@react-native-firebase/app",
       [
@@ -59,15 +74,7 @@
         }
       ],
       "expo-font",
-      "react-native-compressor",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useFrameworks": "static"
-          }
-        }
-      ]
+      "react-native-compressor"
     ],
     "extra": {
       "eas": {
