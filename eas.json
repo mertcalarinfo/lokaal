@@ -21,18 +21,12 @@
         "buildType": "apk"
       },
       "ios": {
-        "simulator": false,
-        "secrets": {
-          "GOOGLE_SERVICE_INFO_PLIST": "GoogleService-Info.plist"
-        }
+        "simulator": false
       }
     },
     "production": {
       "ios": {
-        "simulator": false,
-        "secrets": {
-          "GOOGLE_SERVICE_INFO_PLIST": "GoogleService-Info.plist"
-        }
+        "simulator": false
       }
     }
   },
