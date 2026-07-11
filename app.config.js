@@ -12,6 +12,14 @@
  */
 module.exports = ({ config }) => ({
   ...config,
+  ios: {
+    ...config.ios,
+    // EAS materializes the GOOGLE_SERVICE_INFO_PLIST file secret at build time
+    // and sets this env var to its absolute path. Falls back to the static
+    // app.json value (./GoogleService-Info.plist) for local development.
+    googleServicesFile:
+      process.env.GOOGLE_SERVICE_INFO_PLIST || config.ios.googleServicesFile,
+  },
   extra: {
     ...config.extra,
     geminiApiKey: process.env.GEMINI_API_KEY || '',
