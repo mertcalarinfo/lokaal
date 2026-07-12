@@ -14,7 +14,17 @@ const PREMIUM_ENTITLEMENT_ID = 'premium';
 let isInitialized = false;
 let Purchases: any = null;
 
-const isPlaceholderKey = (key: string) => !key || key.startsWith('YOUR_');
+// RevenueCat public SDK keys are store-prefixed: Apple "appl_", Google "goog_".
+// A key that is empty, a "YOUR_..." placeholder, or the wrong store format must
+// NEVER reach the native Purchases.configure() call — an unusable key makes the
+// SDK abort the whole app natively (SIGABRT / "abort() called"), which a JS
+// try/catch cannot rescue. When the key is unusable we skip initialisation
+// entirely: purchases stay disabled while the rest of the app keeps working.
+const isUsableKey = (key: string, platform: string): boolean => {
+  if (!key || key.startsWith('YOUR_')) return false;
+  if (platform === 'ios') return key.startsWith('appl_');
+  return true; // android: keep existing leniency (sandbox key)
+};
 
 const initializeRevenueCat = async (): Promise<void> => {
   if (isInitialized) return;
@@ -27,9 +37,9 @@ const initializeRevenueCat = async (): Promise<void> => {
     // Don't try to configure with a placeholder key — that throws natively and
     // leaves the SDK in a half-initialised state. Skip cleanly so the paywall
     // can show an informative message instead of crashing.
-    if (isPlaceholderKey(apiKey)) {
+    if (!isUsableKey(apiKey, Platform.OS)) {
       console.warn(
-        `[RevenueCat] No valid API key for ${Platform.OS} — purchases disabled. ` +
+        `[RevenueCat] No usable API key for ${Platform.OS} — purchases disabled. ` +
           `Set REVENUECAT_${Platform.OS === 'ios' ? 'IOS' : 'ANDROID'}_KEY to enable.`
       );
       return;
