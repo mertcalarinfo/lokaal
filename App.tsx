@@ -16,7 +16,7 @@ import { StartupErrorBoundary } from './src/components/StartupErrorBoundary';
 
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -128,7 +128,7 @@ export default function App() {
   return (
     <StartupErrorBoundary>
       <GestureHandlerRootView style={styles.root}>
-        <SafeAreaProvider>
+        <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <ThemeProvider>
             <AuthProvider>
               <AppContent />

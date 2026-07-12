@@ -1,28 +1,23 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
+  View, Text, StyleSheet, ScrollView, Alert,
 } from 'react-native';
 import { Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
-import { Upload, Video, Infinity, BarChart2, CheckCircle2, Check } from 'lucide-react-native';
+import { CheckCircle2, Sparkles, Upload, Video as VideoIcon } from 'lucide-react-native';
 
-import { HomeStackParamList, OnboardingAnswers } from '../../types';
+import { HomeStackParamList, OnboardingAnswers, AnalysisReport } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
-import { useTheme } from '../../contexts/ThemeContext';
-import Button from '../../components/Button';
+import { getUserReports } from '../../services/storage';
+import PressableScale from '../../components/PressableScale';
 import VideoThumbnail from '../../components/VideoThumbnail';
 import PrezenceLogo from '../../components/PrezenceLogo';
-import { ThemeColors, F, R, S } from '../../theme';
+import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
 
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 type UploadOption = 'upload' | 'record';
@@ -36,227 +31,82 @@ function getVideoDurationSeconds(raw?: number | null): number | undefined {
   return seconds;
 }
 
-const createStyles = (T: ThemeColors) => StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: T.bg,
-  },
-  // flexGrow:1 → marginTop:'auto' auf CTA funktioniert (Button sitzt am Boden)
-  scroll: {
-    flexGrow:          1,
-    paddingHorizontal: S.screen,
-    paddingBottom:     0,
-  },
+type TFn = (key: string, opts?: any) => string;
 
-  // ── Header ──────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection:    'row',
-    alignItems:       'center',
-    justifyContent:   'space-between',
-    paddingTop:       14,   // etwas mehr Luft für 62px-Logo
-    paddingBottom:    10,
-  },
-  usagePill: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    backgroundColor:   T.surface,
-    borderRadius:      R.pill,
-    paddingHorizontal: S.s3,
-    paddingVertical:   6,
-    borderWidth:       1,
-    borderColor:       T.hairline,
-    gap:               5,
-  },
-  usagePillText: {
-    fontFamily: F.semiBold,
-    fontSize:   11,
-    fontWeight: '600',
-  },
+function score100(s: number): number {
+  return Math.round(s * 10);
+}
 
-  // ── Hero — frei auf dem Screen, KEINE Hairline (§04 + Fix #1) ──────────────
-  hero: {
-    marginTop:    S.s10,   // 40px Logo → Eyebrow (Spec)
-    paddingBottom: 0,
-  },
-  heroEyebrow: {
-    fontFamily:    F.bold,
-    fontSize:      11,          // skaliert (Spec #4a)
-    fontWeight:    '700',
-    color:         T.textMuted,
-    letterSpacing: 3.5,         // Spec #4a
-    textTransform: 'uppercase',
-    marginBottom:  S.s3,        // 12px Eyebrow → H1
-  },
-  heroTitle: {
-    fontFamily:    F.xBold,
-    fontSize:      44,          // Spec #4a
-    fontWeight:    '800',
-    color:         T.text,
-    lineHeight:    46,          // Spec #4a
-    letterSpacing: -1.4,        // Spec #4a
-    marginBottom:  14,          // 14px H1 → Body
-  },
-  heroBody: {
-    fontFamily: F.regular,
-    fontSize:   16,             // Spec #4a
-    color:      T.textMuted,
-    lineHeight: 23,             // Spec #4a
-  },
+function getGreeting(t: TFn, firstName: string): string {
+  const hour = new Date().getHours();
+  const time = hour < 12 ? t('home.greetingMorning') : hour < 18 ? t('home.greetingDay') : t('home.greetingEvening');
+  return firstName ? `${time}, ${firstName}` : time;
+}
 
-  // ── Upload-Liste — gestapelte Hairline-Reihen (§04) ─────────────────────────
-  uploadList: {
-    borderTopWidth:    1,
-    borderTopColor:    T.hairline,
-    borderBottomWidth: 1,
-    borderBottomColor: T.hairline,
-    marginTop:         28,      // Body → Optionen: 28px (Spec #4b)
-  },
-  uploadRow: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    paddingVertical: 20,        // je 20px vertikales Padding (Spec #4b)
-    gap:             S.s4,
-    borderBottomWidth: 1,
-    borderBottomColor: T.line,
-  },
+function formatRelative(t: TFn, d: Date | string): string {
+  const date = d instanceof Date ? d : new Date(d);
+  const days = Math.floor((Date.now() - date.getTime()) / 86400000);
+  if (days <= 0) return t('common.today');
+  if (days === 1) return t('common.yesterday');
+  return t('common.daysAgo', { count: days });
+}
 
-  // Icon-Kreis — nicht ausgewählt
-  uploadIconCircle: {
-    width:          52,         // Spec #4a: 52×52
-    height:         52,
-    borderRadius:   R.pill,
-    borderWidth:    1,
-    borderColor:    T.hairline,
-    alignItems:     'center',
-    justifyContent: 'center',
-  },
-  // Icon-Kreis — ausgewählt: Accent-Outline + surfaceAccent Tint
-  uploadIconCircleSel: {
-    width:           52,        // Spec #4a: 52×52
-    height:          52,
-    borderRadius:    R.pill,
-    borderWidth:     1.5,
-    borderColor:     T.accent,
-    backgroundColor: T.surfaceAccent,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
+// ─── Sub-Komponenten ──────────────────────────────────────────────────────────
 
-  uploadText:  { flex: 1 },
-  uploadTitle: {
-    fontFamily:   F.semiBold,
-    fontSize:     18,           // Spec #4a
-    fontWeight:   '600',
-    color:        T.text,
-    marginBottom: 2,
-  },
-  uploadSub: {
-    fontFamily: F.regular,
-    fontSize:   13,             // Spec #4a
-    color:      T.textMuted,
-  },
+function OptionRow({
+  icon, label, sub, selected, onPress,
+}: {
+  icon: 'upload' | 'record'; label: string; sub: string; selected: boolean; onPress: () => void;
+}) {
+  const Icon = icon === 'upload' ? Upload : VideoIcon;
+  return (
+    <PressableScale onPress={onPress}>
+      <View style={S.optRow}>
+        <View style={[S.optIconCircle, selected && S.optIconCircleSel]}>
+          <Icon size={23} color={selected ? RC.accent : RC.text} strokeWidth={1.6} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[S.optLabel, selected && S.optLabelSel]}>{label}</Text>
+          <Text style={S.optSub}>{sub}</Text>
+        </View>
+        <View style={[S.radio, selected && S.radioSel]}>
+          {selected && <View style={S.radioDot} />}
+        </View>
+      </View>
+    </PressableScale>
+  );
+}
 
-  // Radio — nicht ausgewählt: leerer Outline-Kreis
-  radioOutline: {
-    width:        26,           // Spec #5: 26×26
-    height:       26,
-    borderRadius: R.pill,
-    borderWidth:  1.5,
-    borderColor:  T.hairline,
-  },
-  // Radio — ausgewählt: gefüllter Sand-Kreis + --on-accent Häkchen (§04/§06)
-  radioFilled: {
-    width:           26,        // Spec #5: 26×26
-    height:          26,
-    borderRadius:    R.pill,
-    backgroundColor: T.accent,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-
-  // Video-Preview
-  previewCard: {
-    backgroundColor: T.surface,
-    borderRadius:    R.lg,
-    padding:         S.s4,
-    marginTop:       28,
-    borderWidth:     1,
-    borderColor:     T.hairline,
-  },
-  previewHeader: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    marginBottom:  S.s3,
-    gap:           S.s2,
-  },
-  previewLabel: {
-    fontFamily: F.semiBold,
-    fontSize:   14,
-    fontWeight: '600',
-    color:      T.success,
-  },
-  duration: {
-    fontFamily: F.regular,
-    fontSize:   12,
-    color:      T.textFaint,
-    marginTop:  S.s2,
-    textAlign:  'center',
-  },
-
-  // Upgrade-Card
-  upgradeCard: {
-    backgroundColor: T.surface,
-    borderRadius:    R.md,
-    padding:         S.s5,
-    marginTop:       S.s4,
-    alignItems:      'center',
-    borderWidth:     1,
-    borderColor:     T.errorBg,
-  },
-  upgradeText: {
-    fontFamily: F.regular,
-    fontSize:   14,
-    color:      T.textMuted,
-    textAlign:  'center',
-    lineHeight: 20,
-  },
-
-  // CTA-Block: marginTop 'auto' → sitzt immer knapp über der Bottom-Nav (Spec #4b)
-  cta: {
-    marginTop:     'auto' as any,
-    paddingTop:    S.s6,
-    paddingBottom: 24,
-  },
-  // Subtext unter Button (Spec #4, Punkt 4)
-  ctaSubtext: {
-    fontFamily:  F.regular,
-    fontSize:    11.5,
-    color:       T.textFaint,
-    textAlign:   'center',
-    marginTop:   16,
-  },
-});
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 const HomeScreen: React.FC = () => {
   const { t }      = useTranslation();
   const navigation = useNavigation<HomeNavigationProp>();
   const { user }   = useAuth();
-  const { subscription, canAnalyze, isSubscribed } = useSubscription(user?.uid || null);
-  const { T }      = useTheme();
-  const styles     = useMemo(() => createStyles(T), [T]);
+  const { canAnalyze, monthlyLimit } = useSubscription(user?.uid || null);
 
   const [selectedVideo,  setSelectedVideo]  = useState<{ uri: string; duration?: number } | null>(null);
-  // Vorauswahl: „Video hochladen" ist per Default aktiv (§04)
   const [selectedOption, setSelectedOption] = useState<UploadOption>('upload');
+  const [lastReport,     setLastReport]     = useState<AnalysisReport | null>(null);
 
+  useFocusEffect(useCallback(() => {
+    if (!user?.uid) return;
+    getUserReports(user.uid).then((reports) => {
+      if (reports.length > 0) setLastReport(reports[0]);
+    }).catch(() => {});
+  }, [user?.uid]));
+
+  const greeting = getGreeting(t, (user?.displayName ?? '').split(' ')[0] ?? '');
+
+  // ── Handlers (unverändert) ────────────────────────────────────────────────────
   const handlePickVideo = useCallback(async () => {
     try {
       const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         if (!canAskAgain) {
-          Alert.alert(t('common.error'), 'Media library access required. Enable it in Settings.', [
+          Alert.alert(t('common.error'), t('home.mediaPermission'), [
             { text: t('common.cancel'), style: 'cancel' },
-            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            { text: t('common.openSettings'), onPress: () => Linking.openSettings() },
           ]);
         } else {
           Alert.alert(t('common.error'), t('home.pickError'));
@@ -289,9 +139,9 @@ const HomeScreen: React.FC = () => {
       const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
         if (!canAskAgain) {
-          Alert.alert(t('common.error'), 'Camera access required. Enable it in Settings.', [
+          Alert.alert(t('common.error'), t('home.cameraPermission'), [
             { text: t('common.cancel'), style: 'cancel' },
-            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            { text: t('common.openSettings'), onPress: () => Linking.openSettings() },
           ]);
         } else {
           Alert.alert(t('common.error'), t('home.recordError'));
@@ -321,7 +171,17 @@ const HomeScreen: React.FC = () => {
 
   const handleAnalyze = useCallback(async () => {
     if (!selectedVideo) { Alert.alert(t('common.error'), t('home.noVideoSelected')); return; }
-    if (!canAnalyze)    { navigation.navigate('Paywall'); return; }
+    if (!canAnalyze) {
+      Alert.alert(
+        t('pro.limitTitle'),
+        t('pro.limitBody', { limit: monthlyLimit }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('pro.unlockButton'), onPress: () => navigation.navigate('Paywall') },
+        ],
+      );
+      return;
+    }
     const answers: OnboardingAnswers = user?.onboardingAnswers ?? {
       purpose: 'personal_improvement',
       experienceLevel: 'beginner',
@@ -330,147 +190,102 @@ const HomeScreen: React.FC = () => {
       feedbackStyle: 'balanced',
     };
     navigation.navigate('AnalysisLoading', { videoUri: selectedVideo.uri, answers });
-  }, [selectedVideo, canAnalyze, navigation, t, user?.onboardingAnswers]);
+  }, [selectedVideo, canAnalyze, monthlyLimit, navigation, t, user?.onboardingAnswers]);
 
   const formatDuration = (s: number) =>
     `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
 
-  const renderUsagePill = () => {
-    if (isSubscribed) {
-      return (
-        <View style={styles.usagePill}>
-          <Infinity size={14} color={T.success} strokeWidth={1.7} />
-          <Text style={[styles.usagePillText, { color: T.success }]} numberOfLines={1}>
-            {t('home.usageUnlimited')}
-          </Text>
-        </View>
-      );
-    }
-    const used = subscription.analysesThisMonth;
-    const over = used >= 1;
-    return (
-      <View style={styles.usagePill}>
-        <BarChart2 size={13} color={over ? T.error : T.textMuted} strokeWidth={1.7} />
-        <Text style={[styles.usagePillText, { color: over ? T.error : T.textMuted }]} numberOfLines={1}>
-          {t('home.usageFree', { used, total: 1 })}
-        </Text>
-      </View>
-    );
-  };
-
-  const OPTIONS: Array<{
-    key:     UploadOption;
-    onPress: () => void;
-    Icon:    React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
-    label:   string;
-    sub:     string;
-  }> = [
-    { key: 'upload', onPress: handlePickVideo,   Icon: Upload, label: t('home.uploadVideo'), sub: t('home.uploadVideoSub') },
-    { key: 'record', onPress: handleRecordVideo, Icon: Video,  label: t('home.recordNow'),   sub: t('home.recordNowSub')   },
-  ];
-
+  // ── JSX ────────────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
+      <ScrollView contentContainerStyle={S.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
-        <View style={styles.header}>
-          <PrezenceLogo size="sm" layout="horizontal" />
-          {renderUsagePill()}
+        {/* ── AKTENKOPF ── */}
+        <View style={S.head}>
+          <PrezenceLogo size="sm" />
         </View>
 
-        {/* Hero — frei, kein Container, KEINE Hairline (Fix #1) */}
-        <View style={styles.hero}>
-          <Text style={styles.heroEyebrow}>{t('home.analyzeEyebrow')}</Text>
-          <Text style={styles.heroTitle}>{t('home.analyzeTitle')}</Text>
-          <Text style={styles.heroBody}>{t('home.analyzeSubtitle')}</Text>
+        <View style={{ height: 26 }} />
+
+        {/* ── HERO ── */}
+        <View style={S.hero}>
+          <Text style={S.greeting}>{greeting}</Text>
+          <View style={{ height: 8 }} />
+          <Text style={S.heroTitle}>{t('home.analyzeTitle')}</Text>
+          <View style={{ height: 14 }} />
+          <Text style={S.heroSub}>{t('home.analyzeSubtitle')}</Text>
         </View>
 
-        {/* Video-Bereich */}
-        {selectedVideo ? (
-          <View style={styles.previewCard}>
-            <View style={styles.previewHeader}>
-              <CheckCircle2 size={17} color={T.success} strokeWidth={1.7} />
-              <Text style={styles.previewLabel}>{t('home.videoSelected')}</Text>
+        {/* ── UPLOAD-OPTIONEN / VIDEO-VORSCHAU (vertikal mittig zwischen Hero und Button) ── */}
+        <View style={S.middle}>
+        <View style={S.rows}>
+          {selectedVideo ? (
+            <>
+              {/* "Video bereit"-Zeile */}
+              <View style={S.readyRow}>
+                <CheckCircle2 size={16} color={RC.accent} strokeWidth={2} />
+                <Text style={S.readyLabel}>{t('home.videoReady')}</Text>
+                <PressableScale onPress={() => setSelectedVideo(null)}>
+                  <Text style={S.removeTxt}>{t('common.remove')}</Text>
+                </PressableScale>
+              </View>
+              {/* Thumbnail — tippen zum Abspielen (Vollbild) */}
+              <View style={S.thumbWrap}>
+                <VideoThumbnail
+                  uri={selectedVideo.uri}
+                  duration={selectedVideo.duration}
+                  size="lg"
+                />
+                {selectedVideo.duration !== undefined && (
+                  <Text style={S.duration}>
+                    {t('home.videoInfo', { duration: formatDuration(selectedVideo.duration) })}
+                  </Text>
+                )}
+              </View>
+            </>
+          ) : (
+            <>
+              <OptionRow
+                icon="upload"
+                label={t('home.uploadVideo')}
+                sub={t('home.uploadVideoSub')}
+                selected={selectedOption === 'upload'}
+                onPress={() => { setSelectedOption('upload'); handlePickVideo(); }}
+              />
+              <OptionRow
+                icon="record"
+                label={t('home.recordNow')}
+                sub={t('home.recordNowSub')}
+                selected={selectedOption === 'record'}
+                onPress={() => { setSelectedOption('record'); handleRecordVideo(); }}
+              />
+            </>
+          )}
+        </View>
+        </View>
+
+        {/* ── PRIMARY-BUTTON ── */}
+        <View style={S.cta}>
+          <PressableScale onPress={handleAnalyze} style={{ alignSelf: 'stretch' }}>
+            <View style={[S.btn, BTN_SHADOW]}>
+              <View style={S.btnLeft}>
+                <Sparkles size={18} color={RC.onAccent} strokeWidth={1.8} />
+                <Text style={S.btnLabel}>{t('home.analyzeButton')}</Text>
+              </View>
             </View>
-            <VideoThumbnail
-              uri={selectedVideo.uri}
-              duration={selectedVideo.duration}
-              size="lg"
-              onRemove={() => setSelectedVideo(null)}
-            />
-            {selectedVideo.duration !== undefined && (
-              <Text style={styles.duration}>
-                {t('home.videoInfo', { duration: formatDuration(selectedVideo.duration) })}
+          </PressableScale>
+          <Text style={S.ctaFootnote}>{t('home.heroFootnote')}</Text>
+
+          {lastReport && (
+            <PressableScale
+              onPress={() => navigation.navigate('Report', { report: lastReport, saved: true })}
+              style={{ marginTop: 16, alignSelf: 'center' }}
+            >
+              <Text style={S.scoreHintText}>
+                {t('home.lastAnalysisLabel')}: <Text style={S.scoreHintAccent}>{score100(lastReport.averageScore)}/100</Text> · {formatRelative(t, lastReport.createdAt)}
               </Text>
-            )}
-          </View>
-        ) : (
-          /*
-           * Gestapelte Hairline-Reihen (§04 Auswahl-Liste).
-           * Ausgewählt: Icon-Kreis Accent-Outline + Tint, gefüllter Häkchen-Kreis.
-           * Nicht ausgewählt: leerer Outline-Kreis. (§06 DO)
-           */
-          <View style={styles.uploadList}>
-            {OPTIONS.map(({ key, onPress, Icon, label, sub }) => {
-              const isSel = selectedOption === key;
-              return (
-                <TouchableOpacity
-                  key={key}
-                  style={styles.uploadRow}
-                  onPress={() => { setSelectedOption(key); onPress(); }}
-                  activeOpacity={0.8}
-                >
-                  <View style={isSel ? styles.uploadIconCircleSel : styles.uploadIconCircle}>
-                    <Icon size={22} color={isSel ? T.accent : T.textMuted} strokeWidth={1.7} />
-                  </View>
-                  <View style={styles.uploadText}>
-                    <Text style={styles.uploadTitle}>{label}</Text>
-                    <Text style={styles.uploadSub}>{sub}</Text>
-                  </View>
-                  {isSel ? (
-                    <View style={styles.radioFilled}>
-                      <Check size={13} color={T.onAccent} strokeWidth={3} strokeLinecap="round" />
-                    </View>
-                  ) : (
-                    <View style={styles.radioOutline} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Upgrade-Notice */}
-        {!isSubscribed && subscription.analysesThisMonth >= 1 && (
-          <View style={styles.upgradeCard}>
-            <Text style={styles.upgradeText}>{t('home.upgradePrompt')}</Text>
-            <Button
-              label={t('home.upgradeButton')}
-              onPress={() => navigation.navigate('Paywall')}
-              variant="danger"
-              size="sm"
-              style={{ marginTop: S.s3 }}
-            />
-          </View>
-        )}
-
-        {/*
-         * CTA — marginTop:'auto' hält den Block am Boden (Spec #4b).
-         * Button immer aktiv sobald Option gewählt (Fix #3 / §04 Spec).
-         */}
-        <View style={styles.cta}>
-          <Button
-            label={t('home.analyzeButton')}
-            onPress={handleAnalyze}
-            fullWidth
-            size="lg"
-            style={{ paddingVertical: 19 }}
-            textStyle={{ fontSize: 15, letterSpacing: 2 }}
-          />
-          <Text style={styles.ctaSubtext}>
-            Eine Aufnahme. Ein ehrliches Urteil.
-          </Text>
+            </PressableScale>
+          )}
         </View>
 
       </ScrollView>
@@ -479,3 +294,180 @@ const HomeScreen: React.FC = () => {
 };
 
 export default HomeScreen;
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const S = StyleSheet.create({
+  safe:   { flex: 1, backgroundColor: RC.bg },
+  scroll: { flexGrow: 1, paddingBottom: 0 },
+
+  // Aktenkopf
+  head: {
+    marginTop: RS.headTop,
+    paddingHorizontal: RS.screenH,
+    paddingBottom: RS.headPadB,
+  },
+
+  // Hero
+  hero: {
+    paddingHorizontal: RS.screenH,
+  },
+  greeting: {
+    fontFamily: MONO_MED,
+    fontSize: 13,
+    letterSpacing: 0.5,
+    color: RC.muted,
+  },
+  heroTitle: {
+    fontSize: 34,
+    fontWeight: '600',
+    letterSpacing: -1,
+    color: RC.text,
+    lineHeight: 40,
+  },
+  heroSub: {
+    fontFamily: MONO,
+    fontSize: 14,
+    lineHeight: 21,
+    color: RC.muted,
+  },
+  scoreHintText: {
+    fontFamily: MONO,
+    fontSize: 12.5,
+    color: RC.faint,
+    textAlign: 'center',
+  },
+  scoreHintAccent: {
+    fontFamily: MONO_MED,
+    color: RC.accent,
+  },
+
+  // Optionen / Video — vertikal mittig zwischen Hero und Button
+  middle: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  rows: {
+    paddingHorizontal: RS.screenH,
+  },
+  optRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 22,
+    borderTopWidth: HL.std,
+    borderTopColor: RC.line,
+  },
+  optIconCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 1.5,
+    borderColor: RC.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optIconCircleSel: {
+    borderColor: RC.accent,
+    backgroundColor: RC.accentWash,
+  },
+  optLabel: {
+    fontFamily: MONO_MED,
+    fontSize: 16,
+    color: RC.muted,
+  },
+  optLabelSel: {
+    color: RC.text,
+  },
+  optSub: {
+    fontFamily: MONO,
+    fontSize: 13,
+    color: RC.faint,
+    marginTop: 4,
+  },
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: RC.ghost,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioSel: {
+    borderColor: RC.accent,
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: RC.accent,
+  },
+
+  // Video bereit
+  readyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: RS.rowV,
+    borderTopWidth: HL.std,
+    borderTopColor: RC.line,
+  },
+  readyLabel: {
+    fontFamily: MONO_MED,
+    fontSize: 14,
+    color: RC.accent,
+    flex: 1,
+  },
+  removeTxt: {
+    fontFamily: MONO,
+    fontSize: 12,
+    color: RC.ghost,
+    textDecorationLine: 'underline',
+  },
+  thumbWrap: {
+    paddingVertical: 12,
+    borderTopWidth: HL.faint,
+    borderTopColor: RC.lineFaint,
+  },
+  duration: {
+    fontFamily: MONO,
+    fontSize: 11,
+    color: RC.ghost,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+
+  // CTA
+  cta: {
+    paddingHorizontal: RS.screenH,
+    paddingBottom: RS.btnBottom,
+  },
+  btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: RC.accent,
+    borderRadius: RR.button,
+    paddingVertical: 18,
+    paddingHorizontal: 22,
+  },
+  btnLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  btnLabel: {
+    fontFamily: MONO_MED,
+    fontSize: 16,
+    color: RC.onAccent,
+  },
+  ctaFootnote: {
+    fontFamily: MONO,
+    fontSize: 12.5,
+    color: RC.faint,
+    textAlign: 'center',
+    // extra clearance so the (now softer) button glow does not sit on the text
+    marginTop: 20,
+  },
+});
