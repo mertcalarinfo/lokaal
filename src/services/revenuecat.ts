@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { Subscription } from '../types';
 
@@ -30,7 +31,11 @@ const initializeRevenueCat = async (): Promise<void> => {
   if (isInitialized) return;
 
   try {
-    const { Platform } = await import('react-native');
+    // NOTE: Platform is imported statically at the top. Do NOT use a dynamic
+    // `import('react-native')` here — that namespace import makes Metro enumerate
+    // every react-native export and invoke deprecated getters (PushNotificationIOS),
+    // which under the New Architecture constructs `new NativeEventEmitter(null)`
+    // and crashes the app at startup (Invariant Violation).
     const apiKey =
       Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
 
