@@ -7,7 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "update:preview": "dotenv -e .env -- eas update --channel preview --environment preview"
+    "update:preview": "dotenv -e .env -- eas update --channel preview"
   },
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.2.3",
