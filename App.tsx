@@ -8,6 +8,12 @@ if (typeof global.crypto === 'undefined' || typeof global.crypto.getRandomValues
   };
 }
 
+// Install the global error handler + boundary BEFORE the i18n / firebase module
+// imports below, so their load-time errors are captured too (not just render
+// errors). In a release build this turns a silent startup crash into a visible
+// error screen.
+import { StartupErrorBoundary } from './src/components/StartupErrorBoundary';
+
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -120,15 +126,17 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <StartupErrorBoundary>
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </StartupErrorBoundary>
   );
 }
 
