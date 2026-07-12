@@ -24,12 +24,18 @@ export const checkFirebaseConfigured = (): boolean => {
 
 const initializeFirebase = () => {
   try {
-    // Use @react-native-firebase which is auto-configured via native modules
-    // For Expo bare workflow with google-services.json / GoogleService-Info.plist
     const firebase = require('@react-native-firebase/app').default;
 
+    // @react-native-firebase auto-initialises the [DEFAULT] app natively from
+    // GoogleService-Info.plist (iOS) / google-services.json (Android). Do NOT
+    // call initializeApp() with a JS/web config for the native default app —
+    // that is an anti-pattern and can abort the app natively (SIGABRT) when the
+    // native config is missing. Rely on the native app; degrade gracefully if
+    // it is absent so the UI still boots.
     if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+      console.warn('[Firebase] No native default app — check GoogleService-Info.plist bundling.');
+      isConfigured = false;
+      return;
     }
 
     firebaseApp = firebase.app();
