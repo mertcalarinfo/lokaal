@@ -123,25 +123,61 @@ Detect the language the speaker uses in the video automatically and write the EN
 Adapt your tone to their preferred feedback style: "gentle" = warm and encouraging while still honest; "direct" = candid and straight to the point; "balanced" = a mix of both. Give extra attention to their biggest challenge and chosen focus area.
 
 Analyze the following 9 categories. For each category:
-- Give a score from 1 to 10
+- Give a score from 1 to 10 (use the 10-100 point anchors below to calibrate precisely, then divide by 10 for the final integer you write in the JSON "score" field — e.g. a performance you judge at 80 on the anchor scale becomes score: 8. The JSON "score" field must always be a whole number from 1 to 10, never the 10-100 anchor number itself.)
 - Write 2-4 specific observations (reference timestamps where possible)
 - Give 2-3 actionable improvement tips
 - Acknowledge strengths directly and specifically — never generically
 - Name weaknesses clearly and honestly — but never in a discouraging way
 
-Categories:
-1. Filler Words (ähm, äh, like, you know, basically, etc.)
-2. Speaking Pace (too fast, too slow, inconsistent)
-3. Use of Pauses (strategic vs. nervous pauses)
-4. Eye Contact (with camera / audience)
-5. Body Language & Gestures (open vs. closed, purposeful vs. nervous)
-6. Facial Expression (engaged, neutral, tense)
-7. Voice Modulation (monotone vs. dynamic, energy, tone variation)
-8. Content Structure (clear intro, main points, conclusion — red thread)
-9. Overall Confidence & Presence (how the speaker comes across as a whole)
+Categories (anchors shown on a 10-100 scale purely to help you calibrate precisely — interpolate between bands as needed, then divide your judgment by 10 for the JSON "score" field):
+
+1. Filler Words — count filler words/sounds (um, uh, like, "you know", "basically", etc.) relative to total words spoken.
+   90-100: fewer than 1 filler per 100 words.
+   50-60: roughly 3-5 fillers per 100 words — noticeable but not disruptive.
+   10-20: more than 8 fillers per 100 words, or fillers appear in nearly every sentence.
+
+2. Speaking Pace — estimate words per minute (WPM) and consistency.
+   90-100: 130-160 WPM, steady and natural, no rushed or dragging stretches.
+   50-60: consistently outside 130-160 WPM (e.g. 100-129 or 161-190), or noticeably inconsistent pace, but still understandable.
+   10-20: below 90 or above 200 WPM sustained, or pace swings wildly enough to impair comprehension.
+
+3. Use of Pauses — frequency and placement of pauses relative to sentence/clause boundaries.
+   90-100: pauses are deliberate, placed at clause/sentence boundaries, roughly one meaningful pause every 15-20 seconds of speech.
+   50-60: pauses exist but are either too rare (speech feels rushed, no breathing room) or too frequent/hesitant (breaks flow every few seconds).
+   10-20: pauses are erratic, mostly filled with hesitation sounds ("um", "äh") rather than silence, or speech has almost no pauses at all.
+
+4. Eye Contact — percentage of total speaking time spent looking at the camera lens (or, if visible, the audience).
+   90-100: eye contact maintained roughly 80-100% of speaking time, only brief natural glances away.
+   50-60: eye contact roughly 40-60% of speaking time, frequently looking away, down, or at notes/screen.
+   10-20: eye contact below 20% of speaking time — mostly reading, looking down, or avoiding the camera.
+
+5. Body Language & Gestures — openness of posture and purposefulness of hand/arm movement.
+   90-100: open posture, purposeful gestures that emphasize key points roughly 70%+ of the time, minimal nervous movement.
+   50-60: some purposeful gestures but repetitive, or posture partially closed (arms crossed / hands in pockets) part of the time.
+   10-20: closed/rigid posture most of the time, or constant nervous fidgeting (touching face/hair, shifting weight) throughout.
+
+6. Facial Expression — how often expression is animated/engaged versus flat or tense.
+   90-100: expression actively matches content (natural smiles, eyebrow movement, emphasis) most of the time, appears relaxed.
+   50-60: mostly neutral with occasional animation — engaged expression less than half the time.
+   10-20: flat/expressionless or visibly tense (clenched jaw, forced smile, strained look) for nearly the entire video.
+
+7. Voice Modulation — variation in pitch, volume, and energy tied to meaning.
+   90-100: clear, intentional pitch/volume variation throughout, energy sustained to the end.
+   50-60: some variation present but flattens into monotone for stretches longer than ~30 seconds.
+   10-20: largely monotone throughout, minimal audible change in pitch, volume, or energy.
+
+8. Content Structure — presence and clarity of intro, main points, and conclusion.
+   90-100: clear opening that states the topic/goal within the first 10-15 seconds, logically ordered main points with signposting ("first... next... finally"), and a clear conclusion or summary.
+   50-60: structure is present but weak — e.g. missing a clear conclusion, or transitions between points are unclear.
+   10-20: no discernible structure — ideas are out of order, rambling, no clear intro or conclusion.
+
+9. Overall Confidence & Presence — composite of composure and visible nervousness across the whole video.
+   90-100: consistent composure, commands attention, minimal nervous tells (no visible shaking, no reading verbatim from notes/screen).
+   50-60: adequate presence but noticeable nervousness at times (some fidgeting, brief voice shake, occasional avoidance of camera).
+   10-20: presence undermined by visible anxiety — shaking, reading from notes/screen throughout, avoiding the camera, or trailing off mid-sentence repeatedly.
 
 After all 9 categories:
-- Write a free-text summary (max 150 words) that feels personal, warm, and honest
+- Write a free-text summary (max 120 words). Begin immediately with the single most important finding — no greeting, no "great to see you working on yourself", no warm-up sentence. Be direct and honest; the tone must match the scores. Low scores get blunt, constructive criticism. High scores get direct acknowledgement of what works.
 - Identify the 3 weakest categories and provide one concrete exercise per weakness
 
 Return your analysis as JSON in this exact format:
@@ -157,6 +193,8 @@ Return your analysis as JSON in this exact format:
   "summary": "...",
   "exercises": ["exercise 1", "exercise 2", "exercise 3"]
 }
+
+CRITICAL: The "name" field of each category MUST use the EXACT English names listed above (e.g. "Filler Words", "Body Language & Gestures", "Overall Confidence & Presence"). Never translate the "name" field — only translate "observations", "tips", "summary", and "exercises".
 
 The video can be up to 5 minutes long. Provide deep analysis but be concise and structured in your descriptions. Ensure your entire response strictly fits into a single, valid JSON object. Do not exceed length limits; prioritize density of feedback over wordiness so the JSON structure never breaks or gets truncated. Keep each observation and tip to one short sentence, and keep the summary under 120 words.
 
@@ -467,6 +505,8 @@ ${ctx ? `\nUser context (address this explicitly in contextResponse): "${ctx}"\n
 Detect the language the speaker uses and write your ENTIRE response in that language.
 If German, always use informal "du" — never "Sie".
 
+Start every field directly with the content — no greeting, no "it's great that you're working on yourself", no opening pleasantry. Be honest and specific: if there is clear improvement, say so directly; if there is decline or no progress, say that too.
+
 Identify the 2–3 most noteworthy changes across these categories:
 Filler Words · Speaking Pace · Use of Pauses · Eye Contact · Body Language & Gestures ·
 Facial Expression · Voice Modulation · Content Structure · Overall Confidence & Presence
@@ -566,7 +606,8 @@ async function doCompareVideos(
   const model = genAI.getGenerativeModel({
     model: GEMINI_MODEL,
     generationConfig: {
-      temperature:       0.4,
+      // Low temperature so comparisons are consistent across runs — see doAnalyzeVideo.
+      temperature:       0.1,
       topP:              0.95,
       maxOutputTokens:   4096,
       responseMimeType:  'application/json',
@@ -659,7 +700,9 @@ async function doAnalyzeVideo(
     model: GEMINI_MODEL,
     systemInstruction: systemPrompt,
     generationConfig: {
-      temperature: 0.4,
+      // Low temperature so the same video scores consistently across runs —
+      // the analysis is a judgment/rubric task, not creative writing.
+      temperature: 0.1,
       topP: 0.95,
       // Max buffer for gemini-2.5-flash so the full 9-category JSON for videos
       // up to 5 minutes is never truncated mid-object (4096 cut off ~1m30s+).
