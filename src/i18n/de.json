@@ -1,4 +1,36 @@
 {
+  "pro": {
+    "lockTitle": "Mit Pro verfügbar",
+    "unlockButton": "Pro freischalten",
+    "limitTitle": "Monatslimit erreicht",
+    "limitBody": "Du hast dein Limit von {{limit}} Analysen für diesen Monat erreicht. Hol dir Pro für mehr.",
+    "unlockedTitle": "Prezence Pro freigeschaltet",
+    "unlockedBody": "Du hast jetzt vollen Zugriff auf alle Features.",
+    "unlockedCta": "Los geht's",
+    "previewTitle": "Prezence Pro",
+    "previewIntro": "Schalte deinen vollen Coaching-Bereich frei.",
+    "previewLater": "Später",
+    "previewFeatures": [
+      "Vollständiger Score-Verlauf — sieh wie du dich über Zeit entwickelst",
+      "Alle gespeicherten Analysen abrufbar",
+      "Vergleichsanalysen — zwei Videos gegenüberstellen",
+      "9 Kategorien statt 3 — vollständiges Feedback",
+      "Verbessertes Radar-Diagramm mit allen Achsen",
+      "Coach-Zusammenfassung nach jeder Analyse",
+      "Wochenübungen — 3 konkrete Übungen pro Session"
+    ]
+  },
+  "access": {
+    "title": "Zugang",
+    "hint": "Gib deinen Zugangscode ein, um Pro freizuschalten.",
+    "placeholder": "Code",
+    "redeem": "Einlösen",
+    "staged": "Code gespeichert. Melde dich an, um Pro zu aktivieren.",
+    "success": "Pro freigeschaltet!",
+    "errorInvalid": "Dieser Code ist ungültig.",
+    "errorUsed": "Dieser Code wurde bereits eingelöst.",
+    "errorGeneric": "Verbindungsfehler. Bitte versuche es erneut."
+  },
   "common": {
     "appName": "PREZENCE",
     "loading": "Wird geladen...",
@@ -15,7 +47,12 @@
     "skip": "Überspringen",
     "done": "Fertig",
     "continue": "Weiter",
-    "orText": "oder"
+    "orText": "oder",
+    "remove": "Entfernen",
+    "today": "heute",
+    "yesterday": "gestern",
+    "daysAgo": "vor {{count}} Tagen",
+    "openSettings": "Einstellungen öffnen"
   },
   "auth": {
     "login": {
@@ -27,6 +64,7 @@
       "passwordPlaceholder": "Dein Passwort",
       "signInButton": "Anmelden",
       "googleButton": "Mit Google fortfahren",
+      "appleButton": "Mit Apple fortfahren",
       "noAccount": "Noch kein Konto?",
       "register": "Registrieren",
       "forgotPassword": "Passwort vergessen?",
@@ -51,6 +89,7 @@
       "confirmPasswordPlaceholder": "Passwort wiederholen",
       "signUpButton": "Konto erstellen",
       "googleButton": "Mit Google fortfahren",
+      "appleButton": "Mit Apple fortfahren",
       "hasAccount": "Bereits ein Konto?",
       "signIn": "Anmelden",
       "errors": {
@@ -146,13 +185,23 @@
     "maxDuration": "Videos müssen kürzer als 5 Minuten sein (dieses ist ca. {{minutes}} Min). Bitte wähle ein kürzeres Video.",
     "pickError": "Video konnte nicht geladen werden. Bitte erneut versuchen.",
     "recordError": "Kamera konnte nicht geöffnet werden. Bitte Berechtigungen prüfen.",
-    "noVideoSelected": "Bitte zuerst ein Video auswählen oder aufnehmen"
+    "noVideoSelected": "Bitte zuerst ein Video auswählen oder aufnehmen",
+    "greetingMorning": "Guten Morgen",
+    "greetingDay": "Hey",
+    "greetingEvening": "Guten Abend",
+    "videoReady": "Video bereit",
+    "heroFootnote": "Eine Aufnahme. Ein ehrliches Urteil.",
+    "lastAnalysisLabel": "Letzte Analyse",
+    "mediaPermission": "Zugriff auf die Mediathek erforderlich. Aktiviere ihn in den Einstellungen.",
+    "cameraPermission": "Kamera-Zugriff erforderlich. Aktiviere ihn in den Einstellungen."
   },
   "analysis": {
+    "headerTitle": "Analyse",
     "loading": {
       "title": "Dein Video wird analysiert",
       "subtitle": "Das dauert normalerweise 30–60 Sekunden",
       "estimatedTime": "Geschätzte Zeit: noch {{seconds}} Sekunden",
+      "uploadStatus": "Lädt hoch",
       "cancelButton": "Abbrechen",
       "tips": [
         "Füllwörter werden analysiert...",
@@ -182,11 +231,11 @@
     "exercises": "Übungen für diese Woche",
     "exercise": "Übung {{number}}",
     "verdict": {
-      "excellent": "Außergewöhnliche Ausstrahlung",
-      "great": "Starke Basis mit viel Potenzial",
-      "good": "Gute Entwicklung — weiter so",
-      "solid": "Solide Basis mit klarem Potenzial",
-      "developing": "Viel Luft nach oben"
+      "excellent": "Starke Leistung",
+      "great": "Solide Basis mit klarem Potenzial",
+      "good": "Ausbaufähig",
+      "solid": "Deutlicher Übungsbedarf",
+      "developing": "Deutlicher Übungsbedarf"
     },
     "saveReport": "Bericht speichern",
     "saved": "Bericht gespeichert!",
@@ -205,7 +254,27 @@
       "Overall Confidence & Presence": "Selbstsicherheit & Ausstrahlung"
     },
     "observations": "Beobachtungen",
-    "tips": "Tipps"
+    "tips": "Tipps",
+    "savingUpload": "Wird hochgeladen… {{pct}}%",
+    "videoUploadFailed": "Bericht gespeichert, aber Video-Upload fehlgeschlagen. Der Vergleich ist für diese Analyse nicht verfügbar.",
+    "focusTag": "Schwächster Bereich",
+    "summaryHead": "Zusammenfassung",
+    "lockedCategoriesMessage": "+{{count}} weitere Kategorien mit Pro",
+    "recording": "Aufnahme",
+    "renameTitle": "Analyse umbenennen",
+    "renamePlaceholder": "z. B. Pitch-Probe Montag",
+    "scoreUnit": "/100",
+    "radarLabels": {
+      "Filler Words": "FÜLLWÖRTER",
+      "Speaking Pace": "SPRECHTEMPO",
+      "Use of Pauses": "PAUSEN",
+      "Eye Contact": "BLICKKONTAKT",
+      "Body Language & Gestures": "KÖRPERSPRACHE",
+      "Facial Expression": "MIMIK",
+      "Voice Modulation": "STIMME",
+      "Content Structure": "STRUKTUR",
+      "Overall Confidence & Presence": "AUSSTRAHLUNG"
+    }
   },
   "progress": {
     "title": "Fortschritt",
@@ -217,6 +286,13 @@
     "compareTitle": "Analysen vergleichen",
     "selectTwo": "Wähle zwei Analysen zum Vergleichen aus",
     "compareClose": "Vergleich schließen",
+    "tabAnalyses": "Analysen",
+    "tabComparisons": "Vergleiche",
+    "noComparisons": "Noch keine Vergleiche",
+    "noComparisonsSub": "Vergleiche zwei Videos im Vergleich-Tab",
+    "comparisonImproved": "{{n}} verbessert",
+    "comparisonDeclined": "{{n}} Rückgang",
+    "comparisonSame": "{{n}} gleich",
     "analysisItem": {
       "score": "Bewertung: {{score}}/10",
       "purpose": "Ziel: {{purpose}}"
@@ -228,7 +304,28 @@
       "public_speaking": "Öffentliches Sprechen",
       "personal_improvement": "Persönliche Weiterentwicklung",
       "other": "Sonstiges"
-    }
+    },
+    "purposesShort": {
+      "job_interview": "INTERVIEW",
+      "business_presentation": "PRÄSENT.",
+      "content_creation": "CONTENT",
+      "public_speaking": "VORTRAG",
+      "personal_improvement": "PRÄSENZ",
+      "other": "SONST."
+    },
+    "historyTitle": "Verlauf",
+    "windowDays": "30 Tage",
+    "scoreHistory": "Score-Verlauf",
+    "tableName": "Name",
+    "tableDate": "Datum",
+    "tableSession": "Sitzung",
+    "tableScore": "Score",
+    "tableDelta": "Δ Vorh.",
+    "untitled": "Unbenannt",
+    "comparisonTitle": "Vergleich",
+    "categoriesHead": "Kategorien",
+    "renameComparisonTitle": "Vergleich umbenennen",
+    "renameComparisonPlaceholder": "z. B. Vorher / Nachher Pitch"
   },
   "settings": {
     "title": "Einstellungen",
@@ -255,7 +352,11 @@
     "appearance": "Darstellung",
     "themeSystem": "System",
     "themeDark": "Dunkel",
-    "themeLight": "Hell"
+    "themeLight": "Hell",
+    "photoView": "Bild anzeigen",
+    "photoChange": "Neues Bild wählen",
+    "photoPermission": "Zugriff auf die Mediathek erforderlich.",
+    "photoError": "Profilbild konnte nicht gespeichert werden."
   },
   "paywall": {
     "title": "Premium werden",
@@ -288,6 +389,7 @@
     "video2Label": "VIDEO 2",
     "fromAnalysis": "Aus gespeicherter Analyse wählen",
     "fromGallery": "Aus Galerie hochladen",
+    "galleryLabel": "Galerie",
     "contextLabel": "Kontext (optional)",
     "contextPlaceholder": "z.B. Im ersten Video hab ich mich oft verplappert. Danach hab ich die vorgeschlagenen Übungen gemacht. Wie siehst du den Unterschied im zweiten Video?",
     "compareButton": "Vergleichen",
@@ -297,7 +399,7 @@
     "loadingSubtitle": "Beide Aufnahmen werden komprimiert, hochgeladen und verglichen.",
     "loadingVideo1": "Video 1 wird hochgeladen…",
     "loadingVideo2": "Video 2 wird hochgeladen…",
-    "loadingAnalyzing": "Gemini vergleicht beide Videos…",
+    "loadingAnalyzing": "KI vergleicht beide Videos…",
     "resultTitle": "Dein Vergleich",
     "overallLabel": "Gesamtentwicklung",
     "categoriesLabel": "Konkrete Unterschiede",
@@ -306,11 +408,17 @@
     "improved": "Verbessert",
     "declined": "Rückgang",
     "same": "Gleichbleibend",
+    "saveComparison": "Vergleich speichern",
+    "comparisonSaved": "Gespeichert ✓",
     "newComparison": "Neuer Vergleich",
     "selectReport": "Analyse auswählen",
     "selectReportHint": "Wähle die Analyse, deren Video du für den Vergleich nutzen möchtest.",
     "noReports": "Noch keine gespeicherten Analysen.",
     "errorTitle": "Vergleich fehlgeschlagen",
-    "errorRetry": "Erneut versuchen"
+    "errorRetry": "Erneut versuchen",
+    "errorUploadV1": "Video 1 konnte nicht hochgeladen werden. Bitte prüfe deine Verbindung.",
+    "errorUploadV2": "Video 2 konnte nicht hochgeladen werden. Bitte prüfe deine Verbindung.",
+    "errorTimeout": "Die Analyse hat zu lange gedauert. Bitte versuche es mit kürzeren Videos.",
+    "errorGeneric": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
   }
 }

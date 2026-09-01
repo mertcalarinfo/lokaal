@@ -23,10 +23,80 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '../services/firebase';
 import { saveUserProfile, getUserProfile } from '../services/storage';
+import { redeemAccessCode } from '../services/access';
 import { User, OnboardingAnswers } from '../types';
+import ProUnlockedModal, { ProNoticeKind } from '../components/ProUnlockedModal';
 
 // AsyncStorage key — scoped per user so switching accounts doesn't bleed
 const onboardingKey = (uid: string) => `@prezence:onboarding_${uid}`;
+// Zugangscode, der vor dem Login eingegeben wurde — wird nach Anmeldung eingelöst.
+const PENDING_CODE_KEY = '@prezence:pendingProCode';
+
+// ─── User-Dokument-Normalisierung ────────────────────────────────────────────
+// Gibt ein Objekt mit AUSSCHLIESSLICH den Feldern zurück, die im Firestore-Dokument
+// noch fehlen. Felder die bereits vorhanden sind werden NICHT in das Ergebnis
+// aufgenommen — saveUserProfile(..., result) überschreibt daher nie bestehende Werte.
+//
+// Bewusst ausgelassen:
+//   isPro    — Firestore-Regel blockiert jeden Client-Write auf dieses Feld
+//   language — fehlendes language ist für neue Nutzer gewollt (triggert LanguageSelect)
+function normalizeUserDoc(
+  fbUser: { email: string | null; displayName: string | null },
+  profile: Record<string, any> | null
+): Record<string, any> {
+  const doc = profile ?? {};
+  const missing: Record<string, any> = {};
+
+  if (!('email' in doc))               missing.email               = fbUser.email ?? '';
+  if (!('displayName' in doc))         missing.displayName         = fbUser.displayName ?? '';
+  if (!('onboardingCompleted' in doc)) missing.onboardingCompleted = false;
+  if (!('onboardingAnswers' in doc))   missing.onboardingAnswers   = {};
+  if (!('usageMonth' in doc))          missing.usageMonth          = '';
+  if (!('usageCount' in doc))          missing.usageCount          = 0;
+  if (!('photoURL' in doc))            missing.photoURL            = null;
+  if (!('createdAt' in doc))           missing.createdAt           = new Date();
+
+  return missing;
+}
+
+/**
+ * Löst einen vor dem Login zwischengespeicherten Code ein (sobald ein Account
+ * authentifiziert ist). Bei Erfolg oder endgültigem Fehlschlag (ungültig/benutzt)
+ * wird der Pending-Code entfernt; bei transienten Fehlern bleibt er für den nächsten Versuch.
+ */
+async function tryRedeemPendingCode(
+  fbUser: any,
+  markPro: () => void,
+  notify: (kind: ProNoticeKind) => void
+): Promise<void> {
+  try {
+    const code = await AsyncStorage.getItem(PENDING_CODE_KEY);
+    if (!code) return;
+
+    // Code sofort löschen — unabhängig vom Ergebnis. Verhindert dass andere
+    // Accounts auf demselben Gerät beim nächsten Login denselben Code aufgreifen.
+    await AsyncStorage.removeItem(PENDING_CODE_KEY);
+
+    // ID-Token explizit auffrischen, bevor der authentifizierte Function-Call
+    // gemacht wird. Ohne force-refresh kann der Token in onAuthStateChanged noch
+    // nicht vollständig bereit sein → Cloud Function wirft "unauthenticated".
+    await fbUser.getIdToken(true);
+
+    const res = await redeemAccessCode(code);
+    if (res.success) {
+      markPro();
+      notify('success');
+    } else if (res.reason === 'invalid') {
+      notify('invalid');
+    } else if (res.reason === 'used') {
+      notify('used');
+    } else {
+      notify('network');
+    }
+  } catch {
+    notify('network');
+  }
+}
 
 interface AuthState {
   user: User | null;
@@ -40,13 +110,21 @@ interface AuthActions {
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   updateLanguage: (language: 'en' | 'de') => Promise<void>;
+  // Persist a new profile picture URL (already uploaded to Storage) to state + Firestore.
+  updatePhotoURL: (photoURL: string) => Promise<void>;
+  // Zugangscode-Einlösung (Pro-Status). redeemCodeNow: eingeloggter Nutzer, sofort.
+  // stageAccessCode: vor dem Login zwischenspeichern, Einlösung nach Anmeldung.
+  redeemCodeNow: (code: string) => Promise<import('../services/access').RedeemResult>;
+  stageAccessCode: (code: string) => Promise<void>;
   markOnboardingCompleted: () => Promise<void>;
   // Save goals + mark onboarding done in one step (new-user intro flow).
   completeOnboarding: (answers: OnboardingAnswers) => Promise<void>;
   // Update goals without touching onboardingCompleted (Settings edit flow).
   saveOnboardingAnswers: (answers: OnboardingAnswers) => Promise<void>;
   clearError: () => void;
+  showProNotice: (kind: ProNoticeKind) => void;
   // DEV ONLY — remove before release
   skipLogin: () => void;
 }
@@ -64,6 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [proNotice, setProNotice] = useState<ProNoticeKind | null>(null);
   // DEV ONLY — prevents onAuthStateChanged from overwriting the mock user
   const devSkipped = useRef(false);
 
@@ -89,6 +168,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             AsyncStorage.getItem(onboardingKey(fbUser.uid)),
           ]);
 
+          // Fehlende Pflichtfelder im Firestore-Dokument ergänzen (Hintergrund-Write,
+          // nie await — kein Einfluss auf Ladezeit oder bestehende Felder).
+          const missing = normalizeUserDoc(fbUser, profile);
+          console.log('[AuthContext] normalizeUserDoc:', JSON.stringify(missing));
+          if (Object.keys(missing).length > 0) {
+            saveUserProfile(fbUser.uid, missing).catch((err: any) =>
+              console.warn('[AuthContext] normalizeUserDoc write FAILED:', err?.code, err?.message)
+            );
+          }
+
           const onboardingCompleted =
             localOnboarding === 'true' || (profile?.onboardingCompleted ?? false);
 
@@ -99,9 +188,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             language: profile?.language || undefined,
             onboardingCompleted,
             onboardingAnswers: profile?.onboardingAnswers || undefined,
+            photoURL: profile?.photoURL || fbUser.photoURL || undefined,
+            isPro: profile?.isPro === true,
+            usageMonth: profile?.usageMonth || undefined,
+            usageCount: profile?.usageCount ?? 0,
             createdAt: profile?.createdAt?.toDate?.() || new Date(),
           };
           setUser(appUser);
+
+          // Vor dem Login eingegebener Zugangscode wird jetzt eingelöst (Account ist authentifiziert).
+          tryRedeemPendingCode(
+            fbUser,
+            () => setUser((p) => (p ? { ...p, isPro: true } : p)),
+            setProNotice
+          );
         } catch {
           // Profile fetch failed — treat as new user with no language set.
           // Do NOT override onboardingCompleted if AsyncStorage says true.
@@ -260,6 +360,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const signInWithApple = useCallback(async () => {
+    setError(null);
+    const auth = getAuth();
+    if (!auth) throw new Error('AUTH_NOT_INITIALIZED');
+
+    try {
+      const AppleAuthentication = await import('expo-apple-authentication');
+      const Crypto = await import('expo-crypto');
+
+      // Firebase requires the RAW nonce in AppleAuthProvider.credential(), while
+      // Apple's request must carry its SHA256 HASH — mixing these up makes
+      // signInWithCredential reject the token as invalid.
+      const rawNonce = Crypto.randomUUID();
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        rawNonce
+      );
+
+      const appleCredential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce: hashedNonce,
+      });
+
+      const AppleAuthProvider =
+        require('@react-native-firebase/auth').default.AppleAuthProvider;
+      const firebaseCredential = AppleAuthProvider.credential(
+        appleCredential.identityToken,
+        rawNonce
+      );
+
+      const credential = await auth.signInWithCredential(firebaseCredential);
+      const fbUser = credential.user;
+
+      // New Apple users: unlike Google, Firebase does NOT auto-populate
+      // displayName from the Apple credential — set it explicitly. Apple only
+      // returns fullName/email on the very first authorization ever, so this
+      // must happen now or the name is lost.
+      if (credential.additionalUserInfo?.isNewUser) {
+        const givenName = appleCredential.fullName?.givenName ?? '';
+        const familyName = appleCredential.fullName?.familyName ?? '';
+        const displayName = `${givenName} ${familyName}`.trim();
+
+        if (displayName) {
+          await fbUser.updateProfile({ displayName });
+        }
+
+        await saveUserProfile(fbUser.uid, {
+          uid: fbUser.uid,
+          email: fbUser.email || appleCredential.email || '',
+          displayName: displayName || fbUser.displayName || '',
+          onboardingCompleted: false,
+          createdAt: new Date(),
+        });
+      }
+    } catch (err: any) {
+      if (err.code !== 'ERR_REQUEST_CANCELED') {
+        setError(err.code || 'generic');
+        throw err;
+      }
+    }
+  }, []);
+
   const updateLanguage = useCallback(
     async (language: 'en' | 'de') => {
       if (!user) return;
@@ -281,6 +446,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     [user]
   );
+
+  const updatePhotoURL = useCallback(
+    async (photoURL: string) => {
+      if (!user) return;
+      const prev = user.photoURL;
+      // Optimistisch: sofort im UI anzeigen.
+      setUser((p) => (p ? { ...p, photoURL } : null));
+      try {
+        await saveUserProfile(user.uid, { photoURL });
+      } catch (err: any) {
+        setUser((p) => (p ? { ...p, photoURL: prev } : null));
+        setError(err.message);
+        throw err;
+      }
+    },
+    [user]
+  );
+
+  // Eingeloggter Nutzer löst sofort ein. Bei Erfolg lokal isPro=true spiegeln + Modal zeigen.
+  const redeemCodeNow = useCallback(async (code: string) => {
+    const res = await redeemAccessCode(code);
+    if (res.success) {
+      setUser((p) => (p ? { ...p, isPro: true } : p));
+      setProNotice('success');
+    }
+    return res;
+  }, []);
+
+  // Vor dem Login: Code nur zwischenspeichern — Einlösung nach Anmeldung.
+  const stageAccessCode = useCallback(async (code: string) => {
+    await AsyncStorage.setItem(PENDING_CODE_KEY, code.trim().toUpperCase());
+  }, []);
 
   const markOnboardingCompleted = useCallback(async () => {
     if (!user) return;
@@ -371,15 +568,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     signUp,
     signOut,
     signInWithGoogle,
+    signInWithApple,
     updateLanguage,
+    updatePhotoURL,
+    redeemCodeNow,
+    stageAccessCode,
     markOnboardingCompleted,
     completeOnboarding,
     saveOnboardingAnswers,
     clearError,
+    showProNotice: setProNotice,
     skipLogin,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <ProUnlockedModal kind={proNotice} onClose={() => setProNotice(null)} />
+    </AuthContext.Provider>
+  );
 };
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────

@@ -1,4 +1,36 @@
 {
+  "pro": {
+    "lockTitle": "Available with Pro",
+    "unlockButton": "Unlock Pro",
+    "limitTitle": "Monthly limit reached",
+    "limitBody": "You've reached your limit of {{limit}} analyses for this month. Get Pro for more.",
+    "unlockedTitle": "Prezence Pro Unlocked",
+    "unlockedBody": "You now have full access to all features.",
+    "unlockedCta": "Let's go",
+    "previewTitle": "Prezence Pro",
+    "previewIntro": "Unlock your full coaching area.",
+    "previewLater": "Later",
+    "previewFeatures": [
+      "Full score history — see how you develop over time",
+      "Access all your saved analyses",
+      "Comparison analyses — put two videos side by side",
+      "9 categories instead of 3 — complete feedback",
+      "Enhanced radar chart with all axes",
+      "Coach summary after every analysis",
+      "Weekly exercises — 3 concrete drills per session"
+    ]
+  },
+  "access": {
+    "title": "Access",
+    "hint": "Enter your access code to unlock Pro.",
+    "placeholder": "Code",
+    "redeem": "Redeem",
+    "staged": "Code saved. Sign in to activate Pro.",
+    "success": "Pro unlocked!",
+    "errorInvalid": "This code is invalid.",
+    "errorUsed": "This code has already been used.",
+    "errorGeneric": "Connection error. Please try again."
+  },
   "common": {
     "appName": "PREZENCE",
     "loading": "Loading...",
@@ -15,7 +47,12 @@
     "skip": "Skip",
     "done": "Done",
     "continue": "Continue",
-    "orText": "or"
+    "orText": "or",
+    "remove": "Remove",
+    "today": "today",
+    "yesterday": "yesterday",
+    "daysAgo": "{{count}} days ago",
+    "openSettings": "Open Settings"
   },
   "auth": {
     "login": {
@@ -27,6 +64,7 @@
       "passwordPlaceholder": "Your password",
       "signInButton": "Sign In",
       "googleButton": "Continue with Google",
+      "appleButton": "Continue with Apple",
       "noAccount": "Don't have an account?",
       "register": "Register",
       "forgotPassword": "Forgot password?",
@@ -51,6 +89,7 @@
       "confirmPasswordPlaceholder": "Repeat your password",
       "signUpButton": "Create Account",
       "googleButton": "Continue with Google",
+      "appleButton": "Continue with Apple",
       "hasAccount": "Already have an account?",
       "signIn": "Sign In",
       "errors": {
@@ -146,13 +185,23 @@
     "maxDuration": "Videos must be under 5 minutes (this one is about {{minutes}} min). Please choose a shorter video.",
     "pickError": "Could not load video. Please try again.",
     "recordError": "Could not open camera. Please check permissions.",
-    "noVideoSelected": "Please select or record a video first"
+    "noVideoSelected": "Please select or record a video first",
+    "greetingMorning": "Good morning",
+    "greetingDay": "Hey",
+    "greetingEvening": "Good evening",
+    "videoReady": "Video ready",
+    "heroFootnote": "One take. One honest verdict.",
+    "lastAnalysisLabel": "Last analysis",
+    "mediaPermission": "Media library access required. Enable it in Settings.",
+    "cameraPermission": "Camera access required. Enable it in Settings."
   },
   "analysis": {
+    "headerTitle": "Analysis",
     "loading": {
       "title": "Analyzing your video",
       "subtitle": "This usually takes 30–60 seconds",
       "estimatedTime": "Estimated time: {{seconds}}s remaining",
+      "uploadStatus": "Uploading",
       "cancelButton": "Cancel",
       "tips": [
         "Analyzing your filler words...",
@@ -182,11 +231,11 @@
     "exercises": "This Week's Exercises",
     "exercise": "Exercise {{number}}",
     "verdict": {
-      "excellent": "Exceptional Presence",
-      "great": "Strong Foundation with Potential",
-      "good": "Good Progress, Keep Going",
-      "solid": "Solid Base with Clear Potential",
-      "developing": "Great Room for Improvement"
+      "excellent": "Strong Performance",
+      "great": "Solid Base, Clear Potential",
+      "good": "Building the Fundamentals",
+      "solid": "Significant Work Needed",
+      "developing": "Significant Work Needed"
     },
     "saveReport": "Save Report",
     "saved": "Report saved!",
@@ -205,7 +254,27 @@
       "Overall Confidence & Presence": "Overall Confidence & Presence"
     },
     "observations": "Observations",
-    "tips": "Tips"
+    "tips": "Tips",
+    "savingUpload": "Uploading… {{pct}}%",
+    "videoUploadFailed": "Report saved, but video upload failed. The Compare feature won't be available for this analysis.",
+    "focusTag": "Weakest area",
+    "summaryHead": "Summary",
+    "lockedCategoriesMessage": "+{{count}} more categories with Pro",
+    "recording": "Recording",
+    "renameTitle": "Rename analysis",
+    "renamePlaceholder": "e.g. Monday pitch practice",
+    "scoreUnit": "/100",
+    "radarLabels": {
+      "Filler Words": "FILLERS",
+      "Speaking Pace": "PACE",
+      "Use of Pauses": "PAUSES",
+      "Eye Contact": "EYE CONTACT",
+      "Body Language & Gestures": "BODY LANG.",
+      "Facial Expression": "EXPRESSION",
+      "Voice Modulation": "VOICE",
+      "Content Structure": "STRUCTURE",
+      "Overall Confidence & Presence": "PRESENCE"
+    }
   },
   "progress": {
     "title": "Progress",
@@ -217,6 +286,13 @@
     "compareTitle": "Compare Analyses",
     "selectTwo": "Select two analyses to compare",
     "compareClose": "Close Comparison",
+    "tabAnalyses": "Analyses",
+    "tabComparisons": "Comparisons",
+    "noComparisons": "No comparisons yet",
+    "noComparisonsSub": "Compare two videos in the Compare tab",
+    "comparisonImproved": "{{n}} improved",
+    "comparisonDeclined": "{{n}} declined",
+    "comparisonSame": "{{n}} same",
     "analysisItem": {
       "score": "Score: {{score}}/10",
       "purpose": "Goal: {{purpose}}"
@@ -228,7 +304,28 @@
       "public_speaking": "Public Speaking",
       "personal_improvement": "Personal Improvement",
       "other": "Other"
-    }
+    },
+    "purposesShort": {
+      "job_interview": "INTERVIEW",
+      "business_presentation": "PRESENT.",
+      "content_creation": "CONTENT",
+      "public_speaking": "SPEECH",
+      "personal_improvement": "PRESENCE",
+      "other": "OTHER"
+    },
+    "historyTitle": "History",
+    "windowDays": "30 days",
+    "scoreHistory": "Score history",
+    "tableName": "Name",
+    "tableDate": "Date",
+    "tableSession": "Session",
+    "tableScore": "Score",
+    "tableDelta": "Δ Prev.",
+    "untitled": "Untitled",
+    "comparisonTitle": "Comparison",
+    "categoriesHead": "Categories",
+    "renameComparisonTitle": "Rename comparison",
+    "renameComparisonPlaceholder": "e.g. Before / After pitch"
   },
   "settings": {
     "title": "Settings",
@@ -255,7 +352,11 @@
     "appearance": "Appearance",
     "themeSystem": "System",
     "themeDark": "Dark",
-    "themeLight": "Light"
+    "themeLight": "Light",
+    "photoView": "View photo",
+    "photoChange": "Choose new photo",
+    "photoPermission": "Media library access required.",
+    "photoError": "Couldn't save profile picture."
   },
   "paywall": {
     "title": "Go Premium",
@@ -288,6 +389,7 @@
     "video2Label": "VIDEO 2",
     "fromAnalysis": "Select from saved analysis",
     "fromGallery": "Upload from gallery",
+    "galleryLabel": "Gallery",
     "contextLabel": "Context (optional)",
     "contextPlaceholder": "e.g. In the first video I kept using filler words. I then did the exercises you suggested. Can you see a difference in video 2?",
     "compareButton": "Compare",
@@ -297,7 +399,7 @@
     "loadingSubtitle": "Both recordings are being compressed, uploaded and compared.",
     "loadingVideo1": "Uploading video 1…",
     "loadingVideo2": "Uploading video 2…",
-    "loadingAnalyzing": "Gemini is comparing both videos…",
+    "loadingAnalyzing": "AI is comparing both videos…",
     "resultTitle": "Your Comparison",
     "overallLabel": "Overall Development",
     "categoriesLabel": "Notable Differences",
@@ -306,11 +408,17 @@
     "improved": "Improved",
     "declined": "Declined",
     "same": "No change",
+    "saveComparison": "Save Comparison",
+    "comparisonSaved": "Saved ✓",
     "newComparison": "New Comparison",
     "selectReport": "Select Analysis",
     "selectReportHint": "Select the analysis whose video you want to use for the comparison.",
     "noReports": "No saved analyses yet.",
     "errorTitle": "Comparison failed",
-    "errorRetry": "Try again"
+    "errorRetry": "Try again",
+    "errorUploadV1": "Video 1 could not be uploaded. Please check your connection.",
+    "errorUploadV2": "Video 2 could not be uploaded. Please check your connection.",
+    "errorTimeout": "Analysis timed out. Please try with shorter videos.",
+    "errorGeneric": "Something went wrong. Please try again."
   }
 }

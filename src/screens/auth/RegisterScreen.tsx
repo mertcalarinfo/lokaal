@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft } from 'lucide-react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -40,6 +41,7 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   },
   googleG:    { fontSize: 15, fontWeight: '800', color: '#4285F4', marginRight: S.s2 },
   googleText: { fontFamily: F.semiBold, fontSize: 14.5, fontWeight: '600', color: T.text },
+  appleBtnWrap: { height: 44, marginTop: S.s3 },
   footerRow:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: S.s6 },
   footerText: { fontFamily: F.regular, fontSize: 14, color: T.textMuted },
   footerLink: { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.accent },
@@ -48,7 +50,7 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
 const RegisterScreen: React.FC = () => {
   const { t }      = useTranslation();
   const navigation = useNavigation<RegisterNav>();
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle, signInWithApple } = useAuth();
   const { T }      = useTheme();
   const styles     = useMemo(() => createStyles(T), [T]);
 
@@ -61,6 +63,8 @@ const RegisterScreen: React.FC = () => {
   const [passError,    setPassError]    = useState('');
   const [confirmError, setConfirmError] = useState('');
   const [loading,      setLoading]      = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading,  setAppleLoading]  = useState(false);
 
   const validate = () => {
     let ok = true;
@@ -136,10 +140,51 @@ const RegisterScreen: React.FC = () => {
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.googleBtn} onPress={() => {}} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={[styles.googleBtn, googleLoading && { opacity: 0.6 }]}
+              onPress={async () => {
+                setGoogleLoading(true);
+                try {
+                  await signInWithGoogle();
+                } catch (err: any) {
+                  const code = err?.code || '';
+                  if (!code.includes('SIGN_IN_CANCELLED')) {
+                    Alert.alert(t('common.error'), t('auth.register.errors.generic'));
+                  }
+                } finally {
+                  setGoogleLoading(false);
+                }
+              }}
+              disabled={googleLoading}
+              activeOpacity={0.8}
+            >
               <Text style={styles.googleG}>G</Text>
               <Text style={styles.googleText}>{t('auth.register.googleButton')}</Text>
             </TouchableOpacity>
+
+            {Platform.OS === 'ios' && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={R.sm}
+                style={styles.appleBtnWrap}
+                accessibilityLabel={t('auth.register.appleButton')}
+                onPress={async () => {
+                  if (appleLoading) return;
+                  setAppleLoading(true);
+                  try {
+                    await signInWithApple();
+                  } catch (err: any) {
+                    const code = err?.code || '';
+                    if (!code.includes('ERR_REQUEST_CANCELED')) {
+                      Alert.alert(t('common.error'), t('auth.register.errors.generic'));
+                    }
+                  } finally {
+                    setAppleLoading(false);
+                  }
+                }}
+              />
+            )}
 
             <View style={styles.footerRow}>
               <Text style={styles.footerText}>{t('auth.register.hasAccount')} </Text>

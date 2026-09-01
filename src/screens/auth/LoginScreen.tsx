@@ -1,12 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
+  View, Text, StyleSheet, ScrollView, Pressable,
   KeyboardAvoidingView, Platform, TouchableOpacity, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -38,22 +39,16 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   },
   googleG:    { fontSize: 15, fontWeight: '800', color: '#4285F4', marginRight: S.s2 },
   googleText: { fontFamily: F.semiBold, fontSize: 14.5, fontWeight: '600', color: T.text },
+  appleBtnWrap: { height: 44, marginTop: S.s3 },
   footerRow:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: S.s6 },
   footerText: { fontFamily: F.regular, fontSize: 14, color: T.textMuted },
   footerLink: { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.accent },
-  devBtn: {
-    marginTop: S.s6, alignSelf: 'center',
-    paddingVertical: S.s2, paddingHorizontal: S.s4,
-    borderRadius: R.xs, borderWidth: 1, borderColor: T.errorBg,
-    backgroundColor: T.errorBg,
-  },
-  devText: { fontFamily: F.medium, fontSize: 12, color: T.error },
 });
 
 const LoginScreen: React.FC = () => {
   const { t }        = useTranslation();
   const navigation   = useNavigation<LoginNav>();
-  const { signIn, signInWithGoogle, skipLogin } = useAuth();
+  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
   const { T } = useTheme();
   const styles = useMemo(() => createStyles(T), [T]);
 
@@ -63,6 +58,20 @@ const LoginScreen: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const [loading,       setLoading]       = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading,  setAppleLoading]  = useState(false);
+
+  // Versteckter Zugang: 10× auf das Logo tippen (kein Feedback, >1,5 s zwischen Taps → Reset).
+  const tapCount = useRef(0);
+  const lastTap  = useRef(0);
+  const handleLogoTap = () => {
+    const now = Date.now();
+    tapCount.current = now - lastTap.current > 1500 ? 1 : tapCount.current + 1;
+    lastTap.current = now;
+    if (tapCount.current >= 10) {
+      tapCount.current = 0;
+      navigation.navigate('AccessCode');
+    }
+  };
 
   const validateEmail = (v: string) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) {
@@ -107,7 +116,10 @@ const LoginScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.logoWrap}>
-            <PrezenceLogo size="lg" showTagline />
+            {/* Verstecktes Tap-Target — kein visuelles Feedback (kein Ripple/Highlight). */}
+            <Pressable onPress={handleLogoTap} android_disableSound>
+              <PrezenceLogo size="lg" showTagline />
+            </Pressable>
           </View>
 
           <View style={styles.card}>
@@ -170,6 +182,30 @@ const LoginScreen: React.FC = () => {
               <Text style={styles.googleText}>{t('auth.login.googleButton')}</Text>
             </TouchableOpacity>
 
+            {Platform.OS === 'ios' && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={R.sm}
+                style={styles.appleBtnWrap}
+                accessibilityLabel={t('auth.login.appleButton')}
+                onPress={async () => {
+                  if (appleLoading) return;
+                  setAppleLoading(true);
+                  try {
+                    await signInWithApple();
+                  } catch (err: any) {
+                    const code = err?.code || '';
+                    if (!code.includes('ERR_REQUEST_CANCELED')) {
+                      Alert.alert(t('common.error'), t('auth.login.errors.generic'));
+                    }
+                  } finally {
+                    setAppleLoading(false);
+                  }
+                }}
+              />
+            )}
+
             <View style={styles.footerRow}>
               <Text style={styles.footerText}>{t('auth.login.noAccount')} </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Register')}>
@@ -177,11 +213,6 @@ const LoginScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* DEV bypass */}
-          <TouchableOpacity style={styles.devBtn} onPress={skipLogin} activeOpacity={0.7}>
-            <Text style={styles.devText}>⚡ Skip Login (Dev)</Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

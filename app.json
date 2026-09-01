@@ -74,7 +74,8 @@
         }
       ],
       "expo-font",
-      "react-native-compressor"
+      "react-native-compressor",
+      "expo-apple-authentication"
     ],
     "extra": {
       "eas": {
