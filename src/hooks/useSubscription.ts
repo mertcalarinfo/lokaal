@@ -1,16 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Subscription } from '../types';
-import { checkSubscription, presentPaywall as rcPresentPaywall, initRevenueCat, identifyUser } from '../services/revenuecat';
-import { getReportsByMonth } from '../services/storage';
+import { checkSubscription, presentPaywall as rcPresentPaywall, initRevenueCat, identifyUser, syncSubscriptionStatus } from '../services/revenuecat';
+import { getMonthlyUsage } from '../services/storage';
+import { useAuth } from './useAuth';
 
-// Temporär deaktiviert für Beta — auf true setzen um Freemium-Limit (1/Monat) wieder zu aktivieren
-const ENFORCE_FREE_TIER_LIMIT = false;
-const FREE_TIER_MONTHLY_LIMIT = 1;
+// Freemium-Limits (Analysen pro Kalendermonat)
+const FREE_MONTHLY_LIMIT = 2;
+const PRO_MONTHLY_LIMIT  = 15;
 
 interface SubscriptionHookState {
   subscription: Subscription;
-  canAnalyze: boolean;
+  /** Effektiver Pro-Status = RevenueCat-Entitlement ODER Firestore isPro. */
+  isPro: boolean;
+  /** Alias für Abwärtskompatibilität (Settings-Anzeige). */
   isSubscribed: boolean;
+  /** Ob der Nutzer JEMALS Pro hatte (auch wenn aktuell abgelaufen). */
+  hadProBefore: boolean;
+  /** Zeitpunkt des letzten Pro-Ablaufs, oder null. */
+  proExpiredAt: Date | null;
+  /** Drei-Zustands-Signal für Paywall-Copy: nie Pro / aktuell aktiv / abgelaufen. */
+  proState: 'never' | 'active' | 'expired';
+  analysesThisMonth: number;
+  monthlyLimit: number;
+  canAnalyze: boolean;
   loading: boolean;
 }
 
@@ -23,53 +35,45 @@ interface SubscriptionHookActions {
 export const useSubscription = (
   userId: string | null
 ): SubscriptionHookState & SubscriptionHookActions => {
-  const [subscription, setSubscription] = useState<Subscription>({
-    isActive: false,
-    tier: 'free',
-    analysesThisMonth: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { user, applySubscriptionSync } = useAuth();
+  const [rcActive,          setRcActive]          = useState(false);
+  const [analysesThisMonth, setAnalysesThisMonth] = useState(0);
+  const [loading,           setLoading]           = useState(true);
 
   const fetchSubscriptionData = useCallback(async () => {
     if (!userId) {
-      setSubscription({ isActive: false, tier: 'free', analysesThisMonth: 0 });
+      setRcActive(false);
+      setAnalysesThisMonth(0);
       setLoading(false);
       return;
     }
 
     try {
-      // Check RevenueCat subscription status
+      // RevenueCat-Entitlement prüfen
       const rcSub = await checkSubscription();
+      setRcActive(rcSub.tier === 'premium' && rcSub.isActive);
 
-      // Count analyses this month from Firestore
-      const now = new Date();
-      let analysesThisMonth = 0;
+      // Server-seitige Verifikation + Persistierung (isPro/hadProBefore/proExpiredAt).
+      // Fire-and-forget: blockiert die UI nicht — rcActive oben ist bereits sofort
+      // verfügbar, AuthContext wird aktualisiert sobald die Antwort da ist.
+      syncSubscriptionStatus().then((result) => {
+        if (result) applySubscriptionSync(result);
+      }).catch(() => {});
 
+      // Monatszähler aus dem User-Doc (usageMonth/usageCount, Reset durch Monatsabgleich)
       try {
-        const reportsThisMonth = await getReportsByMonth(
-          userId,
-          now.getFullYear(),
-          now.getMonth() + 1
-        );
-        analysesThisMonth = reportsThisMonth.length;
+        setAnalysesThisMonth(await getMonthlyUsage(userId));
       } catch {
-        // ignore Firestore errors
+        setAnalysesThisMonth(0);
       }
-
-      setSubscription({
-        ...rcSub,
-        analysesThisMonth,
-      });
     } catch (error) {
       console.warn('Failed to fetch subscription data:', error);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, applySubscriptionSync]);
 
-  // When a real user ID becomes available, identify them with RevenueCat so
-  // their purchase history is correctly associated. This must happen before
-  // getOfferings / checkSubscription so entitlements are scoped to the user.
+  // RevenueCat-User identifizieren, bevor Entitlements geprüft werden.
   useEffect(() => {
     if (!userId) return;
     identifyUser(userId).catch((err) => {
@@ -89,9 +93,7 @@ export const useSubscription = (
   const presentPaywall = useCallback(async (): Promise<boolean> => {
     try {
       const result = await rcPresentPaywall();
-      if (result) {
-        await refresh();
-      }
+      if (result) await refresh();
       return result;
     } catch (error) {
       console.warn('Paywall presentation failed:', error);
@@ -109,16 +111,30 @@ export const useSubscription = (
     }
   }, [fetchSubscriptionData]);
 
-  const isSubscribed = subscription.tier === 'premium' && subscription.isActive;
-  const canAnalyze =
-    !ENFORCE_FREE_TIER_LIMIT ||
-    isSubscribed ||
-    subscription.analysesThisMonth < FREE_TIER_MONTHLY_LIMIT;
+  // Effektiver Pro-Status: echter Kauf (RevenueCat) ODER dauerhaftes isPro (Firestore/Code).
+  const isPro = rcActive || user?.isPro === true;
+  const hadProBefore = user?.hadProBefore === true;
+  const proExpiredAt = user?.proExpiredAt ?? null;
+  const proState: 'never' | 'active' | 'expired' = isPro ? 'active' : hadProBefore ? 'expired' : 'never';
+  const monthlyLimit = isPro ? PRO_MONTHLY_LIMIT : FREE_MONTHLY_LIMIT;
+  const canAnalyze = analysesThisMonth < monthlyLimit;
+
+  const subscription: Subscription = {
+    isActive: isPro,
+    tier: isPro ? 'premium' : 'free',
+    analysesThisMonth,
+  };
 
   return {
     subscription,
+    isPro,
+    isSubscribed: isPro,
+    hadProBefore,
+    proExpiredAt,
+    proState,
+    analysesThisMonth,
+    monthlyLimit,
     canAnalyze,
-    isSubscribed,
     loading,
     refresh,
     presentPaywall,

@@ -7,6 +7,17 @@ export interface User {
   // Persisted coaching goals collected once during onboarding. Editable in
   // Settings. Passed to Gemini on every analysis so feedback stays tailored.
   onboardingAnswers?: OnboardingAnswers;
+  // Profilbild — in Firebase Storage gespeichert, URL in Firestore users/{uid}.photoURL.
+  photoURL?: string;
+  // Dauerhafter Pro-Status — NUR serverseitig (Cloud Function) setzbar, Client kann ihn nicht schreiben.
+  isPro?: boolean;
+  // Ob der Nutzer JEMALS Pro hatte — NUR serverseitig setzbar.
+  hadProBefore?: boolean;
+  // Zeitpunkt an dem Pro zuletzt ausgelaufen ist — NUR serverseitig setzbar.
+  proExpiredAt?: Date;
+  // Monatlicher Analysen-Zähler (Free-Limit). usageMonth = "YYYY-MM", Reset durch Monatsabgleich.
+  usageMonth?: string;
+  usageCount?: number;
   createdAt: Date;
 }
 
@@ -58,6 +69,8 @@ export interface AnalysisReport {
   summary: string;
   exercises: string[];
   averageScore: number;
+  /** Optional user-chosen title, replaces the date-based label everywhere the report appears. */
+  customName?: string;
 }
 
 export interface Subscription {
@@ -77,6 +90,8 @@ export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   LanguageSelect: undefined;
+  // Versteckter Code-Einlöse-Screen (erreichbar über 10× Tap auf das Logo).
+  AccessCode: undefined;
 };
 
 export type MainStackParamList = {
@@ -93,7 +108,7 @@ export type MainTabParamList = {
   SettingsTab: undefined;
 };
 
-// ── Video-Vergleich (ephemeral — wird nicht in Firestore gespeichert) ─────────
+// ── Video-Vergleich ───────────────────────────────────────────────────────────
 
 export interface ComparisonCategoryItem {
   category:    string;
@@ -109,12 +124,27 @@ export interface ComparisonResult {
   coachComment:         string;
 }
 
+export interface SavedComparison {
+  id:          string;
+  userId:      string;
+  createdAt:   Date;
+  video1Label: string;
+  video2Label: string;
+  video1Url?:  string;
+  video2Url?:  string;
+  userContext: string;
+  result:      ComparisonResult;
+  /** Optional user-chosen title, replaces the date-based label everywhere the comparison appears. */
+  customName?: string;
+}
+
 export type HomeStackParamList = {
   Home: undefined;
   // videoUri present = pre-analysis fallback flow; mode='edit' = editing goals
   Onboarding: { videoUri?: string; mode?: 'edit' } | undefined;
   AnalysisLoading: { videoUri: string; answers: OnboardingAnswers };
   // saved=true when opened from the Progress tab (report already in Firestore)
-  Report: { report: AnalysisReport; saved?: boolean };
+  // returnTo='progress' makes the back button switch to the Progress tab instead of going Home
+  Report: { report: AnalysisReport; saved?: boolean; returnTo?: 'progress' };
   Paywall: undefined;
 };

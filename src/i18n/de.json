@@ -361,6 +361,8 @@
   "paywall": {
     "title": "Premium werden",
     "subtitle": "Entfalte dein volles Potenzial als Kommunikator",
+    "expiredTitle": "Willkommen zurück",
+    "expiredSubtitle": "Dein Premium-Zugang ist ausgelaufen. Abonniere erneut, um wieder unbegrenzte Analysen und vollständiges Coaching-Feedback freizuschalten.",
     "features": {
       "unlimited": "Unbegrenzte Video-Analysen",
       "detailed": "Detaillierte KI-Coaching-Berichte",

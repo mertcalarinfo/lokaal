@@ -4,13 +4,15 @@ import { Subscription } from '../types';
 
 // Keys are injected at build time via app.config.js → extra. The Android
 // sandbox key remains as a fallback for development. Replace the iOS key by
-// setting REVENUECAT_IOS_KEY (EAS secret / .env) before App Store builds.
+// setting REVENUECAT_IOS_API_KEY (EAS secret / .env) before App Store builds.
 const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string>;
 const REVENUECAT_API_KEY_IOS =
   extra.revenueCatIosKey || 'YOUR_REVENUECAT_IOS_API_KEY';
 const REVENUECAT_API_KEY_ANDROID =
   extra.revenueCatAndroidKey || 'test_oEswHVrjJiDqyaBlKNFltnENDne';
 const PREMIUM_ENTITLEMENT_ID = 'premium';
+// Muss exakt mit der Deploy-Region der Cloud Functions übereinstimmen (siehe src/services/access.ts).
+const FUNCTIONS_REGION = 'europe-west1';
 
 let isInitialized = false;
 let Purchases: any = null;
@@ -91,6 +93,31 @@ export const resetUser = async (): Promise<void> => {
     await Purchases.logOut();
   } catch (error) {
     console.warn('RevenueCat reset user failed:', error);
+  }
+};
+
+export interface ServerSubscriptionState {
+  isPro: boolean;
+  hadProBefore: boolean;
+  proExpiredAt: number | null;
+}
+
+/**
+ * Ruft die syncSubscriptionStatus Cloud Function auf — verifiziert den
+ * RevenueCat-Status server-seitig und schreibt isPro/hadProBefore/proExpiredAt
+ * per Admin SDK (der Client kann diese Felder laut firestore.rules nicht selbst
+ * schreiben). Gibt bei Fehlern null zurück, statt zu werfen — Aufrufer soll das
+ * nie hart failen lassen (gleiche Konvention wie checkSubscription/getOfferings).
+ */
+export const syncSubscriptionStatus = async (): Promise<ServerSubscriptionState | null> => {
+  try {
+    const { firebase } = await import('@react-native-firebase/functions');
+    const callable = firebase.app().functions(FUNCTIONS_REGION).httpsCallable('syncSubscriptionStatus');
+    const { data } = await callable();
+    return data as ServerSubscriptionState;
+  } catch (error) {
+    console.warn('[RevenueCat] syncSubscriptionStatus failed:', error);
+    return null;
   }
 };
 

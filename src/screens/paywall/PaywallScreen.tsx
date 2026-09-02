@@ -12,6 +12,8 @@ import {
 } from 'lucide-react-native';
 
 import { getOfferings, purchasePackage, restorePurchases } from '../../services/revenuecat';
+import { useAuth } from '../../hooks/useAuth';
+import { useSubscription } from '../../hooks/useSubscription';
 import { useTheme } from '../../contexts/ThemeContext';
 import Button from '../../components/Button';
 import PrezenceLogo from '../../components/PrezenceLogo';
@@ -74,14 +76,24 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
 });
 
 const PaywallScreen: React.FC = () => {
-  const { t }      = useTranslation();
-  const navigation = useNavigation();
-  const { T }      = useTheme();
-  const styles     = useMemo(() => createStyles(T), [T]);
+  const { t }             = useTranslation();
+  const navigation        = useNavigation();
+  const { T }             = useTheme();
+  const { user, showProNotice } = useAuth();
+  const { proState }      = useSubscription(user?.uid || null);
+  const styles            = useMemo(() => createStyles(T), [T]);
 
   const [loading,   setLoading]   = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [offering,  setOffering]  = useState<any>(null);
+
+  // 'active' ist ein unreachable/Race-Only-Edge-Case: beide Navigations-Stellen
+  // (SettingsScreen, HomeScreen) schließen aktive Pro-Nutzer bereits vom Paywall
+  // aus. Fällt bewusst auf die Standard-Copy zurück statt eine eigene "Abo
+  // verwalten"-Meldung zu bauen — das wäre spekulative UI für einen Pfad, den
+  // die App heute nicht anbietet.
+  const titleKey    = proState === 'expired' ? 'paywall.expiredTitle'    : 'paywall.title';
+  const subtitleKey = proState === 'expired' ? 'paywall.expiredSubtitle' : 'paywall.subtitle';
 
   useEffect(() => {
     getOfferings().then(setOffering).catch(() => {});
@@ -98,7 +110,7 @@ const PaywallScreen: React.FC = () => {
         return;
       }
       const ok = await purchasePackage(pkg);
-      if (ok) Alert.alert(t('common.ok'), t('paywall.purchaseSuccess'), [{ text: t('common.ok'), onPress: () => navigation.goBack() }]);
+      if (ok) { showProNotice('success'); navigation.goBack(); }
     } catch (err: any) {
       if (!err?.message?.includes('cancelled') && err?.userCancelled !== true)
         Alert.alert(t('common.error'), t('paywall.errors.purchaseFailed'));
@@ -143,8 +155,8 @@ const PaywallScreen: React.FC = () => {
             <Star size={13} color={T.accent} strokeWidth={1.7} />
             <Text style={styles.premiumPillText}>PREMIUM</Text>
           </View>
-          <Text style={styles.title}>{t('paywall.title')}</Text>
-          <Text style={styles.subtitle}>{t('paywall.subtitle')}</Text>
+          <Text style={styles.title}>{t(titleKey)}</Text>
+          <Text style={styles.subtitle}>{t(subtitleKey)}</Text>
         </View>
 
         {/* Features */}

@@ -118,6 +118,9 @@ interface AuthActions {
   // stageAccessCode: vor dem Login zwischenspeichern, Einlösung nach Anmeldung.
   redeemCodeNow: (code: string) => Promise<import('../services/access').RedeemResult>;
   stageAccessCode: (code: string) => Promise<void>;
+  // Übernimmt das Ergebnis von syncSubscriptionStatus (Cloud Function) in den lokalen State,
+  // ohne auf einen erneuten Firestore-Read zu warten.
+  applySubscriptionSync: (state: { isPro: boolean; hadProBefore: boolean; proExpiredAt: number | null }) => void;
   markOnboardingCompleted: () => Promise<void>;
   // Save goals + mark onboarding done in one step (new-user intro flow).
   completeOnboarding: (answers: OnboardingAnswers) => Promise<void>;
@@ -190,6 +193,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             onboardingAnswers: profile?.onboardingAnswers || undefined,
             photoURL: profile?.photoURL || fbUser.photoURL || undefined,
             isPro: profile?.isPro === true,
+            hadProBefore: profile?.hadProBefore === true,
+            proExpiredAt: profile?.proExpiredAt?.toDate?.() || undefined,
             usageMonth: profile?.usageMonth || undefined,
             usageCount: profile?.usageCount ?? 0,
             createdAt: profile?.createdAt?.toDate?.() || new Date(),
@@ -474,6 +479,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return res;
   }, []);
 
+  const applySubscriptionSync = useCallback(
+    (state: { isPro: boolean; hadProBefore: boolean; proExpiredAt: number | null }) => {
+      setUser((p) =>
+        p
+          ? {
+              ...p,
+              isPro: state.isPro,
+              hadProBefore: state.hadProBefore,
+              proExpiredAt: state.proExpiredAt ? new Date(state.proExpiredAt) : undefined,
+            }
+          : p
+      );
+    },
+    []
+  );
+
   // Vor dem Login: Code nur zwischenspeichern — Einlösung nach Anmeldung.
   const stageAccessCode = useCallback(async (code: string) => {
     await AsyncStorage.setItem(PENDING_CODE_KEY, code.trim().toUpperCase());
@@ -573,6 +594,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     updatePhotoURL,
     redeemCodeNow,
     stageAccessCode,
+    applySubscriptionSync,
     markOnboardingCompleted,
     completeOnboarding,
     saveOnboardingAnswers,

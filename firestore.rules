@@ -2,21 +2,46 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Analysis reports — any signed-in user can read and write. Reports always
-    // carry a userId field equal to request.auth.uid (set at save time), and
-    // queries filter by it, so users only ever see their own reports.
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return request.auth != null && request.auth.uid == uid; }
+
+    // ── Analyse-Berichte ──────────────────────────────────────────────────────
+    // Angemeldete Nutzer dürfen lesen/schreiben. Berichte tragen ein userId-Feld
+    // und alle Queries filtern danach, sodass nur eigene Berichte sichtbar sind.
     match /reports/{reportId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isSignedIn();
     }
 
-    // User profile documents (language, onboarding answers, etc.).
+    // ── Video-Vergleiche ──────────────────────────────────────────────────────
+    match /comparisons/{comparisonId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // ── Nutzerprofil ──────────────────────────────────────────────────────────
+    // Nur der Eigentümer. Sprache, Onboarding, Profilbild, Anzeigename und der
+    // Usage-Zähler (usageMonth/usageCount) bleiben voll schreibbar.
+    // ABER: `isPro`, `hadProBefore` und `proExpiredAt` sind clientseitig NICHT
+    // setz- oder änderbar — das macht ausschließlich die redeemAccessCode bzw.
+    // syncSubscriptionStatus Cloud Function über das Admin SDK.
     match /users/{userId} {
-      allow read, write: if request.auth != null;
+      allow read:   if isOwner(userId);
+      allow create: if isOwner(userId)
+                    && ( !('isPro' in request.resource.data)
+                         || request.resource.data.isPro == false )
+                    && !('hadProBefore' in request.resource.data)
+                    && !('proExpiredAt' in request.resource.data);
+      allow update: if isOwner(userId)
+                    && !( 'isPro' in request.resource.data.diff(resource.data).affectedKeys() )
+                    && !( 'hadProBefore' in request.resource.data.diff(resource.data).affectedKeys() )
+                    && !( 'proExpiredAt' in request.resource.data.diff(resource.data).affectedKeys() );
+      allow delete: if false;
     }
 
-    // Fallback: any other authenticated access is allowed.
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // ── Zugangscodes ──────────────────────────────────────────────────────────
+    // Kein Client-Zugriff (kein Lesen, kein Auflisten, kein Schreiben). Nur die
+    // redeemAccessCode Cloud Function (Admin SDK) liest und markiert Codes.
+    match /accessCodes/{code} {
+      allow read, write: if false;
     }
   }
 }

@@ -361,6 +361,8 @@
   "paywall": {
     "title": "Go Premium",
     "subtitle": "Unlock your full potential as a communicator",
+    "expiredTitle": "Welcome Back",
+    "expiredSubtitle": "Your Premium access has ended. Resubscribe to keep unlocking unlimited analyses and full coaching feedback.",
     "features": {
       "unlimited": "Unlimited video analyses",
       "detailed": "Detailed AI coaching reports",
