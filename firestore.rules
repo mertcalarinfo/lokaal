@@ -20,20 +20,25 @@ service cloud.firestore {
     // ── Nutzerprofil ──────────────────────────────────────────────────────────
     // Nur der Eigentümer. Sprache, Onboarding, Profilbild, Anzeigename und der
     // Usage-Zähler (usageMonth/usageCount) bleiben voll schreibbar.
-    // ABER: `isPro`, `hadProBefore` und `proExpiredAt` sind clientseitig NICHT
-    // setz- oder änderbar — das macht ausschließlich die redeemAccessCode bzw.
-    // syncSubscriptionStatus Cloud Function über das Admin SDK.
+    // ABER: `isPro`, `hadProBefore`, `proExpiredAt` und `proOverride` sind
+    // clientseitig NICHT setz- oder änderbar — das macht ausschließlich die
+    // redeemAccessCode bzw. syncSubscriptionStatus Cloud Function über das
+    // Admin SDK (proOverride nur manuell per Console). Wäre proOverride vom
+    // Client schreibbar, könnte sich ein Nutzer damit vor dem Ablauf seines
+    // Abos schützen und Pro dauerhaft behalten.
     match /users/{userId} {
       allow read:   if isOwner(userId);
       allow create: if isOwner(userId)
                     && ( !('isPro' in request.resource.data)
                          || request.resource.data.isPro == false )
                     && !('hadProBefore' in request.resource.data)
-                    && !('proExpiredAt' in request.resource.data);
+                    && !('proExpiredAt' in request.resource.data)
+                    && !('proOverride' in request.resource.data);
       allow update: if isOwner(userId)
                     && !( 'isPro' in request.resource.data.diff(resource.data).affectedKeys() )
                     && !( 'hadProBefore' in request.resource.data.diff(resource.data).affectedKeys() )
-                    && !( 'proExpiredAt' in request.resource.data.diff(resource.data).affectedKeys() );
+                    && !( 'proExpiredAt' in request.resource.data.diff(resource.data).affectedKeys() )
+                    && !( 'proOverride' in request.resource.data.diff(resource.data).affectedKeys() );
       allow delete: if false;
     }
 

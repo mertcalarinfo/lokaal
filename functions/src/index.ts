@@ -71,6 +71,13 @@ export const redeemAccessCode = onCall({ region: REGION }, async (request) => {
  *  - `proExpiredAt` wird NUR beim tatsächlichen aktiv→inaktiv-Übergang gesetzt,
  *    nicht bei jedem erneuten "weiterhin inaktiv"-Check — der ursprüngliche
  *    Ablaufzeitpunkt bleibt so stabil.
+ *  - Geschützte Konten werden nie angefasst (kein Schreiben, kein RevenueCat-
+ *    Aufruf), weil ihr Pro nicht aus RevenueCat stammt und "kein RC-Abo" sonst
+ *    als Ablauf gewertet und Pro zurückgenommen würde:
+ *      · `proOverride === true` im users-Dokument (manuell vergebenes Pro).
+ *        Das Flag SCHÜTZT nur, es vergibt kein Pro — `isPro: true` muss
+ *        zusammen damit gesetzt werden.
+ *      · bereits eingelöster Zugangscode (accessCodes/{code}.usedBy == uid).
  */
 export const syncSubscriptionStatus = onCall({ region: REGION }, async (request) => {
   const uid = request.auth?.uid;
@@ -84,7 +91,30 @@ export const syncSubscriptionStatus = onCall({ region: REGION }, async (request)
     isPro?: boolean;
     hadProBefore?: boolean;
     proExpiredAt?: Timestamp;
+    proOverride?: boolean;
   };
+
+  // Geschützte Konten (Pro nicht aus RevenueCat): unverändert lassen und den
+  // gespeicherten Stand zurückgeben, damit der Client nichts überschreibt.
+  let protectedBy: 'proOverride' | 'accessCode' | null = null;
+  if (prior.proOverride === true) {
+    protectedBy = 'proOverride';
+  } else {
+    const redeemed = await db
+      .collection('accessCodes')
+      .where('usedBy', '==', uid)
+      .limit(1)
+      .get();
+    if (!redeemed.empty) protectedBy = 'accessCode';
+  }
+  if (protectedBy) {
+    console.log('[syncSubscriptionStatus] protected account, no changes made', { protectedBy });
+    return {
+      isPro: prior.isPro === true,
+      hadProBefore: prior.hadProBefore === true,
+      proExpiredAt: prior.proExpiredAt ? prior.proExpiredAt.toMillis() : null,
+    };
+  }
 
   let rcActive: boolean;
   try {
