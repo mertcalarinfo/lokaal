@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Subscription } from '../types';
-import { checkSubscription, presentPaywall as rcPresentPaywall, initRevenueCat, identifyUser, syncSubscriptionStatus } from '../services/revenuecat';
+import { checkSubscription, presentPaywall as rcPresentPaywall, initRevenueCat, identifyUser, syncSubscriptionStatus, subscribeToEntitlementChanges } from '../services/revenuecat';
 import { getMonthlyUsage } from '../services/storage';
 import { useAuth } from './useAuth';
 
@@ -84,6 +84,17 @@ export const useSubscription = (
   useEffect(() => {
     fetchSubscriptionData();
   }, [fetchSubscriptionData]);
+
+  // Kauf, Wiederherstellung oder Ablauf (zentraler RevenueCat-Listener) → sofort neu
+  // laden, damit Limit, Verlauf-Tab, Report und Einstellungen ohne App-Neustart
+  // umspringen. Der Server-Sync schützt proOverride-/Zugangscode-Konten selbst
+  // (liefert deren gespeicherten Stand zurück), das Ergebnis ist also gefahrlos.
+  useEffect(() => {
+    if (!userId) return;
+    return subscribeToEntitlementChanges(() => {
+      fetchSubscriptionData();
+    });
+  }, [userId, fetchSubscriptionData]);
 
   const refresh = useCallback(async () => {
     setLoading(true);

@@ -29,6 +29,63 @@ const isUsableKey = (key: string, platform: string): boolean => {
   return true; // android: keep existing leniency (sandbox key)
 };
 
+const hasPremium = (customerInfo: any): boolean =>
+  customerInfo?.entitlements?.active?.[PREMIUM_ENTITLEMENT_ID] !== undefined;
+
+// ─── Entitlement-Änderungen (zentral, einmalig) ───────────────────────────────
+// Jede useSubscription-Instanz hält ihren eigenen State und lädt sonst nur beim
+// Mounten. Damit Kauf/Restore/Ablauf überall sofort ankommt, gibt es genau EINEN
+// nativen CustomerInfo-Listener, der an alle Abonnenten verteilt. Er wird erst
+// registriert, wenn es Abonnenten gibt, und entfernt, sobald der letzte geht.
+type EntitlementListener = () => void;
+const entitlementListeners = new Set<EntitlementListener>();
+let nativeCustomerInfoListener: ((info: any) => void) | null = null;
+let lastKnownPremium: boolean | null = null;
+
+const notifyEntitlementChange = (): void => {
+  entitlementListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (error) {
+      console.warn('[RevenueCat] entitlement listener failed:', error);
+    }
+  });
+};
+
+const attachNativeListener = (): void => {
+  if (nativeCustomerInfoListener || !isInitialized || !Purchases) return;
+  if (entitlementListeners.size === 0) return;
+  nativeCustomerInfoListener = (customerInfo: any) => {
+    const active = hasPremium(customerInfo);
+    // Nur bei echter Änderung melden — das SDK feuert auch bei logIn/logOut und
+    // beim Registrieren mit dem Cache, ohne dass sich das Entitlement ändert.
+    if (active === lastKnownPremium) return;
+    lastKnownPremium = active;
+    notifyEntitlementChange();
+  };
+  Purchases.addCustomerInfoUpdateListener(nativeCustomerInfoListener);
+};
+
+const detachNativeListener = (): void => {
+  if (!nativeCustomerInfoListener) return;
+  try {
+    Purchases?.removeCustomerInfoUpdateListener?.(nativeCustomerInfoListener);
+  } catch (error) {
+    console.warn('[RevenueCat] removing CustomerInfo listener failed:', error);
+  }
+  nativeCustomerInfoListener = null;
+};
+
+/** Meldet sich für Entitlement-Änderungen an. Gibt die Abmelde-Funktion zurück. */
+export const subscribeToEntitlementChanges = (listener: EntitlementListener): (() => void) => {
+  entitlementListeners.add(listener);
+  attachNativeListener(); // no-op, falls das SDK noch nicht initialisiert ist (siehe initializeRevenueCat)
+  return () => {
+    entitlementListeners.delete(listener);
+    if (entitlementListeners.size === 0) detachNativeListener();
+  };
+};
+
 const initializeRevenueCat = async (): Promise<void> => {
   if (isInitialized) return;
 
@@ -64,10 +121,12 @@ const initializeRevenueCat = async (): Promise<void> => {
       // older SDKs — ignore
     }
 
-    console.log('[RevenueCat] Initializing for platform:', Platform.OS, '— key prefix:', apiKey.slice(0, 8));
+    console.log('[RevenueCat] Initializing for platform:', Platform.OS);
     Purchases.configure({ apiKey });
     isInitialized = true;
     console.log('[RevenueCat] Initialized successfully');
+    // Abonnenten können sich schon vor dem Ende der Initialisierung angemeldet haben.
+    attachNativeListener();
   } catch (error: any) {
     console.error('[RevenueCat] Initialization failed:', error?.message, error);
     isInitialized = false;
@@ -91,6 +150,7 @@ export const resetUser = async (): Promise<void> => {
   if (!isInitialized || !Purchases) return;
   try {
     await Purchases.logOut();
+    lastKnownPremium = null;
   } catch (error) {
     console.warn('RevenueCat reset user failed:', error);
   }
@@ -109,16 +169,26 @@ export interface ServerSubscriptionState {
  * schreiben). Gibt bei Fehlern null zurück, statt zu werfen — Aufrufer soll das
  * nie hart failen lassen (gleiche Konvention wie checkSubscription/getOfferings).
  */
-export const syncSubscriptionStatus = async (): Promise<ServerSubscriptionState | null> => {
-  try {
-    const { firebase } = await import('@react-native-firebase/functions');
-    const callable = firebase.app().functions(FUNCTIONS_REGION).httpsCallable('syncSubscriptionStatus');
-    const { data } = await callable();
-    return data as ServerSubscriptionState;
-  } catch (error) {
-    console.warn('[RevenueCat] syncSubscriptionStatus failed:', error);
-    return null;
-  }
+let syncInFlight: Promise<ServerSubscriptionState | null> | null = null;
+
+export const syncSubscriptionStatus = (): Promise<ServerSubscriptionState | null> => {
+  // Mehrere useSubscription-Instanzen laden gleichzeitig (Mount, Kauf, Listener):
+  // ein laufender Aufruf wird geteilt statt die Cloud Function mehrfach zu feuern.
+  if (syncInFlight) return syncInFlight;
+  syncInFlight = (async () => {
+    try {
+      const { firebase } = await import('@react-native-firebase/functions');
+      const callable = firebase.app().functions(FUNCTIONS_REGION).httpsCallable('syncSubscriptionStatus');
+      const { data } = await callable();
+      return data as ServerSubscriptionState;
+    } catch (error) {
+      console.warn('[RevenueCat] syncSubscriptionStatus failed:', error);
+      return null;
+    } finally {
+      syncInFlight = null;
+    }
+  })();
+  return syncInFlight;
 };
 
 export const checkSubscription = async (): Promise<Subscription> => {
@@ -134,8 +204,8 @@ export const checkSubscription = async (): Promise<Subscription> => {
 
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    const isActive =
-      customerInfo?.entitlements?.active?.[PREMIUM_ENTITLEMENT_ID] !== undefined;
+    const isActive = hasPremium(customerInfo);
+    lastKnownPremium = isActive;
 
     return {
       isActive,
@@ -169,8 +239,14 @@ export const purchasePackage = async (pkg: any): Promise<boolean> => {
   console.log('[RevenueCat] Purchasing package:', pkg?.product?.identifier ?? pkg?.identifier ?? '(unknown)');
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
-    const active = customerInfo?.entitlements?.active?.[PREMIUM_ENTITLEMENT_ID] !== undefined;
+    const active = hasPremium(customerInfo);
     console.log('[RevenueCat] Purchase complete — premium active:', active);
+    if (active) {
+      // Alle useSubscription-Instanzen sofort neu laden (RevenueCat + Server-Sync),
+      // nicht erst beim nächsten Mounten.
+      lastKnownPremium = true;
+      notifyEntitlementChange();
+    }
     return active;
   } catch (error: any) {
     // Code '1' is user-cancelled — not an error, just a dismissal
@@ -188,12 +264,13 @@ export const restorePurchases = async (): Promise<boolean> => {
     throw new Error('RevenueCat not available');
   }
 
-  try {
-    const customerInfo = await Purchases.restorePurchases();
-    return customerInfo?.entitlements?.active?.[PREMIUM_ENTITLEMENT_ID] !== undefined;
-  } catch (error) {
-    throw error;
+  const customerInfo = await Purchases.restorePurchases();
+  const active = hasPremium(customerInfo);
+  if (active) {
+    lastKnownPremium = true;
+    notifyEntitlementChange();
   }
+  return active;
 };
 
 export const presentPaywall = async (): Promise<boolean> => {

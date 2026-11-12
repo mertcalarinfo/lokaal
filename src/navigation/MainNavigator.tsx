@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { InteractionManager } from 'react-native';
 import { createBottomTabNavigator, BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +18,7 @@ import PaywallScreen from '../screens/paywall/PaywallScreen';
 import { HomeStackParamList } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
+import { MODAL_TRANSITION_SETTLE_MS } from '../contexts/AuthContext';
 import ProPreviewModal from '../components/ProPreviewModal';
 import { RC, MONO_MED } from '../theme/register';
 
@@ -63,6 +65,30 @@ const TabNavigator: React.FC = () => {
   const { user }    = useAuth();
   const { isPro }   = useSubscription(user?.uid || null);
   const [showProModal, setShowProModal] = useState(false);
+
+  // ProPreviewModal (RN-Modal) schließt, die Paywall ist ein natives Stack-Modal.
+  // Beides in einem Zug zu wechseln kann auf iOS eine Taps blockierende Ebene
+  // hinterlassen — daher erst navigieren, wenn das Schließen abgeschlossen ist.
+  const paywallTimer       = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const paywallInteraction = useRef<{ cancel: () => void } | null>(null);
+  const cancelPendingPaywall = useCallback(() => {
+    paywallInteraction.current?.cancel();
+    paywallInteraction.current = null;
+    if (paywallTimer.current) clearTimeout(paywallTimer.current);
+    paywallTimer.current = null;
+  }, []);
+  useEffect(() => cancelPendingPaywall, [cancelPendingPaywall]);
+
+  const handleUnlock = useCallback(() => {
+    setShowProModal(false);
+    cancelPendingPaywall();
+    paywallInteraction.current = InteractionManager.runAfterInteractions(() => {
+      paywallTimer.current = setTimeout(() => {
+        paywallTimer.current = null;
+        navigation.navigate('Paywall');
+      }, MODAL_TRANSITION_SETTLE_MS);
+    });
+  }, [navigation, cancelPendingPaywall]);
 
   return (
     <>
@@ -123,7 +149,7 @@ const TabNavigator: React.FC = () => {
     <ProPreviewModal
       visible={showProModal}
       onClose={() => setShowProModal(false)}
-      onUnlock={() => { setShowProModal(false); navigation.navigate('Paywall'); }}
+      onUnlock={handleUnlock}
     />
     </>
   );

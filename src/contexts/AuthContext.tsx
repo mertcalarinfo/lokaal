@@ -20,6 +20,7 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
+import { InteractionManager } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '../services/firebase';
 import { saveUserProfile, getUserProfile } from '../services/storage';
@@ -31,6 +32,13 @@ import ProUnlockedModal, { ProNoticeKind } from '../components/ProUnlockedModal'
 const onboardingKey = (uid: string) => `@prezence:onboarding_${uid}`;
 // Zugangscode, der vor dem Login eingegeben wurde — wird nach Anmeldung eingelöst.
 const PENDING_CODE_KEY = '@prezence:pendingProCode';
+
+// Wartezeit, bis eine laufende native Modal-/Stack-Transition sicher beendet ist
+// (z. B. das Schließen der Paywall per goBack()). iOS kann kein Modal präsentieren,
+// solange gleichzeitig ein anderes präsentiert oder verworfen wird — das kann eine
+// unsichtbare, Taps blockierende Ebene hinterlassen. Das Pro-Fenster (RN Modal) wird
+// deshalb nie sofort, sondern erst nach dieser Zeit gezeigt.
+export const MODAL_TRANSITION_SETTLE_MS = 700;
 
 // ─── User-Dokument-Normalisierung ────────────────────────────────────────────
 // Gibt ein Objekt mit AUSSCHLIESSLICH den Feldern zurück, die im Firestore-Dokument
@@ -146,6 +154,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [proNotice, setProNotice] = useState<ProNoticeKind | null>(null);
+
+  // Einziger Weg, das globale Pro-Fenster zu öffnen: wartet laufende Interaktionen
+  // und die native Modal-Transition ab (siehe MODAL_TRANSITION_SETTLE_MS). Ein neuer
+  // Aufruf ersetzt einen noch ausstehenden, es stauen sich nie mehrere Fenster.
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noticeInteraction = useRef<{ cancel: () => void } | null>(null);
+  const cancelPendingNotice = useCallback(() => {
+    noticeInteraction.current?.cancel();
+    noticeInteraction.current = null;
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = null;
+  }, []);
+  const presentProNotice = useCallback((kind: ProNoticeKind) => {
+    cancelPendingNotice();
+    noticeInteraction.current = InteractionManager.runAfterInteractions(() => {
+      noticeTimer.current = setTimeout(() => {
+        noticeTimer.current = null;
+        setProNotice(kind);
+      }, MODAL_TRANSITION_SETTLE_MS);
+    });
+  }, [cancelPendingNotice]);
+  useEffect(() => cancelPendingNotice, [cancelPendingNotice]);
+
   // DEV ONLY — prevents onAuthStateChanged from overwriting the mock user
   const devSkipped = useRef(false);
 
@@ -205,7 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           tryRedeemPendingCode(
             fbUser,
             () => setUser((p) => (p ? { ...p, isPro: true } : p)),
-            setProNotice
+            presentProNotice
           );
         } catch {
           // Profile fetch failed — treat as new user with no language set.
@@ -474,10 +505,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const res = await redeemAccessCode(code);
     if (res.success) {
       setUser((p) => (p ? { ...p, isPro: true } : p));
-      setProNotice('success');
+      presentProNotice('success');
     }
     return res;
-  }, []);
+  }, [presentProNotice]);
 
   const applySubscriptionSync = useCallback(
     (state: { isPro: boolean; hadProBefore: boolean; proExpiredAt: number | null }) => {
@@ -599,7 +630,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     completeOnboarding,
     saveOnboardingAnswers,
     clearError,
-    showProNotice: setProNotice,
+    showProNotice: presentProNotice,
     skipLogin,
   };
 

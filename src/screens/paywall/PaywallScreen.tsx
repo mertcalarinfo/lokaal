@@ -109,8 +109,12 @@ const PaywallScreen: React.FC = () => {
         Alert.alert(t('paywall.title'), t('paywall.errors.notAvailable'), [{ text: t('common.ok') }]);
         return;
       }
+      // purchasePackage meldet den Kauf zentral an alle useSubscription-Instanzen
+      // (RevenueCat-Neuladen + Server-Sync) — der Pro-Status springt sofort um.
       const ok = await purchasePackage(pkg);
-      if (ok) { showProNotice('success'); navigation.goBack(); }
+      // Paywall zuerst schließen; das Pro-Fenster wird von showProNotice erst nach
+      // der Modal-Transition gezeigt (nie zwei Modals gleichzeitig).
+      if (ok) { navigation.goBack(); showProNotice('success'); }
     } catch (err: any) {
       if (!err?.message?.includes('cancelled') && err?.userCancelled !== true)
         Alert.alert(t('common.error'), t('paywall.errors.purchaseFailed'));
@@ -123,7 +127,7 @@ const PaywallScreen: React.FC = () => {
     setRestoring(true);
     try {
       const ok = await restorePurchases();
-      if (ok) Alert.alert(t('common.ok'), 'Purchases restored!', [{ text: t('common.ok'), onPress: () => navigation.goBack() }]);
+      if (ok) { navigation.goBack(); showProNotice('success'); }
       else    Alert.alert(t('common.error'), t('paywall.errors.restoreFailed'));
     } catch {
       Alert.alert(t('common.error'), t('paywall.errors.restoreFailed'));
