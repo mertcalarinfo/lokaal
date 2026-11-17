@@ -196,12 +196,12 @@ const ProgressScreen: React.FC = () => {
 
                 {newComparisonCard}
 
-                {/* Neueste 3 Analysen */}
+                {/* Neueste 5 Analysen */}
                 <ListCard
                   label={t('progress.analysesHead')}
                   action={{ text: t('progress.allCount', { count: sorted.length }), onPress: () => navigation.navigate('AllAnalyses') }}
                 >
-                  {sorted.slice(0, 3).map((r, i) => {
+                  {sorted.slice(0, 5).map((r, i) => {
                     const next = sorted[i + 1];
                     return (
                       <React.Fragment key={r.id}>

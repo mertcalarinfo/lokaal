@@ -21,6 +21,7 @@ import VideoThumbnail from '../../components/VideoThumbnail';
 import PrezenceLogo from '../../components/PrezenceLogo';
 import { ChevronRight, UploadIcon, CameraIcon, TrendUpIcon, TrendDownIcon } from '../../components/Icons';
 import { ThemeColors, F, R, S as SP, TY } from '../../theme';
+import { weakestVisibleCategory, plainText } from '../../utils/categories';
 
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -212,6 +213,12 @@ const HomeScreen: React.FC = () => {
   const lastScore = lastReport ? score100(lastReport.averageScore) : null;
   const delta = lastReport && prevReport ? score100(lastReport.averageScore) - score100(prevReport.averageScore) : null;
 
+  // ── Dein Fokus: schwächste sichtbare Kategorie der letzten Analyse ─────────
+  const focusCat   = lastReport ? weakestVisibleCategory(lastReport, isPro) : null;
+  const focusScore = focusCat ? score100(focusCat.score) : 0;
+  const focusTip   = focusCat ? plainText(focusCat.tips?.[0] || focusCat.observations?.[0] || '') : '';
+  const openLastReport = () => lastReport && navigation.navigate('Report', { report: lastReport, saved: true });
+
   // ── JSX ────────────────────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
@@ -287,7 +294,7 @@ const HomeScreen: React.FC = () => {
           {lastReport && lastScore !== null && (
             <Card
               style={styles.rowCard}
-              onPress={() => navigation.navigate('Report', { report: lastReport, saved: true })}
+              onPress={openLastReport}
               accessibilityLabel={`${t('home.lastAnalysisLabel')}, ${lastScore}`}
             >
               <ScoreRing score={lastScore} size={60} />
@@ -309,6 +316,26 @@ const HomeScreen: React.FC = () => {
                 )}
               </View>
               <ChevronRight color={T.textSecondary} />
+            </Card>
+          )}
+
+          {/* 5b · Dein Fokus (nur mit letzter Analyse) */}
+          {lastReport && focusCat && (
+            <Card style={styles.focusCard}>
+              <Text style={styles.label}>{t('home.focusLabel')}</Text>
+              <View style={styles.focusHead}>
+                <Text style={styles.focusName} numberOfLines={1}>
+                  {t(`report.categoryNames.${focusCat.name}`, { defaultValue: focusCat.name })}
+                </Text>
+                <Text style={styles.focusValue}>{focusScore}</Text>
+              </View>
+              <View style={styles.bar}>
+                <View style={[styles.barFill, { width: `${Math.max(0, Math.min(100, focusScore))}%` }]} />
+              </View>
+              {!!focusTip && <Text style={styles.focusTip} numberOfLines={2}>{focusTip}</Text>}
+              <Pressable onPress={openLastReport} accessibilityRole="link" hitSlop={8} style={styles.focusLink}>
+                <Text style={styles.focusLinkTxt}>{t('home.viewInReport')}</Text>
+              </Pressable>
             </Card>
           )}
 
@@ -368,6 +395,14 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
 
   deltaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   delta:    { fontFamily: F.semiBold, fontSize: 13, fontVariant: ['tabular-nums'] },
+
+  focusCard:    { paddingTop: 14, paddingHorizontal: 16, paddingBottom: 4, gap: 8 },
+  focusHead:    { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
+  focusName:    { flex: 1, ...TY.rowTitle, color: T.text },
+  focusValue:   { fontFamily: F.medium, fontSize: 18, letterSpacing: -0.36, color: T.text, fontVariant: ['tabular-nums'] },
+  focusTip:     { fontFamily: F.medium, fontSize: 14, lineHeight: 20, color: T.text },
+  focusLink:    { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
+  focusLinkTxt: { fontFamily: F.semiBold, fontSize: 14, color: T.accentText },
 
   usage: {
     flexDirection: 'row',

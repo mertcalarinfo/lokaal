@@ -201,7 +201,9 @@
     "usageLeft": "{{left}} of {{limit}} analyses left",
     "getPro": "Get Pro",
     "chooseVideo": "Choose a video first",
-    "readyToAnalyze": "Ready to analyze"
+    "readyToAnalyze": "Ready to analyze",
+    "focusLabel": "Your focus",
+    "viewInReport": "View in report"
   },
   "analysis": {
     "headerTitle": "Analysis",
