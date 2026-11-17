@@ -5,17 +5,27 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/branding/app-icon-1024.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/branding/P-warmwhite.png",
+      "image": "./assets/branding/p-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0A1422"
+      "backgroundColor": "#F3F5F9"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.prezence.ios",
       "googleServicesFile": "./GoogleService-Info.plist",
       "icon": "./assets/branding/app-icon-1024.png",
+      "splash": {
+        "image": "./assets/branding/p-logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#F3F5F9",
+        "dark": {
+          "image": "./assets/branding/p-logo.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0A0D14"
+        }
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "PREZENCE needs camera access to record your speaking videos.",
@@ -26,7 +36,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/app-icon-1024.png",
-        "backgroundColor": "#F4F1EA"
+        "backgroundColor": "#F3F5F9"
       },
       "package": "com.prezence.app",
       "googleServicesFile": "./google-services.json",

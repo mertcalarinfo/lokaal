@@ -1,4 +1,5 @@
 /**
+ * ÜBERGANG — alte Register-Tokens (nur noch bis Phase 6, dann gelöscht)
  * Design-Tokens — Variante "Register"
  * Quelle: Prezence-Design-Spec-V3-Register.md
  * Einheitlicher Look (ersetzt Dark/Light-Varianten temporär).
@@ -8,38 +9,40 @@
 // ─── Farben ───────────────────────────────────────────────────────────────────
 
 export const RC = {
-  bg:             '#FCFBF9',  // helleres, fast neutrales Weiß (Option B) statt warmem Cremeweiß
-  bgElevated:     '#FFFFFF',  // erhöhte Flächen leicht heller als bg, konsistent zum neuen Grund
-  text:           '#211F1B',
-  muted:          '#6E685D',
-  faint:          '#8A8478',
-  ghost:          '#BEB7A8',  // leicht abgedunkelt, damit Registernummern/Platzhalter auf hellerem Grund sichtbar bleiben
-  accent:         '#1E3AE0',
-  onAccent:       '#F6F1E8',
-  line:           'rgba(33,31,27,0.18)',
-  lineFaint:      'rgba(33,31,27,0.09)',
-  lineStrong:     '#211F1B',
-  lineTable:      'rgba(33,31,27,0.14)',
-  accentLine:     'rgba(30,58,224,0.25)',
-  accentWash:     'rgba(30,58,224,0.07)',  // +0.01, damit die Fokus-/Auswahl-Tönung auf hellerem Grund sichtbar bleibt
-  accentFill:     'rgba(30,58,224,0.11)',
-  radarRing:      'rgba(33,31,27,0.16)',
-  radarRingInner: 'rgba(33,31,27,0.10)',
+  // ÜBERGANG (Entwurf 5): Werte auf die neue helle Palette gemappt, bis die
+  // Screens in Phase 3–6 auf useTheme() umgestellt sind. Danach wird diese Datei gelöscht.
+  bg:             '#F3F5F9',
+  bgElevated:     '#FFFFFF',
+  text:           '#0B1220',
+  muted:          '#566074',
+  faint:          '#566074',
+  ghost:          '#7A8599',
+  accent:         '#0A6CFF',
+  onAccent:       '#FFFFFF',
+  line:           'rgba(11,18,32,0.12)',
+  lineFaint:      'rgba(11,18,32,0.07)',
+  lineStrong:     '#0B1220',
+  lineTable:      'rgba(11,18,32,0.10)',
+  accentLine:     'rgba(10,108,255,0.25)',
+  accentWash:     'rgba(10,108,255,0.10)',
+  accentFill:     'rgba(10,108,255,0.12)',
+  radarRing:      'rgba(11,18,32,0.16)',
+  radarRingInner: 'rgba(11,18,32,0.10)',
 } as const;
 
 // ─── Typografie ───────────────────────────────────────────────────────────────
 
 /** Hanken Grotesk Regular — alle Metadaten, Labels, Tabellen, Rubriken */
-export const MONO     = 'HankenGrotesk_400Regular';
+export const MONO     = 'Inter_400Regular';
 /** Hanken Grotesk Medium — Button-Label, Wortmarke, Fokus-Zeilen */
-export const MONO_MED = 'HankenGrotesk_500Medium';
+export const MONO_MED = 'Inter_500Medium';
 // Sans (Score-Zahlen, Body): System-Default → fontFamily weglassen
 
 // ─── Schatten ─────────────────────────────────────────────────────────────────
 // Einziger Schatten: Primary-Button
 
 export const BTN_SHADOW = {
-  shadowColor:   '#1E3AE0',
+  shadowColor:   '#0A6CFF',
   // Softer cobalt lift: the previous opacity 0.5 / radius 30 produced a glow
   // strong enough to bleed over the text below the button (iOS). Reduced so the
   // footnote under the analyze button stays readable.

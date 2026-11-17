@@ -10,6 +10,7 @@ import MainNavigator from './MainNavigator';
 import LanguageSelectScreen from '../screens/onboarding/LanguageSelectScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import { ThemeColors } from '../theme';
+import AmbientBackground from '../components/AmbientBackground';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -20,26 +21,22 @@ const createSplashStyles = (T: ThemeColors) => StyleSheet.create({
     alignItems:      'center',
     justifyContent:  'center',
   },
-  // P-Mark zentriert — Spec: dark P-warmwhite.png auf #0A1422, light P-navy.png auf #F4F1EA
+  // Splash (Entwurf 5): bg + blaues P, kein Navy mehr
   pMark: {
-    width:        120,
-    height:       120,
+    width:        116,
+    height:       96,
     marginBottom: 48,
   },
 });
 
 const SplashScreen: React.FC = () => {
-  const { T, isDark } = useTheme();
+  const { T } = useTheme();
   const styles = useMemo(() => createSplashStyles(T), [T]);
-
-  // Theme-abhängige P-Mark-Datei
-  const pSource = isDark
-    ? require('../../assets/branding/P-warmwhite.png')
-    : require('../../assets/branding/P-navy.png');
 
   return (
     <View style={styles.container}>
-      <Image source={pSource} style={styles.pMark} resizeMode="contain" />
+      <AmbientBackground animated={false} />
+      <Image source={require('../../assets/branding/p-logo.png')} style={styles.pMark} resizeMode="contain" />
       <ActivityIndicator size="small" color={T.accent} />
     </View>
   );

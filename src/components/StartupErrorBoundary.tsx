@@ -113,7 +113,7 @@ export class StartupErrorBoundary extends React.Component<
 
 // Hardcoded, theme-independent, NO custom fontFamily (system default only).
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#FCFBF9' },
+  wrap: { flex: 1, backgroundColor: '#F3F5F9' },
   content: { padding: 20, paddingTop: 64 },
   title: { fontSize: 20, fontWeight: '700', color: '#B00020', marginBottom: 8 },
   hint: { fontSize: 13, color: '#555555', marginBottom: 20, lineHeight: 18 },
@@ -125,6 +125,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 4,
   },
-  message: { fontSize: 15, color: '#211F1B', lineHeight: 20 },
+  message: { fontSize: 15, color: '#0B1220', lineHeight: 20 },
   mono: { fontSize: 11, color: '#333333', lineHeight: 16 },
 });

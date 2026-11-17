@@ -485,7 +485,7 @@ const S = StyleSheet.create({
   // Avatar-ActionSheet
   sheetOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(33,31,27,0.45)',
+    backgroundColor: 'rgba(11,18,32,0.32)',
     justifyContent: 'flex-end',
   },
   sheet: {

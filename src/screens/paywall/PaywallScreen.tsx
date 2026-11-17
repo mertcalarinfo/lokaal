@@ -23,56 +23,56 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   safe:  { flex: 1, backgroundColor: T.bg },
   closeBtn: {
     position: 'absolute', top: 56, right: S.screen, zIndex: 10,
-    width: 34, height: 34, borderRadius: R.pill,
-    backgroundColor: T.surface2, alignItems: 'center', justifyContent: 'center',
+    width: 34, height: 34, borderRadius: R.buttonSm,
+    backgroundColor: T.disabledBg, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: T.hairline,
   },
   scroll: { paddingHorizontal: S.screen, paddingTop: 60, paddingBottom: S.s10 },
   header: { alignItems: 'center', marginBottom: S.s8 },
   premiumPill: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: T.surfaceAccent, borderRadius: R.pill,
+    backgroundColor: T.accentTint, borderRadius: R.buttonSm,
     paddingHorizontal: S.s3, paddingVertical: 5,
     borderWidth: 1, borderColor: T.hairline, gap: 5, marginBottom: S.s4,
   },
-  premiumPillText: { fontFamily: F.xBold, fontSize: 11, fontWeight: '800', color: T.accent, letterSpacing: 2 },
+  premiumPillText: { fontFamily: F.semiBold, fontSize: 11, color: T.accent, letterSpacing: 2 },
   title: {
-    fontFamily: F.xBold, fontSize: 28, fontWeight: '800',
+    fontFamily: F.semiBold, fontSize: 28,
     color: T.text, marginBottom: S.s2, textAlign: 'center', letterSpacing: -0.56,
   },
   subtitle: {
-    fontFamily: F.regular, fontSize: 14.5, color: T.textMuted,
+    fontFamily: F.regular, fontSize: 14.5, color: T.textSecondary,
     textAlign: 'center', lineHeight: 22, paddingHorizontal: S.s4,
   },
   featuresCard: {
-    backgroundColor: T.surface, borderRadius: R.lg,
+    backgroundColor: T.card, borderRadius: R.card,
     padding: S.s5, marginBottom: S.s5,
     borderWidth: 1, borderColor: T.hairline,
   },
   featureRow:     { flexDirection: 'row', alignItems: 'center', paddingVertical: S.s3 },
   featureIconWrap: {
-    width: 34, height: 34, borderRadius: R.sm,
+    width: 34, height: 34, borderRadius: R.button,
     alignItems: 'center', justifyContent: 'center', marginRight: S.s3,
   },
-  featureText: { flex: 1, fontFamily: F.medium, fontSize: 14.5, fontWeight: '500', color: T.text },
+  featureText: { flex: 1, fontFamily: F.medium, fontSize: 14.5, color: T.text },
   pricingCard: {
-    borderRadius: R.lg, padding: S.s5, marginBottom: S.s6,
+    borderRadius: R.card, padding: S.s5, marginBottom: S.s6,
     borderWidth: 1.5, borderColor: T.accent, alignItems: 'center',
   },
   pricingTag: {
-    fontFamily: F.xBold, fontSize: 10, fontWeight: '800',
+    fontFamily: F.semiBold, fontSize: 10,
     color: T.accent, letterSpacing: 2.5, marginBottom: S.s2,
   },
   priceNum: {
-    fontFamily: F.xBold, fontSize: 38, fontWeight: '800',
+    fontFamily: F.semiBold, fontSize: 38,
     color: T.text, letterSpacing: -1, marginBottom: 3,
   },
-  priceSub:    { fontFamily: F.regular, fontSize: 13, color: T.textFaint },
+  priceSub:    { fontFamily: F.regular, fontSize: 13, color: T.textSecondary },
   cta:         { alignItems: 'center' },
-  disclaimer:  { fontFamily: F.regular, fontSize: 13, color: T.textFaint, textAlign: 'center', marginBottom: S.s4 },
+  disclaimer:  { fontFamily: F.regular, fontSize: 13, color: T.textSecondary, textAlign: 'center', marginBottom: S.s4 },
   restoreBtn:  { paddingVertical: S.s2, marginBottom: S.s3 },
-  restoreText: { fontFamily: F.medium, fontSize: 14, color: T.textMuted, textDecorationLine: 'underline' },
-  terms:       { fontFamily: F.regular, fontSize: 11, color: T.textFaint, textAlign: 'center', lineHeight: 16, paddingHorizontal: S.s4 },
+  restoreText: { fontFamily: F.medium, fontSize: 14, color: T.textSecondary, textDecorationLine: 'underline' },
+  terms:       { fontFamily: F.regular, fontSize: 11, color: T.textSecondary, textAlign: 'center', lineHeight: 16, paddingHorizontal: S.s4 },
 });
 
 const PaywallScreen: React.FC = () => {
@@ -138,23 +138,23 @@ const PaywallScreen: React.FC = () => {
 
   const features = [
     { key: 'unlimited', Icon: Infinity,   color: T.accent   },
-    { key: 'detailed',  Icon: Sparkles,   color: T.textMuted },
-    { key: 'progress',  Icon: TrendingUp, color: T.success  },
-    { key: 'exercises', Icon: Dumbbell,   color: T.textMuted },
-    { key: 'compare',   Icon: GitCompare, color: T.textMuted },
+    { key: 'detailed',  Icon: Sparkles,   color: T.textSecondary },
+    { key: 'progress',  Icon: TrendingUp, color: T.accentText  },
+    { key: 'exercises', Icon: Dumbbell,   color: T.textSecondary },
+    { key: 'compare',   Icon: GitCompare, color: T.textSecondary },
   ] as const;
 
   return (
     <SafeAreaView style={styles.safe}>
       {/* Close */}
       <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
-        <X size={20} color={T.textMuted} strokeWidth={1.7} />
+        <X size={20} color={T.textSecondary} strokeWidth={1.7} />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <PrezenceLogo size="md" showTagline={false} style={{ marginBottom: S.s4 }} />
+          <PrezenceLogo size="md" style={{ marginBottom: S.s4 }} />
           <View style={styles.premiumPill}>
             <Star size={13} color={T.accent} strokeWidth={1.7} />
             <Text style={styles.premiumPillText}>PREMIUM</Text>
@@ -171,7 +171,7 @@ const PaywallScreen: React.FC = () => {
                 <Icon size={17} color={color} strokeWidth={1.7} />
               </View>
               <Text style={styles.featureText}>{t(`paywall.features.${key}`)}</Text>
-              <CheckCircle2 size={17} color={T.success} strokeWidth={1.7} />
+              <CheckCircle2 size={17} color={T.accentText} strokeWidth={1.7} />
             </View>
           ))}
         </View>

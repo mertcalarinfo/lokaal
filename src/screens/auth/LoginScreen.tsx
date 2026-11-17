@@ -24,25 +24,25 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   scroll:   { flexGrow: 1, paddingHorizontal: S.screen, paddingVertical: S.s8, justifyContent: 'center' },
   logoWrap: { alignItems: 'center', marginBottom: S.s8 },
   card: {
-    backgroundColor: T.surface, borderRadius: R.xl,
+    backgroundColor: T.card, borderRadius: R.card,
     padding: S.s6, borderWidth: 1, borderColor: T.hairline,
   },
-  cardTitle: { fontFamily: F.bold, fontSize: 24, fontWeight: '700', color: T.text, letterSpacing: -0.48, marginBottom: 4 },
-  cardSub:   { fontFamily: F.regular, fontSize: 14.5, color: T.textMuted, marginBottom: S.s6 },
+  cardTitle: { fontFamily: F.semiBold, fontSize: 24, color: T.text, letterSpacing: -0.48, marginBottom: 4 },
+  cardSub:   { fontFamily: F.regular, fontSize: 14.5, color: T.textSecondary, marginBottom: S.s6 },
   divider:      { flexDirection: 'row', alignItems: 'center', marginVertical: S.s5 },
-  dividerLine:  { flex: 1, height: 1, backgroundColor: T.line },
-  dividerText:  { fontFamily: F.regular, fontSize: 13, color: T.textFaint, marginHorizontal: S.s3 },
+  dividerLine:  { flex: 1, height: 1, backgroundColor: T.hairline },
+  dividerText:  { fontFamily: F.regular, fontSize: 13, color: T.textSecondary, marginHorizontal: S.s3 },
   googleBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: T.surface2, borderWidth: 1, borderColor: T.hairline,
-    borderRadius: R.sm, paddingVertical: S.s4,
+    backgroundColor: T.disabledBg, borderWidth: 1, borderColor: T.hairline,
+    borderRadius: R.button, paddingVertical: S.s4,
   },
-  googleG:    { fontSize: 15, fontWeight: '800', color: '#4285F4', marginRight: S.s2 },
-  googleText: { fontFamily: F.semiBold, fontSize: 14.5, fontWeight: '600', color: T.text },
+  googleG:    { fontSize: 15, color: '#4285F4', marginRight: S.s2 },
+  googleText: { fontFamily: F.semiBold, fontSize: 14.5, color: T.text },
   appleBtnWrap: { height: 44, marginTop: S.s3 },
   footerRow:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: S.s6 },
-  footerText: { fontFamily: F.regular, fontSize: 14, color: T.textMuted },
-  footerLink: { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.accent },
+  footerText: { fontFamily: F.regular, fontSize: 14, color: T.textSecondary },
+  footerLink: { fontFamily: F.semiBold, fontSize: 14, color: T.accent },
 });
 
 const LoginScreen: React.FC = () => {
@@ -118,7 +118,7 @@ const LoginScreen: React.FC = () => {
           <View style={styles.logoWrap}>
             {/* Verstecktes Tap-Target — kein visuelles Feedback (kein Ripple/Highlight). */}
             <Pressable onPress={handleLogoTap} android_disableSound>
-              <PrezenceLogo size="lg" showTagline />
+              <PrezenceLogo size="lg" />
             </Pressable>
           </View>
 
@@ -186,7 +186,7 @@ const LoginScreen: React.FC = () => {
               <AppleAuthentication.AppleAuthenticationButton
                 buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                 buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                cornerRadius={R.sm}
+                cornerRadius={R.button}
                 style={styles.appleBtnWrap}
                 accessibilityLabel={t('auth.login.appleButton')}
                 onPress={async () => {

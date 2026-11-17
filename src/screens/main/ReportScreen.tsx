@@ -564,7 +564,7 @@ const S = StyleSheet.create({
     paddingTop: 6,
     paddingBottom: 5,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(33,31,27,0.2)',
+    borderBottomColor: 'rgba(11,18,32,0.14)',
   },
   legendHeadTxt: {
     fontFamily: MONO,
@@ -590,7 +590,7 @@ const S = StyleSheet.create({
   },
   legendRowLast: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(33,31,27,0.2)',
+    borderBottomColor: 'rgba(11,18,32,0.14)',
   },
   legendNum: {
     fontFamily: MONO,

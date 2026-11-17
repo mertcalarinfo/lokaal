@@ -1,66 +1,56 @@
-import React, { useMemo } from 'react';
-import { View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
+import React from 'react';
+import { View, Image, ViewStyle, StyleProp } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { ThemeColors, F } from '../theme';
+
+const P_LOGO   = require('../../assets/branding/p-logo.png');          // 700 × 581, freigestellt, Blau
+const WORDMARK = require('../../assets/branding/wordmark-rezence.png'); // 326 × 45, weiß → per tintColor eingefärbt
+
+const P_RATIO  = 700 / 581;
+const WM_RATIO = 326 / 45;
 
 interface PrezenceLogoProps {
-  size?:        'sm' | 'md' | 'lg';
-  showTagline?: boolean;
-  style?:       ViewStyle;
-  /** Kept for API-Kompatibilität — visuelle Ausrichtung folgt dem Bild-Lockup */
-  layout?:      'horizontal' | 'vertical';
+  /** lockup: P + Wortmarke "REZENCE" (Kopf) · mark: nur das P */
+  variant?: 'lockup' | 'mark';
+  /** Höhe des P in pt. Standard: 35 (Kopf), Paywall 96. */
+  height?: number;
+  /** Kompatibilität: lg = etwas größeres Lockup */
+  size?: 'sm' | 'md' | 'lg';
+  style?: StyleProp<ViewStyle>;
 }
 
-const createStyles = (T: ThemeColors) => StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tagline: {
-    fontFamily:    F.regular,
-    fontSize:      12,
-    color:         T.textFaint,
-    marginTop:     4,
-    letterSpacing: 0.3,
-    textAlign:     'center',
-  },
-});
+/**
+ * Prezence-Logo (Entwurf 5): das blaue P bleibt unverändert, die echte
+ * Wortmarke wird in der Textfarbe des aktiven Modus eingefärbt.
+ * Maße laut Vorlage: P 42 × 35, Wortmarke 4 pt rechts daneben, 6 pt tiefer.
+ */
+const PrezenceLogo: React.FC<PrezenceLogoProps> = ({ variant = 'lockup', height, size, style }) => {
+  const { T } = useTheme();
+  const pH = height ?? (size === 'lg' ? 46 : 35);
+  const pW = Math.round(pH * P_RATIO);
 
-// Höhe und proportionale Breite für das horizontale Lockup-Bild
-// PNG-Aspect-Ratio: 501 × 168 ≈ 2.98 : 1 (transparente PNGs)
-const SIZES: Record<'sm' | 'md' | 'lg', { height: number; width: number }> = {
-  sm: { height: 44, width: 131 },   // Header — 44 × 2.98 ≈ 131, Ratio exakt
-  md: { height: 44, width: 131 },   // Auth-Screens, Paywall
-  lg: { height: 56, width: 167 },   // Login-Hero — 56 × 2.98 ≈ 167
-};
+  if (variant === 'mark') {
+    return (
+      <View style={style} accessible accessibilityRole="image" accessibilityLabel="Prezence">
+        <Image source={P_LOGO} style={{ width: pW, height: pH }} resizeMode="contain" />
+      </View>
+    );
+  }
 
-const PrezenceLogo: React.FC<PrezenceLogoProps> = ({
-  size        = 'md',
-  showTagline = false,
-  style,
-}) => {
-  const { T, isDark } = useTheme();
-  const styles = useMemo(() => createStyles(T), [T]);
-
-  const { height, width } = SIZES[size];
-
-  // Automatische Theme-Wahl:
-  //   Dark  → warmweißes Logo auf dunklem Hintergrund
-  //   Light → navyfarbenes Logo auf hellem Hintergrund
-  const logoSource = isDark
-    ? require('../../assets/branding/logo-full-darkmode.png')
-    : require('../../assets/branding/logo-full-lightmode.png');
-
+  // Versalhöhe ≈ 13-pt-Schrift der Vorlage
+  const wmH = Math.round(pH * (10 / 35) * 10) / 10;
   return (
-    <View style={[styles.wrapper, style]}>
+    <View
+      style={[{ flexDirection: 'row', alignItems: 'center', gap: 4, height: Math.max(44, pH) }, style]}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel="Prezence"
+    >
+      <Image source={P_LOGO} style={{ width: pW, height: pH }} resizeMode="contain" />
       <Image
-        source={logoSource}
-        style={{ height, width }}
+        source={WORDMARK}
+        style={{ width: wmH * WM_RATIO, height: wmH, marginTop: Math.round(pH * 6 / 35), tintColor: T.text }}
         resizeMode="contain"
       />
-      {showTagline && (
-        <Text style={styles.tagline}>Your AI Communication Coach</Text>
-      )}
     </View>
   );
 };

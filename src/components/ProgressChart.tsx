@@ -4,7 +4,7 @@ import Svg, { Path, Circle, Line, Text as SvgText, Defs, LinearGradient, Stop } 
 import Animated, {
   useSharedValue, useAnimatedProps, withDelay, withTiming, Easing,
 } from 'react-native-reanimated';
-import { useColors } from './theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const W = 320, H = 150, PAD = 26;
@@ -52,7 +52,8 @@ type Props = {
 };
 
 export default function ProgressChart({ scores, max = 10, mode, colors, showYAxis = false, xMarkers }: Props) {
-  const themeColors = useColors(mode);
+  const { T } = useTheme();
+  const themeColors: ChartColors = { accent: T.accentData, gridLine: T.hairline, bg: T.card, faint: T.textSecondary };
   const c = colors ?? themeColors;
   const step = (W - PAD * 2) / Math.max(1, scores.length - 1);
   const pts = scores.map((s, i) => ({

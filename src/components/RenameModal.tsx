@@ -69,7 +69,7 @@ export default RenameModal;
 const S = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(33,31,27,0.45)',
+    backgroundColor: 'rgba(11,18,32,0.32)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 28,

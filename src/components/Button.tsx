@@ -1,20 +1,10 @@
 import React from 'react';
-import {
-  Pressable,
-  Text,
-  ActivityIndicator,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
+import { Pressable, Text, ActivityIndicator, ViewStyle, TextStyle, StyleProp } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext';
-import { F, R } from '../theme';
+import { R, SIZE, TY } from '../theme';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
 interface ButtonProps {
   label: string;
@@ -23,11 +13,18 @@ interface ButtonProps {
   loading?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+  /** lg/md: Haupt-Button (56, Radius 14) · sm: kleiner Button (44, Radius 12) */
   size?: 'sm' | 'md' | 'lg';
+  /** Größerer Schatten (Paywall-CTA) */
+  prominent?: boolean;
 }
 
+/**
+ * Button im Stil von Entwurf 5: Akzentfläche mit weißem Text, kein Gradient,
+ * keine Pill-Form. Deaktiviert = disabledBg/disabledText (nicht ausgegraut per Opacity).
+ */
 const Button: React.FC<ButtonProps> = ({
   label,
   onPress,
@@ -37,86 +34,60 @@ const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
   style,
   textStyle,
-  size = 'md',
+  size = 'lg',
+  prominent = false,
 }) => {
   const { T } = useTheme();
   const isDisabled = disabled || loading;
+  const small = size === 'sm';
 
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-  const handlePressIn = () => {
-    if (isDisabled) return;
-    scale.value = withTiming(0.972, { duration: 140 });
-  };
-  const handlePressOut = () => {
-    scale.value = withTiming(1, { duration: 140 });
-  };
-
-  const getContainerStyle = (): ViewStyle => {
-    const sizeStyles: Record<string, ViewStyle> = {
-      sm: { paddingHorizontal: 16, paddingVertical: 9,  minHeight: 36 },
-      md: { paddingHorizontal: 22, paddingVertical: 13, minHeight: 48 },
-      lg: { paddingHorizontal: 26, paddingVertical: 17, minHeight: 54 },
-    };
-
-    const variantBg: Record<ButtonVariant, ViewStyle> = {
-      primary:   { backgroundColor: isDisabled ? T.textFaint : T.text },
-      secondary: { backgroundColor: T.surface2, borderWidth: 1, borderColor: T.hairline },
-      outline:   { backgroundColor: 'transparent', borderWidth: 1, borderColor: T.hairline },
-      ghost:     { backgroundColor: 'transparent' },
-      danger:    { backgroundColor: isDisabled ? T.errorBg : T.error },
-    };
-
-    return {
-      borderRadius:   R.sm,
-      alignItems:     'center',
-      justifyContent: 'center',
-      flexDirection:  'row',
-      ...sizeStyles[size],
-      ...variantBg[variant],
-      ...(fullWidth    ? { width: '100%' } : {}),
-      ...(isDisabled   ? { opacity: 0.45 } : {}),
-    };
+  const container: ViewStyle = {
+    height:          small ? SIZE.buttonSmH : SIZE.buttonH,
+    paddingHorizontal: small ? 18 : 22,
+    borderRadius:    small ? R.buttonSm : R.button,
+    alignItems:      'center',
+    justifyContent:  'center',
+    flexDirection:   'row',
+    gap:             8,
+    ...(fullWidth ? { alignSelf: 'stretch' } : null),
   };
 
-  const getTextStyle = (): TextStyle => {
-    const variantTextColor: Record<ButtonVariant, string> = {
-      primary:   isDisabled ? T.textMuted : T.btnFg,
-      secondary: T.text,
-      outline:   T.text,
-      ghost:     T.textMuted,
-      danger:    '#101A28',
-    };
-
-    return {
-      fontFamily:    F.bold,
-      fontSize:      14,
-      fontWeight:    '700',
-      letterSpacing: 1.96,
-      textTransform: 'uppercase',
-      color:         variantTextColor[variant],
-    };
-  };
+  let fg: string;
+  if (isDisabled && variant === 'primary') {
+    container.backgroundColor = T.disabledBg;
+    fg = T.disabledText;
+  } else if (variant === 'primary') {
+    container.backgroundColor = T.accent;
+    container.boxShadow = prominent ? T.shadowButtonLg : T.shadowButton;
+    fg = T.onAccent;
+  } else if (variant === 'secondary') {
+    container.backgroundColor = T.card;
+    container.borderWidth = 1;
+    container.borderColor = T.cardBorder;
+    fg = isDisabled ? T.disabledText : T.text;
+  } else {
+    container.backgroundColor = 'transparent';
+    fg = isDisabled ? T.disabledText : T.accentText;
+  }
 
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPressIn={() => { if (!isDisabled) scale.value = withTiming(0.975, { duration: 120 }); }}
+      onPressOut={() => { scale.value = withTiming(1, { duration: 140 }); }}
       disabled={isDisabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      style={fullWidth ? { alignSelf: 'stretch' } : undefined}
     >
-      <Animated.View style={[getContainerStyle(), style, animStyle]}>
-        {loading ? (
-          <ActivityIndicator
-            size="small"
-            color={variant === 'primary' || variant === 'danger' ? '#101A28' : T.textMuted}
-            style={{ marginRight: 8 }}
-          />
-        ) : null}
-        <Text style={[getTextStyle(), textStyle]}>{label}</Text>
+      <Animated.View style={[container, style, animStyle]}>
+        {loading ? <ActivityIndicator size="small" color={fg} /> : null}
+        <Text style={[small ? TY.buttonSm : TY.button, { color: fg }, textStyle]} numberOfLines={1}>
+          {label}
+        </Text>
       </Animated.View>
     </Pressable>
   );

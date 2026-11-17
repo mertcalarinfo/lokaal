@@ -22,16 +22,11 @@ import { StyleSheet, View, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import {
-  HankenGrotesk_400Regular,
-  HankenGrotesk_500Medium,
-  HankenGrotesk_600SemiBold,
-  HankenGrotesk_700Bold,
-  HankenGrotesk_800ExtraBold,
-} from '@expo-google-fonts/hanken-grotesk';
-import {
-  JetBrainsMono_400Regular,
-  JetBrainsMono_500Medium,
-} from '@expo-google-fonts/jetbrains-mono';
+  Inter_300Light,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from '@expo-google-fonts/inter';
 
 // Initialize i18n before anything else
 import './src/i18n';
@@ -45,7 +40,7 @@ import { initRevenueCat } from './src/services/revenuecat';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
-import { C } from './src/theme';
+import { lightPalette as C } from './src/theme';
 
 // ─── Firebase-Banner (benötigt keinen Theme-Kontext) ─────────────────────────
 
@@ -59,15 +54,15 @@ const FirebaseNotConfiguredBanner: React.FC = () => (
 
 const bannerStyles = StyleSheet.create({
   banner: {
-    backgroundColor: C.errorBg,
+    backgroundColor: C.disabledBg,
     borderBottomWidth: 1,
-    borderBottomColor: C.error,
+    borderBottomColor: C.cardBorder,
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
   text: {
     fontSize: 11,
-    color: C.error,
+    color: C.text,
     textAlign: 'center',
     lineHeight: 16,
   },
@@ -87,10 +82,10 @@ const AppContent: React.FC = () => {
         colors: {
           primary:      T.accent,
           background:   T.bg,
-          card:         T.surface,
+          card:         T.card,
           text:         T.text,
           border:       T.hairline,
-          notification: T.error,
+          notification: T.accent,
         },
       }}
     >
@@ -106,13 +101,10 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    HankenGrotesk_400Regular,
-    HankenGrotesk_500Medium,
-    HankenGrotesk_600SemiBold,
-    HankenGrotesk_700Bold,
-    HankenGrotesk_800ExtraBold,
-    JetBrainsMono_400Regular,
-    JetBrainsMono_500Medium,
+    Inter_300Light,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
   });
 
   useEffect(() => {

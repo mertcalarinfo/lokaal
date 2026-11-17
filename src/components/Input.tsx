@@ -1,16 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  TextInputProps,
-  ViewStyle,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, TextInputProps, ViewStyle,
 } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { ThemeColors, F, R } from '../theme';
+import { ThemeColors, F, R, TY } from '../theme';
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -21,51 +15,30 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
 }
 
 const createStyles = (T: ThemeColors) => StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize:      10,
-    fontWeight:    '600',
-    fontFamily:    F.semiBold,
-    color:         T.textMuted,
-    letterSpacing: 2,           // 0.2em of 10px
-    textTransform: 'uppercase',
-    marginBottom:  8,
-  },
+  container: { marginBottom: 16 },
+  label: { ...TY.label, color: T.textSecondary, marginBottom: 8 },
   inputWrapper: {
-    flexDirection:    'row',
-    alignItems:       'center',
-    backgroundColor:  T.surface,
-    borderWidth:      1,
-    borderColor:      T.hairline,
-    borderRadius:     R.md,
+    flexDirection:     'row',
+    alignItems:        'center',
+    minHeight:         52,
+    backgroundColor:   T.card,
+    borderWidth:       1,
+    borderColor:       T.cardBorder,
+    borderRadius:      R.button,
     paddingHorizontal: 16,
   },
-  inputWrapperFocused: {
-    borderColor: T.accent,
-  },
-  inputWrapperError: {
-    borderColor: T.error,
-  },
+  inputWrapperFocused: { borderColor: T.accent },
+  // Fehler ohne zweite Akzentfarbe: kräftigerer Rand in Textfarbe + Meldung darunter
+  inputWrapperError:   { borderColor: T.text },
   input: {
-    flex:           1,
-    paddingVertical: 15,
-    fontSize:       15,
-    fontFamily:     F.regular,
-    color:          T.text,
+    flex:            1,
+    paddingVertical: 14,
+    fontSize:        15,
+    fontFamily:      F.regular,
+    color:           T.text,
   },
-  iconButton: {
-    padding:    4,
-    marginLeft: 8,
-  },
-  errorText: {
-    fontSize:   12,
-    fontFamily: F.regular,
-    color:      T.error,
-    marginTop:  6,
-    marginLeft: 4,
-  },
+  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -10 },
+  errorText: { ...TY.captionSm, fontFamily: F.medium, color: T.text, marginTop: 6, marginLeft: 4 },
 });
 
 const Input: React.FC<InputProps> = ({
@@ -88,13 +61,14 @@ const Input: React.FC<InputProps> = ({
         style={[
           styles.inputWrapper,
           isFocused && styles.inputWrapperFocused,
-          error     && styles.inputWrapperError,
+          !!error   && styles.inputWrapperError,
         ]}
       >
         <TextInput
           {...textInputProps}
           style={styles.input}
-          placeholderTextColor={T.textFaint}
+          placeholderTextColor={T.disabledText}
+          selectionColor={T.accent}
           secureTextEntry={isPassword && !showPassword}
           onFocus={(e) => { setIsFocused(true);  textInputProps.onFocus?.(e); }}
           onBlur={(e)  => { setIsFocused(false); textInputProps.onBlur?.(e);  }}
@@ -104,11 +78,11 @@ const Input: React.FC<InputProps> = ({
             style={styles.iconButton}
             onPress={() => setShowPassword((v) => !v)}
             activeOpacity={0.7}
+            accessibilityRole="button"
           >
             {showPassword
-              ? <EyeOff size={20} color={T.textMuted} strokeWidth={1.7} />
-              : <Eye    size={20} color={T.textMuted} strokeWidth={1.7} />
-            }
+              ? <EyeOff size={20} color={T.textSecondary} strokeWidth={1.7} />
+              : <Eye    size={20} color={T.textSecondary} strokeWidth={1.7} />}
           </TouchableOpacity>
         )}
       </View>

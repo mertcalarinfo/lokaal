@@ -20,21 +20,21 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   logoWrap:  { marginBottom: S.s10 },
   titleWrap: { marginBottom: S.s8 },
   title: {
-    fontFamily: F.xBold, fontSize: 28, fontWeight: '800',
+    fontFamily: F.semiBold, fontSize: 28,
     color: T.text, letterSpacing: -0.56, marginBottom: S.s2, lineHeight: 32,
   },
-  sub:  { fontFamily: F.regular, fontSize: 14.5, color: T.textMuted, lineHeight: 21 },
+  sub:  { fontFamily: F.regular, fontSize: 14.5, color: T.textSecondary, lineHeight: 21 },
   cards: { flexDirection: 'row', gap: S.s4, flex: 1, alignItems: 'center' },
   card: {
-    flex: 1, backgroundColor: T.surface,
-    borderRadius: R.lg, padding: S.s6,
+    flex: 1, backgroundColor: T.card,
+    borderRadius: R.card, padding: S.s6,
     alignItems: 'center', borderWidth: 1.5, borderColor: T.hairline,
     minHeight: 148, justifyContent: 'center',
   },
-  cardActive: { borderColor: T.accent, backgroundColor: T.surfaceAccent },
+  cardActive: { borderColor: T.accent, backgroundColor: T.accentTint },
   flag:      { fontSize: 36, marginBottom: S.s3 },
-  langLabel: { fontFamily: F.bold, fontSize: 18, fontWeight: '700', color: T.text, marginBottom: 3 },
-  langSub:   { fontFamily: F.regular, fontSize: 13, color: T.textFaint },
+  langLabel: { fontFamily: F.semiBold, fontSize: 18, color: T.text, marginBottom: 3 },
+  langSub:   { fontFamily: F.regular, fontSize: 13, color: T.textSecondary },
   check:     { position: 'absolute', top: S.s3, right: S.s3 },
   footer:    { paddingBottom: S.s2 },
 });
@@ -72,7 +72,7 @@ const LanguageSelectScreen: React.FC = () => {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.logoWrap}>
-          <PrezenceLogo size="sm" layout="horizontal" />
+          <PrezenceLogo size="sm" />
         </View>
 
         <View style={styles.titleWrap}>
