@@ -25,6 +25,7 @@ import RichText from '../../components/RichText';
 import RenameModal from '../../components/RenameModal';
 import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
 
+import { useTabBarSpace } from '../../navigation/tabBarSpace';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type VideoSelection = { uri: string; label: string } | null;
@@ -86,6 +87,7 @@ function DirectionGlyph({ direction }: { direction: 'improved' | 'declined' | 's
 
 const CompareScreen: React.FC = () => {
   const { t }    = useTranslation();
+  const tabSpace   = useTabBarSpace();
   const { user } = useAuth();
 
   // View state
@@ -323,7 +325,7 @@ const CompareScreen: React.FC = () => {
         )}
       </View>
 
-      <ScrollView contentContainerStyle={S.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: tabSpace }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* ── IDLE ── */}
         {viewState === 'idle' && (

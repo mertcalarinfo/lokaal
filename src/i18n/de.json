@@ -422,5 +422,10 @@
     "errorUploadV2": "Video 2 konnte nicht hochgeladen werden. Bitte prüfe deine Verbindung.",
     "errorTimeout": "Die Analyse hat zu lange gedauert. Bitte versuche es mit kürzeren Videos.",
     "errorGeneric": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+  },
+  "tabs": {
+    "home": "Home",
+    "history": "Verlauf",
+    "profile": "Profil"
   }
 }

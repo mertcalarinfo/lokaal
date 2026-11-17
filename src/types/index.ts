@@ -103,9 +103,16 @@ export type MainStackParamList = {
 
 export type MainTabParamList = {
   HomeTab:     undefined;
+  /** Verlauf (Pro) — eigener Stack mit Vergleich */
   ProgressTab: undefined;
-  CompareTab:  undefined;
+  /** Profil */
   SettingsTab: undefined;
+};
+
+/** Verlauf-Stack: Übersicht + KI-Vergleich (seit Entwurf 5 kein eigener Tab mehr). */
+export type ProgressStackParamList = {
+  Progress: undefined;
+  Compare:  undefined;
 };
 
 // ── Video-Vergleich ───────────────────────────────────────────────────────────

@@ -23,6 +23,7 @@ import RenameModal from '../../components/RenameModal';
 import ProLock from '../../components/ProLock';
 import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
 
+import { useTabBarSpace } from '../../navigation/tabBarSpace';
 type ProgressNav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
 // ─── Hilfsfunktionen ─────────────────────────────────────────────────────────
@@ -124,6 +125,7 @@ function ComparisonRow({ comp, onPress }: { comp: SavedComparison; onPress: () =
 
 const ProgressScreen: React.FC = () => {
   const { t }      = useTranslation();
+  const tabSpace   = useTabBarSpace();
   const navigation = useNavigation<ProgressNav>();
   const { user }   = useAuth();
   const { isPro }  = useSubscription(user?.uid || null);
@@ -263,7 +265,7 @@ const ProgressScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={[S.safe, { paddingBottom: tabSpace - 24 }]} edges={['top', 'left', 'right']}>
         <View style={S.loadingBox}>
           <Text style={S.loadingText}>{t('common.loading')}</Text>
         </View>
@@ -274,7 +276,7 @@ const ProgressScreen: React.FC = () => {
   // ── Verlauf-Tab für Free komplett gesperrt ──
   if (!isPro) {
     return (
-      <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={[S.safe, { paddingBottom: tabSpace - 24 }]} edges={['top', 'left', 'right']}>
         <View style={S.head}>
           <Text style={S.headTitle}>{t('progress.historyTitle').toUpperCase()}</Text>
           <Text style={S.headMeta}>{t('progress.windowDays').toUpperCase()}</Text>
@@ -289,7 +291,7 @@ const ProgressScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[S.safe, { paddingBottom: tabSpace - 24 }]} edges={['top', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={S.scroll}
         showsVerticalScrollIndicator={false}

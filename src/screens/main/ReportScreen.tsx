@@ -21,6 +21,7 @@ import ProLock from '../../components/ProLock';
 import { useSubscription } from '../../hooks/useSubscription';
 import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
 
+import { useTabBarSpace } from '../../navigation/tabBarSpace';
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -99,6 +100,7 @@ function LegendRow({ num, label, value, isFocus, isLast, feedback }: LegendRowPr
 
 const ReportScreen: React.FC = () => {
   const { t }      = useTranslation();
+  const tabSpace   = useTabBarSpace();
   const navigation = useNavigation<ReportNav>();
   const route      = useRoute<ReportRoute>();
   const { user }   = useAuth();
@@ -228,7 +230,7 @@ const ReportScreen: React.FC = () => {
   return (
     <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
 
-      <ScrollView contentContainerStyle={S.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: tabSpace }]} showsVerticalScrollIndicator={false}>
 
         {/* ── AKTENKOPF ── */}
         <View style={S.head}>

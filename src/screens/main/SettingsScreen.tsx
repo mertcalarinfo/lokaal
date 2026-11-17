@@ -19,6 +19,7 @@ import { uploadProfilePicture } from '../../services/storage';
 import PressableScale from '../../components/PressableScale';
 import { RC, MONO, MONO_MED, RS, HL, RR } from '../../theme/register';
 
+import { useTabBarSpace } from '../../navigation/tabBarSpace';
 const APP_VERSION = '1.0.0';
 
 // ─── Sub-Komponenten ──────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ function RadioRow({
 
 const SettingsScreen: React.FC = () => {
   const { t }      = useTranslation();
+  const tabSpace   = useTabBarSpace();
   const navigation = useNavigation<any>();
   const { user, signOut, updateLanguage, updatePhotoURL } = useAuth();
   const { isSubscribed } = useSubscription(user?.uid || null);
@@ -155,7 +157,7 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={S.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: tabSpace }]} showsVerticalScrollIndicator={false}>
 
         {/* ── AKTENKOPF ── */}
         <View style={S.head}>

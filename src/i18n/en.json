@@ -422,5 +422,10 @@
     "errorUploadV2": "Video 2 could not be uploaded. Please check your connection.",
     "errorTimeout": "Analysis timed out. Please try with shorter videos.",
     "errorGeneric": "Something went wrong. Please try again."
+  },
+  "tabs": {
+    "home": "Home",
+    "history": "History",
+    "profile": "Profile"
   }
 }

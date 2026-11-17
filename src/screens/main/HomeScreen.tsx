@@ -19,6 +19,7 @@ import VideoThumbnail from '../../components/VideoThumbnail';
 import PrezenceLogo from '../../components/PrezenceLogo';
 import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
 
+import { useTabBarSpace } from '../../navigation/tabBarSpace';
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 type UploadOption = 'upload' | 'record';
 
@@ -81,6 +82,7 @@ function OptionRow({
 
 const HomeScreen: React.FC = () => {
   const { t }      = useTranslation();
+  const tabSpace   = useTabBarSpace();
   const navigation = useNavigation<HomeNavigationProp>();
   const { user }   = useAuth();
   const { canAnalyze, monthlyLimit } = useSubscription(user?.uid || null);
@@ -198,7 +200,7 @@ const HomeScreen: React.FC = () => {
   // ── JSX ────────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={S.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: tabSpace }]} showsVerticalScrollIndicator={false}>
 
         {/* ── AKTENKOPF ── */}
         <View style={S.head}>

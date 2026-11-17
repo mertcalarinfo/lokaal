@@ -16,6 +16,7 @@ import { incrementMonthlyUsage } from '../../services/storage';
 import PressableScale from '../../components/PressableScale';
 import { RC, MONO, MONO_MED, RS } from '../../theme/register';
 
+import { useTabBarSpace } from '../../navigation/tabBarSpace';
 type LoadingRoute = RouteProp<HomeStackParamList, 'AnalysisLoading'>;
 type LoadingNav   = NativeStackNavigationProp<HomeStackParamList, 'AnalysisLoading'>;
 
@@ -23,6 +24,7 @@ const TIP_INTERVAL_MS = 4000;
 
 const AnalysisLoadingScreen: React.FC = () => {
   const { t }      = useTranslation();
+  const tabSpace   = useTabBarSpace(0);
   const navigation = useNavigation<LoadingNav>();
   const route      = useRoute<LoadingRoute>();
   const { user }   = useAuth();
@@ -106,7 +108,7 @@ const AnalysisLoadingScreen: React.FC = () => {
   }, [cancel, navigation, t]);
 
   return (
-    <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[S.safe, { paddingBottom: tabSpace }]} edges={['top', 'left', 'right']}>
 
       {/* ── AKTENKOPF ── */}
       <View style={S.head}>

@@ -20,6 +20,7 @@ import {
   Activity, Scale, Heart, Zap, CheckCircle2,
 } from 'lucide-react-native';
 
+import { useTabBarSpace } from '../../navigation/tabBarSpace';
 const { width: SW } = Dimensions.get('window');
 
 type StepKey = keyof OnboardingAnswers;
@@ -146,6 +147,7 @@ const ST = StyleSheet.create({
 
 const OnboardingScreen: React.FC = () => {
   const { t }          = useTranslation();
+  const tabSpace   = useTabBarSpace(0);
   const navigation     = useNavigation<any>();
   const route          = useRoute<any>();
   const { user, completeOnboarding, saveOnboardingAnswers } = useAuth();
@@ -200,7 +202,7 @@ const OnboardingScreen: React.FC = () => {
   const ctaDisabled = !selected || isLoading;
 
   return (
-    <SafeAreaView style={ST.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[ST.safe, { paddingBottom: tabSpace }]} edges={['top', 'left', 'right']}>
       <View style={ST.container}>
         {/* Aktenkopf */}
         <View style={ST.head}>
