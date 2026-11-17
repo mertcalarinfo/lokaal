@@ -2,6 +2,7 @@ import React from 'react';
 import { Platform, StyleSheet, View, ViewStyle, StyleProp } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../contexts/ThemeContext';
+import { getLiquidGlass } from '../utils/native';
 
 /**
  * Glasfläche (Entwurf 5) — NUR für Navigationsleiste, Schließen-Button und
@@ -16,13 +17,33 @@ interface GlassProps {
   style?: StyleProp<ViewStyle>;
   /** sm: kleiner Schatten (Schließen-Button) */
   shadow?: 'lg' | 'sm';
+  /** Liquid Glass reagiert auf Berührung (Tab-Leiste, Glas-Buttons) */
+  interactive?: boolean;
   children?: React.ReactNode;
 }
 
 const BLUR_AVAILABLE = Platform.OS === 'ios';
 
-const Glass: React.FC<GlassProps> = ({ radius, style, shadow = 'lg', children }) => {
+const Glass: React.FC<GlassProps> = ({ radius, style, shadow = 'lg', interactive = false, children }) => {
   const { T, isDark } = useTheme();
+  // Echtes Liquid Glass (iOS 26+, ab Build 5): native Glasfläche statt Blur + Farbschicht.
+  // Fehlt das native Modul (Build 4) oder ist iOS älter → bisheriger BlurView.
+  const liquid = getLiquidGlass();
+  if (liquid) {
+    const { GlassView } = liquid;
+    return (
+      <View style={[{ borderRadius: radius, boxShadow: shadow === 'lg' ? T.shadowGlass : T.shadowGlassSm }, style]}>
+        <GlassView
+          pointerEvents={interactive ? 'auto' : 'none'}
+          glassEffectStyle="regular"
+          isInteractive={interactive}
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}
+        />
+        {children}
+      </View>
+    );
+  }
   return (
     <View
       style={[

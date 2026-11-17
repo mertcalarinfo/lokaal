@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Alert, Pressable, Linking, Platform,
 } from 'react-native';
+import Pressable3D from '../../components/Pressable3D';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -153,17 +154,17 @@ const PaywallScreen: React.FC = () => {
 
           {/* Links — eine Zeile, nicht umbrechen */}
           <View style={styles.links}>
-            <Pressable onPress={handleRestore} disabled={restoring} style={styles.link} accessibilityRole="button">
+            <Pressable3D onPress={handleRestore} disabled={restoring} style={styles.link} accessibilityRole="button">
               <Text style={[styles.linkText, styles.linkRestore]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                 {restoring ? t('common.loading') : t('paywall.restore')}
               </Text>
-            </Pressable>
-            <Pressable onPress={() => openUrl(TERMS_URL)} style={styles.link} accessibilityRole="link">
+            </Pressable3D>
+            <Pressable3D onPress={() => openUrl(TERMS_URL)} style={styles.link} accessibilityRole="link">
               <Text style={styles.linkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('paywall.terms')}</Text>
-            </Pressable>
-            <Pressable onPress={() => openUrl(PRIVACY_URL)} style={styles.link} accessibilityRole="link">
+            </Pressable3D>
+            <Pressable3D onPress={() => openUrl(PRIVACY_URL)} style={styles.link} accessibilityRole="link">
               <Text style={styles.linkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('paywall.privacy')}</Text>
-            </Pressable>
+            </Pressable3D>
           </View>
         </ScrollView>
       </SafeAreaView>

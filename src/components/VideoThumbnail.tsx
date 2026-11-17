@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Modal, Pressable, ViewStyle, StyleProp } from 'react-native';
+import Pressable3D from './Pressable3D';
 import { Video, ResizeMode } from 'expo-av';
 import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
@@ -25,7 +26,7 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, size = 56, style }
 
   return (
     <>
-      <Pressable
+      <Pressable3D
         onPress={() => setViewerVisible(true)}
         accessibilityRole="button"
         accessibilityLabel={t('home.videoReady')}
@@ -46,7 +47,7 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, size = 56, style }
             </Svg>
           </View>
         </View>
-      </Pressable>
+      </Pressable3D>
 
       <Modal
         visible={viewerVisible}
@@ -63,7 +64,7 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, size = 56, style }
             shouldPlay
             isLooping={false}
           />
-          <Pressable
+          <Pressable3D
             onPress={() => setViewerVisible(false)}
             accessibilityRole="button"
             accessibilityLabel={t('common.close')}
@@ -76,7 +77,7 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, size = 56, style }
                 </Svg>
               </View>
             </Glass>
-          </Pressable>
+          </Pressable3D>
         </View>
       </Modal>
     </>

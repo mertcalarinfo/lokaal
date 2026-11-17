@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import Pressable3D from '../../components/Pressable3D';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -90,11 +91,10 @@ const LanguageSelectScreen: React.FC = () => {
           {langs.map((lang) => {
             const active = selected === lang.code;
             return (
-              <TouchableOpacity
+              <Pressable3D
                 key={lang.code}
                 style={[styles.card, active && styles.cardActive]}
                 onPress={() => setSelected(lang.code)}
-                activeOpacity={0.8}
               >
                 <Text style={styles.flag}>{lang.flag}</Text>
                 <Text style={[styles.langLabel, active && { color: T.accentText }]}>{lang.label}</Text>
@@ -104,7 +104,7 @@ const LanguageSelectScreen: React.FC = () => {
                     <CheckCircle2 size={20} color={T.accent} strokeWidth={1.7} />
                   </View>
                 )}
-              </TouchableOpacity>
+              </Pressable3D>
             );
           })}
         </View>

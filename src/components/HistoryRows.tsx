@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import Pressable3D from './Pressable3D';
 import { useTheme } from '../contexts/ThemeContext';
 import { ChevronRight } from './Icons';
 import Card from './Card';
@@ -71,9 +72,9 @@ export const AnalysisRow: React.FC<AnalysisRowProps> = ({ name, date, score, del
   const up = delta !== null && delta > 0;
   const down = delta !== null && delta < 0;
   return (
-    <Pressable
+    <Pressable3D
       onPress={onPress}
-      style={({ pressed }) => [rs.row, pressed && { opacity: 0.6 }]}
+      style={[rs.row]}
       accessibilityRole="button"
       accessibilityLabel={`${name}, ${date}, ${score}`}
     >
@@ -88,7 +89,7 @@ export const AnalysisRow: React.FC<AnalysisRowProps> = ({ name, date, score, del
       )}
       <Text style={[rs.score, { color: T.text }]}>{score}</Text>
       {trailing ?? <ChevronRight color={T.textSecondary} />}
-    </Pressable>
+    </Pressable3D>
   );
 };
 
@@ -98,9 +99,9 @@ export const ComparisonListRow: React.FC<{ comp: SavedComparison; onPress: () =>
   const { improved, declined, same } = comparisonCounts(comp);
   const name = comp.customName || `${comp.video1Label} → ${comp.video2Label}`;
   return (
-    <Pressable
+    <Pressable3D
       onPress={onPress}
-      style={({ pressed }) => [rs.row, pressed && { opacity: 0.6 }]}
+      style={[rs.row]}
       accessibilityRole="button"
       accessibilityLabel={name}
     >
@@ -114,7 +115,7 @@ export const ComparisonListRow: React.FC<{ comp: SavedComparison; onPress: () =>
         {same > 0 && <Text style={[rs.delta, { color: T.textSecondary }]}>→ {same}</Text>}
       </View>
       <ChevronRight color={T.textSecondary} />
-    </Pressable>
+    </Pressable3D>
   );
 };
 
@@ -131,9 +132,9 @@ export const ListCard: React.FC<{
       <View style={rs.listHead}>
         <Text style={[TY.label, { color: T.textSecondary }]}>{label}</Text>
         {action && (
-          <Pressable onPress={action.onPress} hitSlop={12} accessibilityRole="button">
+          <Pressable3D onPress={action.onPress} hitSlop={12} accessibilityRole="button">
             <Text style={[rs.action, { color: T.accentText }]}>{action.text}</Text>
-          </Pressable>
+          </Pressable3D>
         )}
       </View>
       {children}

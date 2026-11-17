@@ -13,7 +13,7 @@ import { Share2, CheckCircle2, ChevronDown, Pencil, Play } from 'lucide-react-na
 import { HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { saveReport, uploadVideo, updateReportName } from '../../services/storage';
-import PressableScale from '../../components/PressableScale';
+import Pressable3D from '../../components/Pressable3D';
 import RadarChart, { RadarCategory } from '../../components/RadarChart';
 import RichText from '../../components/RichText';
 import RenameModal from '../../components/RenameModal';
@@ -21,6 +21,7 @@ import ProLock from '../../components/ProLock';
 import AmbientBackground from '../../components/AmbientBackground';
 import GlassIconButton from '../../components/GlassIconButton';
 import Card from '../../components/Card';
+import CountUpText from '../../components/CountUpText';
 import Button from '../../components/Button';
 import { useSubscription } from '../../hooks/useSubscription';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -76,7 +77,7 @@ function LegendRow({ num, label, value, isFocus, isLast, feedback }: LegendRowPr
   };
 
   return (
-    <Pressable onPress={toggle} style={rowStyle}>
+    <Pressable3D onPress={toggle} style={rowStyle}>
       <View style={S.legendRowMain}>
         <Text style={[S.legendNum, { color: isFocus ? T.accentText : T.textSecondary }]}>{num}</Text>
         <View style={{ flex: 1 }}>
@@ -96,7 +97,7 @@ function LegendRow({ num, label, value, isFocus, isLast, feedback }: LegendRowPr
       {open && feedback ? (
         <RichText text={feedback} style={[S.legendFeedback, isFocus && { color: T.text }]} />
       ) : null}
-    </Pressable>
+    </Pressable3D>
   );
 }
 
@@ -241,12 +242,12 @@ const ReportScreen: React.FC = () => {
           <View style={S.head}>
             <GlassIconButton icon="back" onPress={handleBack} accessibilityLabel={t('progress.back')} />
             <View style={S.headRight}>
-              <PressableScale onPress={() => setRenameVisible(true)} style={S.shareBtn} accessibilityLabel={t('report.renameTitle')}>
+              <Pressable3D onPress={() => setRenameVisible(true)} style={S.shareBtn} accessibilityLabel={t('report.renameTitle')}>
                 <Pencil size={18} color={T.accentText} strokeWidth={1.7} />
-              </PressableScale>
-              <PressableScale onPress={handleShare} style={S.shareBtn} accessibilityLabel={t('common.share', { defaultValue: 'Share' })}>
+              </Pressable3D>
+              <Pressable3D onPress={handleShare} style={S.shareBtn} accessibilityLabel={t('common.share', { defaultValue: 'Share' })}>
                 <Share2 size={18} color={T.accentText} strokeWidth={1.7} />
-              </PressableScale>
+              </Pressable3D>
             </View>
           </View>
 
@@ -259,18 +260,18 @@ const ReportScreen: React.FC = () => {
           {/* ── Score ── */}
           <Card style={S.scoreBlock}>
             <View style={S.scoreLeft}>
-              <Text style={S.scoreNum} allowFontScaling={false}>{totalScore}</Text>
+              <CountUpText value={totalScore} style={S.scoreNum} />
               <Text style={S.scoreUnit}>/100</Text>
             </View>
             {hasVideo && (
-              <PressableScale onPress={() => setVideoVisible(true)} accessibilityLabel={t('report.recording')}>
+              <Pressable3D onPress={() => setVideoVisible(true)} accessibilityLabel={t('report.recording')}>
                 <View style={S.videoThumb}>
                   <View style={S.videoPlayBadge}>
                     <Play size={14} color={T.onAccent} strokeWidth={2} fill={T.onAccent} />
                   </View>
                   <Text style={S.videoThumbLabel}>{t('report.recording')}</Text>
                 </View>
-              </PressableScale>
+              </Pressable3D>
             )}
           </Card>
 

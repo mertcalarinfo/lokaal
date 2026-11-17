@@ -16,7 +16,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
 import { changeLanguage } from '../../i18n';
 import { uploadProfilePicture } from '../../services/storage';
-import PressableScale from '../../components/PressableScale';
+import Pressable3D from '../../components/Pressable3D';
 import AmbientBackground from '../../components/AmbientBackground';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -41,14 +41,14 @@ function Row({
   const { T } = useTheme();
   const S = useMemo(() => createStyles(T), [T]);
   return (
-    <PressableScale style={[S.row, isFirst && S.rowFirst]} onPress={onPress} disabled={!onPress}>
+    <Pressable3D style={[S.row, isFirst && S.rowFirst]} onPress={onPress} disabled={!onPress}>
       <View style={S.rowIcon}>{icon}</View>
       <Text style={S.rowLabel}>{label}</Text>
       <View style={S.rowRight}>
         {right}
         {onPress && !right && <ChevronRight size={18} color={T.textSecondary} strokeWidth={1.8} />}
       </View>
-    </PressableScale>
+    </Pressable3D>
   );
 }
 
@@ -58,7 +58,7 @@ function RadioRow({
   const { T } = useTheme();
   const S = useMemo(() => createStyles(T), [T]);
   return (
-    <PressableScale style={[S.row, isFirst && S.rowFirst]} onPress={onPress}>
+    <Pressable3D style={[S.row, isFirst && S.rowFirst]} onPress={onPress}>
       <View style={S.rowIcon}>{icon}</View>
       <Text style={[S.rowLabel, active && { color: T.accentText }]}>{label}</Text>
       {active ? (
@@ -66,7 +66,7 @@ function RadioRow({
       ) : (
         <View style={S.radioEmpty} />
       )}
-    </PressableScale>
+    </Pressable3D>
   );
 }
 
@@ -182,7 +182,7 @@ const SettingsScreen: React.FC = () => {
 
           {/* Profil */}
           <Card style={S.profileRow}>
-            <PressableScale onPress={handleAvatarPress} accessibilityLabel={t('settings.photoChange')}>
+            <Pressable3D onPress={handleAvatarPress} accessibilityLabel={t('settings.photoChange')}>
               <View style={S.avatar}>
                 {photoURL ? (
                   <Image source={{ uri: photoURL }} style={S.avatarImg} />
@@ -195,7 +195,7 @@ const SettingsScreen: React.FC = () => {
                   <Camera size={11} color={T.onAccent} strokeWidth={2} />
                 </View>
               </View>
-            </PressableScale>
+            </Pressable3D>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={S.profileName} numberOfLines={1}>{user?.displayName || '—'}</Text>
               <Text style={S.profileEmail} numberOfLines={1}>{user?.email || '—'}</Text>
@@ -291,22 +291,22 @@ const SettingsScreen: React.FC = () => {
         transparent
         onRequestClose={() => setAvatarMenu(false)}
       >
-        <PressableScale style={S.sheetOverlay} onPress={() => setAvatarMenu(false)}>
+        <Pressable3D style={S.sheetOverlay} onPress={() => setAvatarMenu(false)}>
           <View style={S.sheet}>
-            <PressableScale onPress={() => { setAvatarMenu(false); setViewerVisible(true); }}>
+            <Pressable3D onPress={() => { setAvatarMenu(false); setViewerVisible(true); }}>
               <View style={S.sheetRow}>
                 <ImageIcon size={18} color={T.text} strokeWidth={1.7} />
                 <Text style={S.sheetLabel}>{t('settings.photoView')}</Text>
               </View>
-            </PressableScale>
-            <PressableScale onPress={pickAndUploadPhoto}>
+            </Pressable3D>
+            <Pressable3D onPress={pickAndUploadPhoto}>
               <View style={[S.sheetRow, S.sheetRowBorder]}>
                 <Camera size={18} color={T.text} strokeWidth={1.7} />
                 <Text style={S.sheetLabel}>{t('settings.photoChange')}</Text>
               </View>
-            </PressableScale>
+            </Pressable3D>
           </View>
-        </PressableScale>
+        </Pressable3D>
       </Modal>
 
       {/* ── Vollbild-Viewer ── */}

@@ -20,6 +20,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { MODAL_TRANSITION_SETTLE_MS } from '../contexts/AuthContext';
 import ProPreviewModal from '../components/ProPreviewModal';
 import FloatingTabBar from './FloatingTabBar';
+import { withTabFade } from './TabFade';
 
 const Tab           = createBottomTabNavigator<MainTabParamList>();
 const HomeStack     = createNativeStackNavigator<HomeStackParamList>();
@@ -68,6 +69,11 @@ const ProgressStackNavigator: React.FC = () => {
   );
 };
 
+// Tab-Inhalte mit weichem Einblenden beim Tab-Wechsel
+const HomeTabScreen     = withTabFade(HomeStackNavigator);
+const ProgressTabScreen = withTabFade(ProgressStackNavigator);
+const SettingsTabScreen = withTabFade(SettingsScreen);
+
 const TabNavigator: React.FC = () => {
   const navigation  = useNavigation<any>();   // hier: Parent-Stack (MainStack) → navigate('Paywall')
   const { user }    = useAuth();
@@ -104,10 +110,10 @@ const TabNavigator: React.FC = () => {
         tabBar={(props) => <FloatingTabBar {...props} />}
         screenOptions={{ headerShown: false }}
       >
-        <Tab.Screen name="HomeTab" component={HomeStackNavigator} />
+        <Tab.Screen name="HomeTab" component={HomeTabScreen} />
         <Tab.Screen
           name="ProgressTab"
-          component={ProgressStackNavigator}
+          component={ProgressTabScreen}
           listeners={{
             tabPress: (e) => {
               // Free-Nutzer: Navigation abfangen, bevor der Screen erscheint → Pro-Modal.
@@ -118,7 +124,7 @@ const TabNavigator: React.FC = () => {
             },
           }}
         />
-        <Tab.Screen name="SettingsTab" component={SettingsScreen} />
+        <Tab.Screen name="SettingsTab" component={SettingsTabScreen} />
       </Tab.Navigator>
 
       <ProPreviewModal

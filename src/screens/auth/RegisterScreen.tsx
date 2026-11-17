@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView,
   KeyboardAvoidingView, Platform, TouchableOpacity, Alert,
 } from 'react-native';
+import Pressable3D from '../../components/Pressable3D';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -142,7 +143,7 @@ const RegisterScreen: React.FC = () => {
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity
+            <Pressable3D
               style={[styles.googleBtn, googleLoading && { opacity: 0.6 }]}
               onPress={async () => {
                 setGoogleLoading(true);
@@ -158,11 +159,10 @@ const RegisterScreen: React.FC = () => {
                 }
               }}
               disabled={googleLoading}
-              activeOpacity={0.8}
             >
               <Text style={styles.googleG}>G</Text>
               <Text style={styles.googleText}>{t('auth.register.googleButton')}</Text>
-            </TouchableOpacity>
+            </Pressable3D>
 
             {Platform.OS === 'ios' && (
               <AppleAuthentication.AppleAuthenticationButton
@@ -190,9 +190,9 @@ const RegisterScreen: React.FC = () => {
 
             <View style={styles.footerRow}>
               <Text style={styles.footerText}>{t('auth.register.hasAccount')} </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Pressable3D onPress={() => navigation.navigate('Login')}>
                 <Text style={styles.footerLink}>{t('auth.register.signIn')}</Text>
-              </TouchableOpacity>
+              </Pressable3D>
             </View>
           </View>
         </ScrollView>

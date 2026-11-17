@@ -10,7 +10,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 
 import { OnboardingAnswers } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import PressableScale from '../../components/PressableScale';
+import Pressable3D from '../../components/Pressable3D';
 import AmbientBackground from '../../components/AmbientBackground';
 import GlassIconButton from '../../components/GlassIconButton';
 import Button from '../../components/Button';
@@ -216,7 +216,7 @@ const OnboardingScreen: React.FC = () => {
               {current.options.map(({ value, Icon }) => {
                 const active = selected === value;
                 return (
-                  <PressableScale
+                  <Pressable3D
                     key={value}
                     onPress={() => setAnswers((p) => ({ ...p, [current.key]: value }))}
                     style={[ST.option, active && ST.optionActive]}
@@ -230,7 +230,7 @@ const OnboardingScreen: React.FC = () => {
                         {t(`onboarding.steps.${current.i18nKey}.options.${value}`)}
                       </Text>
                       {active && <CheckCircle2 size={20} color={T.accentText} strokeWidth={1.8} />}
-                  </PressableScale>
+                  </Pressable3D>
                 );
               })}
             </ScrollView>

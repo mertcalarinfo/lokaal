@@ -1,10 +1,11 @@
 import React, { useEffect, useId, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, View, useWindowDimensions, LayoutChangeEvent } from 'react-native';
+import { StyleSheet, View, useWindowDimensions, LayoutChangeEvent } from 'react-native';
 import Svg, { Defs, RadialGradient, LinearGradient, Stop, Circle, Path } from 'react-native-svg';
 import Animated, {
   Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 
 /**
  * Hintergrund (Entwurf 5): zwei weiche blaue Flecken + eine dünne Linie über `bg`.
@@ -43,17 +44,7 @@ const SPECS: Record<Variant, { blobs: BlobSpec[]; line: LineSpec; blobOpacityLig
   },
 };
 
-/** true, solange iOS/Android "Bewegung reduzieren" aktiv ist (reagiert auf Änderungen). */
-export function useReduceMotion(): boolean {
-  const [reduce, setReduce] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((v) => { if (alive) setReduce(v); }).catch(() => {});
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduce);
-    return () => { alive = false; sub.remove(); };
-  }, []);
-  return reduce;
-}
+export { useReduceMotion };
 
 /** Endlos hin und zurück 0 → 1, oder fest auf 0, wenn nicht animiert. */
 function useDrift(active: boolean, duration: number) {

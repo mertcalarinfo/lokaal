@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
+import Pressable3D from '../../components/Pressable3D';
 import { Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -249,14 +250,14 @@ const HomeScreen: React.FC = () => {
                     : t('home.readyToAnalyze')}
                 </Text>
               </View>
-              <Pressable
+              <Pressable3D
                 onPress={() => setSelectedVideo(null)}
                 accessibilityRole="button"
                 style={styles.removeHit}
                 hitSlop={6}
               >
                 <Text style={styles.removeTxt}>{t('common.remove')}</Text>
-              </Pressable>
+              </Pressable3D>
             </Card>
           ) : (
             <View style={styles.options}>
@@ -333,9 +334,9 @@ const HomeScreen: React.FC = () => {
                 <View style={[styles.barFill, { width: `${Math.max(0, Math.min(100, focusScore))}%` }]} />
               </View>
               {!!focusTip && <Text style={styles.focusTip} numberOfLines={2}>{focusTip}</Text>}
-              <Pressable onPress={openLastReport} accessibilityRole="link" hitSlop={8} style={styles.focusLink}>
+              <Pressable3D onPress={openLastReport} accessibilityRole="link" hitSlop={8} style={styles.focusLink}>
                 <Text style={styles.focusLinkTxt}>{t('home.viewInReport')}</Text>
-              </Pressable>
+              </Pressable3D>
             </Card>
           )}
 

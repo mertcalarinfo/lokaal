@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pressable, Text, ActivityIndicator, ViewStyle, TextStyle, StyleProp } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { View, Text, ActivityIndicator, ViewStyle, TextStyle, StyleProp } from 'react-native';
+import Pressable3D from './Pressable3D';
 import { useTheme } from '../contexts/ThemeContext';
 import { R, SIZE, TY } from '../theme';
 
@@ -41,8 +41,6 @@ const Button: React.FC<ButtonProps> = ({
   const isDisabled = disabled || loading;
   const small = size === 'sm';
 
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const container: ViewStyle = {
     height:          small ? SIZE.buttonSmH : SIZE.buttonH,
@@ -74,22 +72,20 @@ const Button: React.FC<ButtonProps> = ({
   }
 
   return (
-    <Pressable
+    <Pressable3D
       onPress={onPress}
-      onPressIn={() => { if (!isDisabled) scale.value = withTiming(0.975, { duration: 120 }); }}
-      onPressOut={() => { scale.value = withTiming(1, { duration: 140 }); }}
       disabled={isDisabled}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      haptic={variant === 'primary'}
+      accessibilityState={{ busy: loading }}
       style={fullWidth ? { alignSelf: 'stretch' } : undefined}
     >
-      <Animated.View style={[container, style, animStyle]}>
+      <View style={[container, style]}>
         {loading ? <ActivityIndicator size="small" color={fg} /> : null}
         <Text style={[small ? TY.buttonSm : TY.button, { color: fg }, textStyle]} numberOfLines={1}>
           {label}
         </Text>
-      </Animated.View>
-    </Pressable>
+      </View>
+    </Pressable3D>
   );
 };
 

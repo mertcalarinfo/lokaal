@@ -13,8 +13,10 @@ import { useTabBarSpace } from '../../navigation/tabBarSpace';
 import AmbientBackground from '../../components/AmbientBackground';
 import Card, { IconTile } from '../../components/Card';
 import ScoreLineChart from '../../components/ScoreLineChart';
+import CountUpText from '../../components/CountUpText';
 import ProLock from '../../components/ProLock';
 import ComparisonDetailModal from '../../components/ComparisonDetailModal';
+import SegmentedControl, { SegmentContent } from '../../components/SegmentedControl';
 import { ChevronRight, CompareIcon } from '../../components/Icons';
 import {
   AnalysisRow, ComparisonListRow, ListCard, EmptyCard, RowDivider,
@@ -148,26 +150,17 @@ const ProgressScreen: React.FC = () => {
         >
           {header}
 
-          {/* Umschalter Analysen | Vergleiche */}
-          <Card radius={R.segment} style={st.segment}>
-            {(['analyses', 'comparisons'] as const).map((key) => {
-              const active = segment === key;
-              return (
-                <Pressable
-                  key={key}
-                  onPress={() => setSegment(key)}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: active }}
-                  style={[st.segItem, active && { backgroundColor: T.accentTint }]}
-                >
-                  <Text style={[st.segText, active ? st.segTextActive : null]}>
-                    {key === 'analyses' ? t('progress.tabAnalyses') : t('progress.tabComparisons')}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </Card>
+          {/* Umschalter Analysen | Vergleiche — gleitende Markierung wie die Tab-Leiste */}
+          <SegmentedControl
+            items={[
+              { key: 'analyses' as const, label: t('progress.tabAnalyses') },
+              { key: 'comparisons' as const, label: t('progress.tabComparisons') },
+            ]}
+            value={segment}
+            onChange={setSegment}
+          />
 
+          <SegmentContent key={segment} direction={segment === 'analyses' ? -1 : 1} style={st.segBody}>
           {segment === 'analyses' && (
             sorted.length === 0 ? (
               <EmptyCard
@@ -184,7 +177,7 @@ const ProgressScreen: React.FC = () => {
                     <Text style={st.chartWindow}>{t('progress.window3Months')}</Text>
                   </View>
                   <View style={st.scoreRow}>
-                    <Text style={st.bigScore}>{latestScore}</Text>
+                    {latestScore !== null && <CountUpText value={latestScore} style={st.bigScore} />}
                     {windowDelta !== null && chartReports[0] && (
                       <Text style={[st.since, { color: windowDelta >= 0 ? T.accentText : T.textSecondary }]}>
                         {windowDelta >= 0 ? '↑' : '↓'} {Math.abs(windowDelta)} {t('progress.sinceDate', { date: formatShortDate(chartReports[0].createdAt) })}
@@ -242,6 +235,7 @@ const ProgressScreen: React.FC = () => {
               )}
             </>
           )}
+          </SegmentContent>
         </ScrollView>
       </SafeAreaView>
 
@@ -265,6 +259,7 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   label: { ...TY.label, color: T.textSecondary },
   title: { ...TY.pageTitle, color: T.text },
 
+  segBody:       { gap: 12 },
   segment:       { padding: 4, flexDirection: 'row', gap: 4 },
   segItem:       { flex: 1, height: 36, borderRadius: R.segmentItem, alignItems: 'center', justifyContent: 'center' },
   segText:       { fontFamily: F.medium, fontSize: 13.5, color: T.textSecondary },

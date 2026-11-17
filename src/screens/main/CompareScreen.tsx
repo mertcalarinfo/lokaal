@@ -18,7 +18,7 @@ import { AnalysisReport, ComparisonResult, SavedComparison } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { compareVideos } from '../../services/gemini';
 import { getUserReports, saveComparison, updateComparisonName, uploadVideo } from '../../services/storage';
-import PressableScale from '../../components/PressableScale';
+import Pressable3D from '../../components/Pressable3D';
 import RichText from '../../components/RichText';
 import RenameModal from '../../components/RenameModal';
 import AmbientBackground from '../../components/AmbientBackground';
@@ -48,21 +48,21 @@ function VideoSelectorRows({ onPickReport, onPickGallery }: { onPickReport: () =
   const { t } = useTranslation();
   return (
     <Card style={S.selCard}>
-      <PressableScale onPress={onPickReport} accessibilityLabel={t('compare.fromAnalysis')}>
+      <Pressable3D onPress={onPickReport} accessibilityLabel={t('compare.fromAnalysis')}>
         <View style={S.selRow}>
           <IconTile size={40}><TrendingUp size={19} color={T.accentText} strokeWidth={1.7} /></IconTile>
           <Text style={S.selLabel}>{t('compare.fromAnalysis')}</Text>
           <ChevronRight color={T.textSecondary} />
         </View>
-      </PressableScale>
+      </Pressable3D>
       <View style={S.divider} />
-      <PressableScale onPress={onPickGallery} accessibilityLabel={t('compare.fromGallery')}>
+      <Pressable3D onPress={onPickGallery} accessibilityLabel={t('compare.fromGallery')}>
         <View style={S.selRow}>
           <IconTile size={40}><UploadIcon size={20} color={T.accentText} /></IconTile>
           <Text style={S.selLabel}>{t('compare.fromGallery')}</Text>
           <ChevronRight color={T.textSecondary} />
         </View>
-      </PressableScale>
+      </Pressable3D>
     </Card>
   );
 }
@@ -75,9 +75,9 @@ function SelectedRow({ label, onClear }: { label: string; onClear: () => void })
     <Card style={[S.selCard, S.selRow]}>
       <IconTile size={40}><CheckIcon size={18} color={T.accentText} /></IconTile>
       <Text style={S.selectedLabel} numberOfLines={1}>{label}</Text>
-      <PressableScale onPress={onClear} style={S.removeHit}>
+      <Pressable3D onPress={onClear} style={S.removeHit}>
         <Text style={S.clearTxt}>{t('common.remove')}</Text>
-      </PressableScale>
+      </Pressable3D>
     </Card>
   );
 }
@@ -322,12 +322,12 @@ const CompareScreen: React.FC = () => {
             <>
               <GlassIconButton icon="back" onPress={handleReset} accessibilityLabel={t('compare.newComparison')} />
               <View style={S.headRight}>
-                <PressableScale onPress={() => setRenameVisible(true)} style={S.iconBtn} accessibilityLabel={t('progress.renameComparisonTitle')}>
+                <Pressable3D onPress={() => setRenameVisible(true)} style={S.iconBtn} accessibilityLabel={t('progress.renameComparisonTitle')}>
                   <Pencil size={18} color={T.accentText} strokeWidth={1.7} />
-                </PressableScale>
-                <PressableScale onPress={handleShare} style={S.iconBtn} accessibilityLabel={t('common.share', { defaultValue: 'Share' })}>
+                </Pressable3D>
+                <Pressable3D onPress={handleShare} style={S.iconBtn} accessibilityLabel={t('common.share', { defaultValue: 'Share' })}>
                   <Share2 size={18} color={T.accentText} strokeWidth={1.7} />
-                </PressableScale>
+                </Pressable3D>
               </View>
             </>
           ) : (
@@ -517,7 +517,7 @@ const CompareScreen: React.FC = () => {
               <ScrollView contentContainerStyle={{ padding: SP.screen, paddingBottom: 40 }}>
                 <Card style={{ paddingHorizontal: 16 }}>
                   {savedReports.map((item, index) => (
-                    <PressableScale key={item.id} onPress={() => selectFromReport(item)}>
+                    <Pressable3D key={item.id} onPress={() => selectFromReport(item)}>
                       <View style={[S.reportRow, index > 0 && S.catDivider]}>
                         <View style={{ flex: 1 }}>
                           <Text style={S.reportDate}>{fmtDate(item.createdAt)}</Text>
@@ -525,7 +525,7 @@ const CompareScreen: React.FC = () => {
                         </View>
                         <ChevronRight color={T.textSecondary} />
                       </View>
-                    </PressableScale>
+                    </Pressable3D>
                   ))}
                 </Card>
               </ScrollView>

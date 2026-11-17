@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, ViewStyle, StyleProp } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import PressableScale from './PressableScale';
+import Pressable3D from './Pressable3D';
 import { R } from '../theme';
 
 interface CardProps {
@@ -28,9 +28,9 @@ const Card: React.FC<CardProps> = ({ children, style, radius = R.card, onPress, 
   };
   if (onPress) {
     return (
-      <PressableScale onPress={onPress} accessibilityLabel={accessibilityLabel} style={[base, style]}>
+      <Pressable3D onPress={onPress} accessibilityLabel={accessibilityLabel} style={[base, style]}>
         {children}
-      </PressableScale>
+      </Pressable3D>
     );
   }
   return <View style={[base, style]}>{children}</View>;

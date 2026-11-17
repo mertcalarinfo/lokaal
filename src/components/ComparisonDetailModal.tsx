@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, View, Text, ScrollView, Share, StyleSheet, Pressable } from 'react-native';
+import Pressable3D from './Pressable3D';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Video, ResizeMode } from 'expo-av';
 import { useTranslation } from 'react-i18next';
@@ -37,17 +38,17 @@ const ComparisonDetailModal: React.FC<Props> = ({ comparison, onClose, onRename 
             <View style={st.head}>
               <GlassIconButton icon="close" onPress={onClose} accessibilityLabel={t('common.close')} />
               <View style={st.headRight}>
-                <Pressable onPress={() => setRenameVisible(true)} style={st.iconBtn} accessibilityRole="button" accessibilityLabel={t('progress.renameComparisonTitle')}>
+                <Pressable3D onPress={() => setRenameVisible(true)} style={st.iconBtn} accessibilityRole="button" accessibilityLabel={t('progress.renameComparisonTitle')}>
                   <Pencil size={18} color={T.accentText} strokeWidth={1.7} />
-                </Pressable>
-                <Pressable
+                </Pressable3D>
+                <Pressable3D
                   onPress={() => Share.share({ message: `${c.result.overallChange}\n\n${c.result.coachComment}` })}
                   style={st.iconBtn}
                   accessibilityRole="button"
                   accessibilityLabel={t('common.share', { defaultValue: 'Share' })}
                 >
                   <Share2 size={18} color={T.accentText} strokeWidth={1.7} />
-                </Pressable>
+                </Pressable3D>
               </View>
             </View>
 

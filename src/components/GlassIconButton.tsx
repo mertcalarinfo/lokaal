@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleProp, View, ViewStyle } from 'react-native';
+import Pressable3D from './Pressable3D';
 import { useTheme } from '../contexts/ThemeContext';
 import Glass from './Glass';
 import { ChevronLeft, CloseIcon } from './Icons';
@@ -16,20 +17,20 @@ const GlassIconButton: React.FC<{
 }> = ({ icon, onPress, accessibilityLabel, style }) => {
   const { T } = useTheme();
   return (
-    <Pressable
+    <Pressable3D
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       hitSlop={4}
-      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }, style]}
+      style={style}
     >
-      <Glass radius={R.buttonSm} shadow="sm" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+      <Glass radius={R.buttonSm} shadow="sm" interactive style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
         {/* In einer View, damit das Icon sicher über der Glasschicht liegt */}
         <View pointerEvents="none">
           {icon === 'close' ? <CloseIcon color={T.text} /> : <ChevronLeft color={T.text} />}
         </View>
       </Glass>
-    </Pressable>
+    </Pressable3D>
   );
 };
 
