@@ -18,7 +18,8 @@
       "Verbessertes Radar-Diagramm mit allen Achsen",
       "Coach-Zusammenfassung nach jeder Analyse",
       "Wochenübungen — 3 konkrete Übungen pro Session"
-    ]
+    ],
+    "limitBodyPro": "Du hast alle {{limit}} Analysen für diesen Monat genutzt. Im nächsten Monat geht es weiter."
   },
   "access": {
     "title": "Zugang",
@@ -169,7 +170,7 @@
   "home": {
     "title": "PREZENCE",
     "analyzeEyebrow": "Heutige Session",
-    "analyzeTitle": "Analysiere dein Sprechen.",
+    "analyzeTitle": "Analysiere dein\nSprechen.",
     "analyzeSubtitle": "Lade ein Video hoch oder nimm eines auf und erhalte persönliches KI-Coaching",
     "uploadVideo": "Video hochladen",
     "uploadVideoSub": "Aus Bibliothek wählen",
@@ -193,7 +194,14 @@
     "heroFootnote": "Eine Aufnahme. Ein ehrliches Urteil.",
     "lastAnalysisLabel": "Letzte Analyse",
     "mediaPermission": "Zugriff auf die Mediathek erforderlich. Aktiviere ihn in den Einstellungen.",
-    "cameraPermission": "Kamera-Zugriff erforderlich. Aktiviere ihn in den Einstellungen."
+    "cameraPermission": "Kamera-Zugriff erforderlich. Aktiviere ihn in den Einstellungen.",
+    "deltaUp": "{{count}} mehr als davor",
+    "deltaDown": "{{count}} weniger als davor",
+    "deltaSame": "Gleich wie davor",
+    "usageLeft": "{{left}} von {{limit}} Analysen übrig",
+    "getPro": "Pro holen",
+    "chooseVideo": "Wähle zuerst ein Video",
+    "readyToAnalyze": "Bereit zur Analyse"
   },
   "analysis": {
     "headerTitle": "Analyse",

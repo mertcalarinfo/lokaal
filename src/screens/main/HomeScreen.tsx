@@ -1,27 +1,28 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, Alert,
-} from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
 import { Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
-import { CheckCircle2, Sparkles, Upload, Video as VideoIcon } from 'lucide-react-native';
 
 import { HomeStackParamList, OnboardingAnswers, AnalysisReport } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
-import { getUserReports } from '../../services/storage';
-import PressableScale from '../../components/PressableScale';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getUserReports, getMonthlyUsage } from '../../services/storage';
+import { useTabBarSpace } from '../../navigation/tabBarSpace';
+import AmbientBackground from '../../components/AmbientBackground';
+import Card, { IconTile } from '../../components/Card';
+import Button from '../../components/Button';
+import ScoreRing from '../../components/ScoreRing';
 import VideoThumbnail from '../../components/VideoThumbnail';
 import PrezenceLogo from '../../components/PrezenceLogo';
-import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
+import { ChevronRight, UploadIcon, CameraIcon, TrendUpIcon, TrendDownIcon } from '../../components/Icons';
+import { ThemeColors, F, R, S as SP, TY } from '../../theme';
 
-import { useTabBarSpace } from '../../navigation/tabBarSpace';
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
-type UploadOption = 'upload' | 'record';
 
 const MAX_VIDEO_DURATION_SECONDS = 300;
 
@@ -47,34 +48,32 @@ function getGreeting(t: TFn, firstName: string): string {
 function formatRelative(t: TFn, d: Date | string): string {
   const date = d instanceof Date ? d : new Date(d);
   const days = Math.floor((Date.now() - date.getTime()) / 86400000);
-  if (days <= 0) return t('common.today');
-  if (days === 1) return t('common.yesterday');
-  return t('common.daysAgo', { count: days });
+  const txt = days <= 0 ? t('common.today') : days === 1 ? t('common.yesterday') : t('common.daysAgo', { count: days });
+  return txt.charAt(0).toUpperCase() + txt.slice(1);
 }
+
+const formatDuration = (s: number) =>
+  `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
 
 // ─── Sub-Komponenten ──────────────────────────────────────────────────────────
 
-function OptionRow({
-  icon, label, sub, selected, onPress,
+function OptionCard({
+  icon, label, sub, onPress, styles, T,
 }: {
-  icon: 'upload' | 'record'; label: string; sub: string; selected: boolean; onPress: () => void;
+  icon: 'upload' | 'record'; label: string; sub: string; onPress: () => void;
+  styles: ReturnType<typeof createStyles>; T: ThemeColors;
 }) {
-  const Icon = icon === 'upload' ? Upload : VideoIcon;
   return (
-    <PressableScale onPress={onPress}>
-      <View style={S.optRow}>
-        <View style={[S.optIconCircle, selected && S.optIconCircleSel]}>
-          <Icon size={23} color={selected ? RC.accent : RC.text} strokeWidth={1.6} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[S.optLabel, selected && S.optLabelSel]}>{label}</Text>
-          <Text style={S.optSub}>{sub}</Text>
-        </View>
-        <View style={[S.radio, selected && S.radioSel]}>
-          {selected && <View style={S.radioDot} />}
-        </View>
+    <Card onPress={onPress} style={styles.rowCard} accessibilityLabel={`${label}, ${sub}`}>
+      <IconTile size={44}>
+        {icon === 'upload' ? <UploadIcon color={T.accentText} /> : <CameraIcon color={T.accentText} />}
+      </IconTile>
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>{label}</Text>
+        <Text style={styles.rowSub}>{sub}</Text>
       </View>
-    </PressableScale>
+      <ChevronRight color={T.textSecondary} />
+    </Card>
   );
 }
 
@@ -84,21 +83,31 @@ const HomeScreen: React.FC = () => {
   const { t }      = useTranslation();
   const tabSpace   = useTabBarSpace();
   const navigation = useNavigation<HomeNavigationProp>();
+  const { T }      = useTheme();
+  const styles     = useMemo(() => createStyles(T), [T]);
   const { user }   = useAuth();
-  const { canAnalyze, monthlyLimit } = useSubscription(user?.uid || null);
+  const { canAnalyze, monthlyLimit, analysesThisMonth, isPro } = useSubscription(user?.uid || null);
 
-  const [selectedVideo,  setSelectedVideo]  = useState<{ uri: string; duration?: number } | null>(null);
-  const [selectedOption, setSelectedOption] = useState<UploadOption>('upload');
-  const [lastReport,     setLastReport]     = useState<AnalysisReport | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<{ uri: string; duration?: number } | null>(null);
+  const [lastReport,    setLastReport]    = useState<AnalysisReport | null>(null);
+  const [prevReport,    setPrevReport]    = useState<AnalysisReport | null>(null);
+  // Frischer Monatszähler bei jedem Fokus (der Hook lädt nur beim Mounten).
+  const [usedFresh,     setUsedFresh]     = useState<number | null>(null);
 
   useFocusEffect(useCallback(() => {
     if (!user?.uid) return;
     getUserReports(user.uid).then((reports) => {
-      if (reports.length > 0) setLastReport(reports[0]);
+      setLastReport(reports[0] ?? null);
+      setPrevReport(reports[1] ?? null);
     }).catch(() => {});
+    getMonthlyUsage(user.uid).then(setUsedFresh).catch(() => {});
   }, [user?.uid]));
 
   const greeting = getGreeting(t, (user?.displayName ?? '').split(' ')[0] ?? '');
+  const used     = usedFresh ?? analysesThisMonth;
+  const left     = Math.max(0, monthlyLimit - used);
+  const usedFrac = monthlyLimit > 0 ? Math.min(1, used / monthlyLimit) : 0;
+  const limitReached = !canAnalyze || used >= monthlyLimit;
 
   // ── Handlers (unverändert) ────────────────────────────────────────────────────
   const handlePickVideo = useCallback(async () => {
@@ -173,15 +182,20 @@ const HomeScreen: React.FC = () => {
 
   const handleAnalyze = useCallback(async () => {
     if (!selectedVideo) { Alert.alert(t('common.error'), t('home.noVideoSelected')); return; }
-    if (!canAnalyze) {
-      Alert.alert(
-        t('pro.limitTitle'),
-        t('pro.limitBody', { limit: monthlyLimit }),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('pro.unlockButton'), onPress: () => navigation.navigate('Paywall') },
-        ],
-      );
+    if (limitReached) {
+      // Pro-Nutzer haben schon Pro → kein "Pro freischalten" anbieten.
+      if (isPro) {
+        Alert.alert(t('pro.limitTitle'), t('pro.limitBodyPro', { limit: monthlyLimit }), [{ text: t('common.ok') }]);
+      } else {
+        Alert.alert(
+          t('pro.limitTitle'),
+          t('pro.limitBody', { limit: monthlyLimit }),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('pro.unlockButton'), onPress: () => navigation.navigate('Paywall') },
+          ],
+        );
+      }
       return;
     }
     const answers: OnboardingAnswers = user?.onboardingAnswers ?? {
@@ -192,106 +206,133 @@ const HomeScreen: React.FC = () => {
       feedbackStyle: 'balanced',
     };
     navigation.navigate('AnalysisLoading', { videoUri: selectedVideo.uri, answers });
-  }, [selectedVideo, canAnalyze, monthlyLimit, navigation, t, user?.onboardingAnswers]);
+  }, [selectedVideo, limitReached, isPro, monthlyLimit, navigation, t, user?.onboardingAnswers]);
 
-  const formatDuration = (s: number) =>
-    `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+  // ── Letzte Analyse: Veränderung zur vorherigen ─────────────────────────────
+  const lastScore = lastReport ? score100(lastReport.averageScore) : null;
+  const delta = lastReport && prevReport ? score100(lastReport.averageScore) - score100(prevReport.averageScore) : null;
 
-  // ── JSX ────────────────────────────────────────────────────────────────────────
+  // ── JSX ────────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: tabSpace }]} showsVerticalScrollIndicator={false}>
+    <View style={styles.root}>
+      <AmbientBackground animated />
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        <ScrollView
+          contentContainerStyle={[styles.scroll, { paddingBottom: tabSpace }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* 1 · Kopf */}
+          <PrezenceLogo />
 
-        {/* ── AKTENKOPF ── */}
-        <View style={S.head}>
-          <PrezenceLogo size="sm" />
-        </View>
+          {/* 2 · Begrüßung */}
+          <View style={styles.hero}>
+            <Text style={styles.label}>{greeting}</Text>
+            <Text style={styles.title} accessibilityRole="header">{t('home.analyzeTitle')}</Text>
+          </View>
 
-        <View style={{ height: 26 }} />
-
-        {/* ── HERO ── */}
-        <View style={S.hero}>
-          <Text style={S.greeting}>{greeting}</Text>
-          <View style={{ height: 8 }} />
-          <Text style={S.heroTitle}>{t('home.analyzeTitle')}</Text>
-          <View style={{ height: 14 }} />
-          <Text style={S.heroSub}>{t('home.analyzeSubtitle')}</Text>
-        </View>
-
-        {/* ── UPLOAD-OPTIONEN / VIDEO-VORSCHAU (vertikal mittig zwischen Hero und Button) ── */}
-        <View style={S.middle}>
-        <View style={S.rows}>
+          {/* 3 · Optionen bzw. gewähltes Video */}
           {selectedVideo ? (
-            <>
-              {/* "Video bereit"-Zeile */}
-              <View style={S.readyRow}>
-                <CheckCircle2 size={16} color={RC.accent} strokeWidth={2} />
-                <Text style={S.readyLabel}>{t('home.videoReady')}</Text>
-                <PressableScale onPress={() => setSelectedVideo(null)}>
-                  <Text style={S.removeTxt}>{t('common.remove')}</Text>
-                </PressableScale>
+            <Card style={styles.rowCard}>
+              <VideoThumbnail uri={selectedVideo.uri} size={56} />
+              <View style={styles.rowText}>
+                <Text style={styles.rowTitle}>{t('home.videoReady')}</Text>
+                <Text style={styles.rowSub} numberOfLines={1}>
+                  {selectedVideo.duration !== undefined
+                    ? t('home.videoInfo', { duration: formatDuration(selectedVideo.duration) })
+                    : t('home.readyToAnalyze')}
+                </Text>
               </View>
-              {/* Thumbnail — tippen zum Abspielen (Vollbild) */}
-              <View style={S.thumbWrap}>
-                <VideoThumbnail
-                  uri={selectedVideo.uri}
-                  duration={selectedVideo.duration}
-                  size="lg"
-                />
-                {selectedVideo.duration !== undefined && (
-                  <Text style={S.duration}>
-                    {t('home.videoInfo', { duration: formatDuration(selectedVideo.duration) })}
-                  </Text>
-                )}
-              </View>
-            </>
+              <Pressable
+                onPress={() => setSelectedVideo(null)}
+                accessibilityRole="button"
+                style={styles.removeHit}
+                hitSlop={6}
+              >
+                <Text style={styles.removeTxt}>{t('common.remove')}</Text>
+              </Pressable>
+            </Card>
           ) : (
-            <>
-              <OptionRow
+            <View style={styles.options}>
+              <OptionCard
                 icon="upload"
                 label={t('home.uploadVideo')}
                 sub={t('home.uploadVideoSub')}
-                selected={selectedOption === 'upload'}
-                onPress={() => { setSelectedOption('upload'); handlePickVideo(); }}
+                onPress={handlePickVideo}
+                styles={styles}
+                T={T}
               />
-              <OptionRow
+              <OptionCard
                 icon="record"
                 label={t('home.recordNow')}
                 sub={t('home.recordNowSub')}
-                selected={selectedOption === 'record'}
-                onPress={() => { setSelectedOption('record'); handleRecordVideo(); }}
+                onPress={handleRecordVideo}
+                styles={styles}
+                T={T}
               />
-            </>
+            </View>
           )}
-        </View>
-        </View>
 
-        {/* ── PRIMARY-BUTTON ── */}
-        <View style={S.cta}>
-          <PressableScale onPress={handleAnalyze} style={{ alignSelf: 'stretch' }}>
-            <View style={[S.btn, BTN_SHADOW]}>
-              <View style={S.btnLeft}>
-                <Sparkles size={18} color={RC.onAccent} strokeWidth={1.8} />
-                <Text style={S.btnLabel}>{t('home.analyzeButton')}</Text>
+          {/* 4 · Analysieren */}
+          <View>
+            <Button
+              label={t('home.analyzeButton')}
+              onPress={handleAnalyze}
+              disabled={!selectedVideo}
+              fullWidth
+            />
+            <Text style={styles.footnote}>{t('home.heroFootnote')}</Text>
+          </View>
+
+          {/* 5 · Letzte Analyse */}
+          {lastReport && lastScore !== null && (
+            <Card
+              style={styles.rowCard}
+              onPress={() => navigation.navigate('Report', { report: lastReport, saved: true })}
+              accessibilityLabel={`${t('home.lastAnalysisLabel')}, ${lastScore}`}
+            >
+              <ScoreRing score={lastScore} size={60} />
+              <View style={[styles.rowText, { gap: 3 }]}>
+                <Text style={styles.label}>{t('home.lastAnalysisLabel')}</Text>
+                <Text style={styles.rowTitle}>{formatRelative(t, lastReport.createdAt)}</Text>
+                {delta !== null && (
+                  <View style={styles.deltaRow}>
+                    {delta > 0 && <TrendUpIcon color={T.accentText} />}
+                    {delta < 0 && <TrendDownIcon color={T.textSecondary} />}
+                    <Text style={[styles.delta, { color: delta > 0 ? T.accentText : T.textSecondary }]}>
+                      {delta > 0
+                        ? t('home.deltaUp', { count: delta })
+                        : delta < 0
+                          ? t('home.deltaDown', { count: Math.abs(delta) })
+                          : t('home.deltaSame')}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <ChevronRight color={T.textSecondary} />
+            </Card>
+          )}
+
+          {/* 6 · Nutzung */}
+          <Card radius={R.cardSm} style={[styles.usage, isPro && styles.usagePro]}>
+            <View style={styles.usageText}>
+              <Text style={[styles.usageLabel, isPro && { fontSize: 15 }]}>
+                {t('home.usageLeft', { left, limit: monthlyLimit })}
+              </Text>
+              <View style={styles.bar}>
+                <View style={[styles.barFill, { width: `${usedFrac * 100}%` }]} />
               </View>
             </View>
-          </PressableScale>
-          <Text style={S.ctaFootnote}>{t('home.heroFootnote')}</Text>
-
-          {lastReport && (
-            <PressableScale
-              onPress={() => navigation.navigate('Report', { report: lastReport, saved: true })}
-              style={{ marginTop: 16, alignSelf: 'center' }}
-            >
-              <Text style={S.scoreHintText}>
-                {t('home.lastAnalysisLabel')}: <Text style={S.scoreHintAccent}>{score100(lastReport.averageScore)}/100</Text> · {formatRelative(t, lastReport.createdAt)}
-              </Text>
-            </PressableScale>
-          )}
-        </View>
-
-      </ScrollView>
-    </SafeAreaView>
+            {!isPro && (
+              <Button
+                label={t('home.getPro')}
+                size="sm"
+                onPress={() => navigation.navigate('Paywall')}
+              />
+            )}
+          </Card>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -299,177 +340,46 @@ export default HomeScreen;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const S = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: RC.bg },
-  scroll: { flexGrow: 1, paddingBottom: 0 },
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  root:   { flex: 1, backgroundColor: T.bg },
+  safe:   { flex: 1 },
+  scroll: { paddingHorizontal: SP.screen, paddingTop: SP.top, gap: 14 },
 
-  // Aktenkopf
-  head: {
-    marginTop: RS.headTop,
-    paddingHorizontal: RS.screenH,
-    paddingBottom: RS.headPadB,
-  },
+  hero:  { gap: 4 },
+  label: { ...TY.label, color: T.textSecondary },
+  title: { ...TY.pageTitle, color: T.text },
 
-  // Hero
-  hero: {
-    paddingHorizontal: RS.screenH,
-  },
-  greeting: {
-    fontFamily: MONO_MED,
-    fontSize: 13,
-    letterSpacing: 0.5,
-    color: RC.muted,
-  },
-  heroTitle: {
-    fontSize: 34,
-    fontWeight: '600',
-    letterSpacing: -1,
-    color: RC.text,
-    lineHeight: 40,
-  },
-  heroSub: {
-    fontFamily: MONO,
-    fontSize: 14,
-    lineHeight: 21,
-    color: RC.muted,
-  },
-  scoreHintText: {
-    fontFamily: MONO,
-    fontSize: 12.5,
-    color: RC.faint,
-    textAlign: 'center',
-  },
-  scoreHintAccent: {
-    fontFamily: MONO_MED,
-    color: RC.accent,
-  },
-
-  // Optionen / Video — vertikal mittig zwischen Hero und Button
-  middle: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  rows: {
-    paddingHorizontal: RS.screenH,
-  },
-  optRow: {
+  options: { gap: 10 },
+  rowCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    paddingVertical: 22,
-    borderTopWidth: HL.std,
-    borderTopColor: RC.line,
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  optIconCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    borderWidth: 1.5,
-    borderColor: RC.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  optIconCircleSel: {
-    borderColor: RC.accent,
-    backgroundColor: RC.accentWash,
-  },
-  optLabel: {
-    fontFamily: MONO_MED,
-    fontSize: 16,
-    color: RC.muted,
-  },
-  optLabelSel: {
-    color: RC.text,
-  },
-  optSub: {
-    fontFamily: MONO,
-    fontSize: 13,
-    color: RC.faint,
-    marginTop: 4,
-  },
-  radio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: RC.ghost,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioSel: {
-    borderColor: RC.accent,
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: RC.accent,
-  },
+  rowText:  { flex: 1, gap: 2, minWidth: 0 },
+  rowTitle: { ...TY.rowTitle, color: T.text },
+  rowSub:   { ...TY.caption, color: T.textSecondary },
 
-  // Video bereit
-  readyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: RS.rowV,
-    borderTopWidth: HL.std,
-    borderTopColor: RC.line,
-  },
-  readyLabel: {
-    fontFamily: MONO_MED,
-    fontSize: 14,
-    color: RC.accent,
-    flex: 1,
-  },
-  removeTxt: {
-    fontFamily: MONO,
-    fontSize: 12,
-    color: RC.ghost,
-    textDecorationLine: 'underline',
-  },
-  thumbWrap: {
-    paddingVertical: 12,
-    borderTopWidth: HL.faint,
-    borderTopColor: RC.lineFaint,
-  },
-  duration: {
-    fontFamily: MONO,
-    fontSize: 11,
-    color: RC.ghost,
-    textAlign: 'center',
-    marginTop: 8,
-  },
+  removeHit: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 2 },
+  removeTxt: { fontFamily: F.semiBold, fontSize: 14, color: T.accentText },
 
-  // CTA
-  cta: {
-    paddingHorizontal: RS.screenH,
-    paddingBottom: RS.btnBottom,
-  },
-  btn: {
+  footnote: { marginTop: 8, textAlign: 'center', fontFamily: F.regular, fontSize: 12.5, color: T.textSecondary },
+
+  deltaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  delta:    { fontFamily: F.semiBold, fontSize: 13, fontVariant: ['tabular-nums'] },
+
+  usage: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: RC.accent,
-    borderRadius: RR.button,
-    paddingVertical: 18,
-    paddingHorizontal: 22,
+    gap: 14,
+    paddingVertical: 8,
+    paddingRight: 8,
+    paddingLeft: 16,
   },
-  btnLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  btnLabel: {
-    fontFamily: MONO_MED,
-    fontSize: 16,
-    color: RC.onAccent,
-  },
-  ctaFootnote: {
-    fontFamily: MONO,
-    fontSize: 12.5,
-    color: RC.faint,
-    textAlign: 'center',
-    // extra clearance so the (now softer) button glow does not sit on the text
-    marginTop: 20,
-  },
+  usagePro:   { paddingVertical: 16, paddingRight: 16 },
+  usageText:  { flex: 1, gap: 7 },
+  usageLabel: { fontFamily: F.medium, fontSize: 14, color: T.text, fontVariant: ['tabular-nums'] },
+  bar:        { height: 4, borderRadius: 2, backgroundColor: T.track, overflow: 'hidden' },
+  barFill:    { height: 4, borderRadius: 2, backgroundColor: T.accentData },
 });

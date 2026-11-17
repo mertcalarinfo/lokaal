@@ -18,7 +18,8 @@
       "Enhanced radar chart with all axes",
       "Coach summary after every analysis",
       "Weekly exercises — 3 concrete drills per session"
-    ]
+    ],
+    "limitBodyPro": "You have used all {{limit}} analyses for this month. You can continue next month."
   },
   "access": {
     "title": "Access",
@@ -169,7 +170,7 @@
   "home": {
     "title": "PREZENCE",
     "analyzeEyebrow": "Today's Session",
-    "analyzeTitle": "Analyze Your Speaking.",
+    "analyzeTitle": "Analyze your\nspeaking.",
     "analyzeSubtitle": "Upload or record a video and get personalized coaching from AI",
     "uploadVideo": "Upload Video",
     "uploadVideoSub": "Choose from library",
@@ -193,7 +194,14 @@
     "heroFootnote": "One take. One honest verdict.",
     "lastAnalysisLabel": "Last analysis",
     "mediaPermission": "Media library access required. Enable it in Settings.",
-    "cameraPermission": "Camera access required. Enable it in Settings."
+    "cameraPermission": "Camera access required. Enable it in Settings.",
+    "deltaUp": "{{count}} more than before",
+    "deltaDown": "{{count}} less than before",
+    "deltaSame": "Same as before",
+    "usageLeft": "{{left}} of {{limit}} analyses left",
+    "getPro": "Get Pro",
+    "chooseVideo": "Choose a video first",
+    "readyToAnalyze": "Ready to analyze"
   },
   "analysis": {
     "headerTitle": "Analysis",

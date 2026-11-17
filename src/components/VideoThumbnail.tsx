@@ -1,64 +1,53 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal } from 'react-native';
+import { View, StyleSheet, Modal, Pressable, ViewStyle, StyleProp } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
-import { Play, X } from 'lucide-react-native';
-import PressableScale from './PressableScale';
-import { RC, MONO_MED, HL } from '../theme/register';
+import Svg, { Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../contexts/ThemeContext';
+import Glass from './Glass';
+import { R } from '../theme';
 
 interface VideoThumbnailProps {
   uri: string;
-  duration?: number;
-  onRemove?: () => void;
-  size?: 'sm' | 'md' | 'lg';
+  /** Kantenlänge der quadratischen Vorschau (Home: 56) */
+  size?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
-const formatDuration = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
-
-const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, duration, onRemove, size = 'lg' }) => {
+/**
+ * Kleine Video-Vorschau (erster Frame, Radius 12). Antippen öffnet das Video im
+ * Vollbild; Schließen über einen runden Glas-Button.
+ */
+const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, size = 56, style }) => {
+  const { T } = useTheme();
+  const { t } = useTranslation();
   const [viewerVisible, setViewerVisible] = useState(false);
 
-  const boxHeight = size === 'sm' ? 80 : size === 'md' ? 130 : 200;
-
   return (
-    <View>
-      <PressableScale onPress={() => setViewerVisible(true)}>
-        <View style={[S.box, { height: boxHeight }]}>
-          {/* Erster Frame als statische Vorschau (expo-av, pausiert) */}
-          <Video
-            source={{ uri }}
-            style={StyleSheet.absoluteFill}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay={false}
-            isMuted
-            positionMillis={1}
-          />
-
-          {/* Play-Badge */}
-          <View style={S.playBadge}>
-            <Play size={20} color={RC.onAccent} strokeWidth={2} fill={RC.onAccent} />
+    <>
+      <Pressable
+        onPress={() => setViewerVisible(true)}
+        accessibilityRole="button"
+        accessibilityLabel={t('home.videoReady')}
+        style={[{ width: size, height: size, borderRadius: R.tile, overflow: 'hidden', backgroundColor: '#000' }, style]}
+      >
+        <Video
+          source={{ uri }}
+          style={StyleSheet.absoluteFill}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay={false}
+          isMuted
+          positionMillis={1}
+        />
+        <View style={S.playWrap} pointerEvents="none">
+          <View style={[S.play, { backgroundColor: 'rgba(0,0,0,0.38)' }]}>
+            <Svg width={12} height={12} viewBox="0 0 24 24">
+              <Path d="M7 4.5v15l13-7.5z" fill="#FFFFFF" />
+            </Svg>
           </View>
-
-          {/* Dauer */}
-          {duration !== undefined && (
-            <View style={S.durationBadge}>
-              <Text style={S.durationTxt}>{formatDuration(duration)}</Text>
-            </View>
-          )}
         </View>
-      </PressableScale>
+      </Pressable>
 
-      {/* Entfernen */}
-      {onRemove && (
-        <PressableScale style={S.removeBtn} onPress={onRemove}>
-          <X size={13} color={RC.onAccent} strokeWidth={2.5} />
-        </PressableScale>
-      )}
-
-      {/* Vollbild-Viewer */}
       <Modal
         visible={viewerVisible}
         animationType="fade"
@@ -66,9 +55,6 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, duration, onRemove
         onRequestClose={() => setViewerVisible(false)}
       >
         <View style={S.overlay}>
-          <PressableScale style={S.close} onPress={() => setViewerVisible(false)}>
-            <X size={22} color={RC.onAccent} strokeWidth={2} />
-          </PressableScale>
           <Video
             source={{ uri }}
             style={S.fullVideo}
@@ -77,76 +63,39 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, duration, onRemove
             shouldPlay
             isLooping={false}
           />
+          <Pressable
+            onPress={() => setViewerVisible(false)}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.close')}
+            style={S.closeHit}
+          >
+            <Glass radius={R.buttonSm} shadow="sm" style={S.close}>
+              <Svg width={18} height={18} viewBox="0 0 24 24">
+                <Path d="M6 6l12 12M18 6L6 18" fill="none" stroke={T.text} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </Glass>
+          </Pressable>
         </View>
       </Modal>
-    </View>
+    </>
   );
 };
 
 export default VideoThumbnail;
 
 const S = StyleSheet.create({
-  box: {
-    width: '100%',
-    backgroundColor: '#000',
-    borderWidth: HL.std,
-    borderColor: RC.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  playBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: RC.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  durationBadge: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(20,18,15,0.78)',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  durationTxt: {
-    fontFamily: MONO_MED,
-    color: '#FFFFFF',
-    fontSize: 10,
-  },
-  removeBtn: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    zIndex: 10,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: RC.text,
-    alignItems: 'center',
-    justifyContent: 'center',
+  playWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  play: {
+    width: 26, height: 26, borderRadius: 13,
+    alignItems: 'center', justifyContent: 'center', paddingLeft: 2,
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(20,18,15,0.96)',
+    backgroundColor: 'rgba(0,0,0,0.94)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  close: {
-    position: 'absolute',
-    top: 56,
-    right: 22,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
-  },
-  fullVideo: {
-    width: '100%',
-    height: '78%',
-  },
+  closeHit: { position: 'absolute', top: 58, right: 24, zIndex: 2 },
+  close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  fullVideo: { width: '100%', height: '78%' },
 });

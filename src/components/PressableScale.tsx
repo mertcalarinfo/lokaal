@@ -9,9 +9,11 @@ type Props = {
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
+  accessibilityLabel?: string;
+  hitSlop?: number;
 };
 
-export default function PressableScale({ children, onPress, style, disabled }: Props) {
+export default function PressableScale({ children, onPress, style, disabled, accessibilityLabel, hitSlop }: Props) {
   const scale   = useSharedValue(1);
   const opacity = useSharedValue(1);
 
@@ -24,9 +26,13 @@ export default function PressableScale({ children, onPress, style, disabled }: P
     <AnimatedPressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: !!disabled }}
+      hitSlop={hitSlop}
       onPressIn={() => {
-        scale.value   = withTiming(0.972, { duration: 140 });
-        opacity.value = withTiming(0.92,  { duration: 140 });
+        scale.value   = withTiming(0.98, { duration: 120 });
+        opacity.value = withTiming(0.94, { duration: 120 });
       }}
       onPressOut={() => {
         scale.value   = withTiming(1, { duration: 140 });

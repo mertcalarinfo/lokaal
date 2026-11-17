@@ -1,0 +1,55 @@
+import React from 'react';
+import { View, Text } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+import { useTheme } from '../contexts/ThemeContext';
+import { F } from '../theme';
+
+interface ScoreRingProps {
+  /** 0–100 */
+  score: number;
+  size?: number;
+  strokeWidth?: number;
+  fontSize?: number;
+}
+
+/**
+ * Score-Ring (Entwurf 5): track + accentData, beginnt oben, runde Enden,
+ * Zahl dünn (300) und mit fester Ziffernbreite in der Mitte.
+ */
+const ScoreRing: React.FC<ScoreRingProps> = ({ score, size = 60, strokeWidth = 4, fontSize = 21 }) => {
+  const { T } = useTheme();
+  const r = size / 2 - strokeWidth / 2 - 3; // 60 → r 25 wie in der Vorlage
+  const c = 2 * Math.PI * r;
+  const clamped = Math.max(0, Math.min(100, score));
+  return (
+    <View style={{ width: size, height: size }} accessible accessibilityLabel={`${Math.round(clamped)} / 100`}>
+      <Svg width={size} height={size}>
+        <Circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={T.track} strokeWidth={strokeWidth} />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={T.accentData}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={`${c} ${c}`}
+          strokeDashoffset={c * (1 - clamped / 100)}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </Svg>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+        <Text
+          style={{
+            fontFamily: F.light, fontSize, letterSpacing: -fontSize * 0.03,
+            color: T.text, fontVariant: ['tabular-nums'],
+          }}
+        >
+          {Math.round(clamped)}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+export default ScoreRing;
