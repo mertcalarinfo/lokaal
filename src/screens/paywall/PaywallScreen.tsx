@@ -1,79 +1,30 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert,
+  View, Text, StyleSheet, ScrollView, Alert, Pressable, Linking, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import {
-  X, Star, CheckCircle2, Infinity,
-  Sparkles, TrendingUp, Dumbbell, GitCompare,
-} from 'lucide-react-native';
 
 import { getOfferings, purchasePackage, restorePurchases } from '../../services/revenuecat';
 import { useAuth } from '../../hooks/useAuth';
-import { useSubscription } from '../../hooks/useSubscription';
+import { useSubscription, PRO_MONTHLY_LIMIT } from '../../hooks/useSubscription';
 import { useTheme } from '../../contexts/ThemeContext';
+import AmbientBackground from '../../components/AmbientBackground';
 import Button from '../../components/Button';
+import Card from '../../components/Card';
+import GlassIconButton from '../../components/GlassIconButton';
 import PrezenceLogo from '../../components/PrezenceLogo';
-import { ThemeColors, F, R, S } from '../../theme';
+import { CheckIcon } from '../../components/Icons';
+import { ThemeColors, F, R, S as SP } from '../../theme';
 
-const createStyles = (T: ThemeColors) => StyleSheet.create({
-  safe:  { flex: 1, backgroundColor: T.bg },
-  closeBtn: {
-    position: 'absolute', top: 56, right: S.screen, zIndex: 10,
-    width: 34, height: 34, borderRadius: R.buttonSm,
-    backgroundColor: T.disabledBg, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: T.hairline,
-  },
-  scroll: { paddingHorizontal: S.screen, paddingTop: 60, paddingBottom: S.s10 },
-  header: { alignItems: 'center', marginBottom: S.s8 },
-  premiumPill: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: T.accentTint, borderRadius: R.buttonSm,
-    paddingHorizontal: S.s3, paddingVertical: 5,
-    borderWidth: 1, borderColor: T.hairline, gap: 5, marginBottom: S.s4,
-  },
-  premiumPillText: { fontFamily: F.semiBold, fontSize: 11, color: T.accent, letterSpacing: 2 },
-  title: {
-    fontFamily: F.semiBold, fontSize: 28,
-    color: T.text, marginBottom: S.s2, textAlign: 'center', letterSpacing: -0.56,
-  },
-  subtitle: {
-    fontFamily: F.regular, fontSize: 14.5, color: T.textSecondary,
-    textAlign: 'center', lineHeight: 22, paddingHorizontal: S.s4,
-  },
-  featuresCard: {
-    backgroundColor: T.card, borderRadius: R.card,
-    padding: S.s5, marginBottom: S.s5,
-    borderWidth: 1, borderColor: T.hairline,
-  },
-  featureRow:     { flexDirection: 'row', alignItems: 'center', paddingVertical: S.s3 },
-  featureIconWrap: {
-    width: 34, height: 34, borderRadius: R.button,
-    alignItems: 'center', justifyContent: 'center', marginRight: S.s3,
-  },
-  featureText: { flex: 1, fontFamily: F.medium, fontSize: 14.5, color: T.text },
-  pricingCard: {
-    borderRadius: R.card, padding: S.s5, marginBottom: S.s6,
-    borderWidth: 1.5, borderColor: T.accent, alignItems: 'center',
-  },
-  pricingTag: {
-    fontFamily: F.semiBold, fontSize: 10,
-    color: T.accent, letterSpacing: 2.5, marginBottom: S.s2,
-  },
-  priceNum: {
-    fontFamily: F.semiBold, fontSize: 38,
-    color: T.text, letterSpacing: -1, marginBottom: 3,
-  },
-  priceSub:    { fontFamily: F.regular, fontSize: 13, color: T.textSecondary },
-  cta:         { alignItems: 'center' },
-  disclaimer:  { fontFamily: F.regular, fontSize: 13, color: T.textSecondary, textAlign: 'center', marginBottom: S.s4 },
-  restoreBtn:  { paddingVertical: S.s2, marginBottom: S.s3 },
-  restoreText: { fontFamily: F.medium, fontSize: 14, color: T.textSecondary, textDecorationLine: 'underline' },
-  terms:       { fontFamily: F.regular, fontSize: 11, color: T.textSecondary, textAlign: 'center', lineHeight: 16, paddingHorizontal: S.s4 },
-});
+// Rechtstexte — die Seiten, die das Projekt bereits für Support & Legal nutzt.
+// Für Nutzungsbedingungen gibt es dort (noch) keine eigene Seite; bis dahin gilt
+// Apples Standard-EULA, die auch in App Store Connect hinterlegt ist.
+const PRIVACY_URL = 'https://mertcalarinfo.github.io/prezence-legal/privacy-policy.html';
+const TERMS_URL   = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+
+const FEATURE_KEYS = ['monthly', 'detailed', 'progress', 'compare', 'exercises'] as const;
 
 const PaywallScreen: React.FC = () => {
   const { t }             = useTranslation();
@@ -89,15 +40,25 @@ const PaywallScreen: React.FC = () => {
 
   // 'active' ist ein unreachable/Race-Only-Edge-Case: beide Navigations-Stellen
   // (SettingsScreen, HomeScreen) schließen aktive Pro-Nutzer bereits vom Paywall
-  // aus. Fällt bewusst auf die Standard-Copy zurück statt eine eigene "Abo
-  // verwalten"-Meldung zu bauen — das wäre spekulative UI für einen Pfad, den
-  // die App heute nicht anbietet.
+  // aus. Fällt bewusst auf die Standard-Copy zurück.
   const titleKey    = proState === 'expired' ? 'paywall.expiredTitle'    : 'paywall.title';
   const subtitleKey = proState === 'expired' ? 'paywall.expiredSubtitle' : 'paywall.subtitle';
 
   useEffect(() => {
     getOfferings().then(setOffering).catch(() => {});
   }, []);
+
+  // Preis aus dem Store-Produkt, nie fest im Text
+  const pkg   = offering?.monthly || offering?.availablePackages?.[0];
+  const price: string | null = pkg?.product?.priceString ?? null;
+  // "Gratis testen" nur, wenn das Produkt wirklich eine kostenlose Testphase hat
+  const hasFreeTrial = pkg?.product?.introPrice != null && Number(pkg.product.introPrice.price) === 0;
+  const android = Platform.OS === 'android';
+  const renewText = price
+    ? t(android ? 'paywall.renewNoticeAndroid' : 'paywall.renewNotice', { price })
+    : t(android ? 'paywall.renewNoticeNoPriceAndroid' : 'paywall.renewNoticeNoPrice');
+
+  const openUrl = (url: string) => { Linking.openURL(url).catch(() => {}); };
 
   const handleSubscribe = async () => {
     setLoading(true);
@@ -136,74 +97,123 @@ const PaywallScreen: React.FC = () => {
     }
   };
 
-  const features = [
-    { key: 'unlimited', Icon: Infinity,   color: T.accent   },
-    { key: 'detailed',  Icon: Sparkles,   color: T.textSecondary },
-    { key: 'progress',  Icon: TrendingUp, color: T.accentText  },
-    { key: 'exercises', Icon: Dumbbell,   color: T.textSecondary },
-    { key: 'compare',   Icon: GitCompare, color: T.textSecondary },
-  ] as const;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      {/* Close */}
-      <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
-        <X size={20} color={T.textSecondary} strokeWidth={1.7} />
-      </TouchableOpacity>
-
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <PrezenceLogo size="md" style={{ marginBottom: S.s4 }} />
-          <View style={styles.premiumPill}>
-            <Star size={13} color={T.accent} strokeWidth={1.7} />
-            <Text style={styles.premiumPillText}>PREMIUM</Text>
+    <View style={styles.root}>
+      <AmbientBackground animated variant="paywall" />
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right', 'bottom']}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          {/* Schließen */}
+          <View style={styles.closeRow}>
+            <GlassIconButton icon="close" onPress={() => navigation.goBack()} accessibilityLabel={t('common.close')} />
           </View>
-          <Text style={styles.title}>{t(titleKey)}</Text>
+
+          {/* Kopf */}
+          <PrezenceLogo variant="mark" height={96} style={{ marginTop: -2 }} />
+          <Text style={styles.title} accessibilityRole="header">{t(titleKey)}</Text>
           <Text style={styles.subtitle}>{t(subtitleKey)}</Text>
-        </View>
 
-        {/* Features */}
-        <View style={styles.featuresCard}>
-          {features.map(({ key, Icon, color }) => (
-            <View key={key} style={styles.featureRow}>
-              <View style={[styles.featureIconWrap, { backgroundColor: `${color}18` }]}>
-                <Icon size={17} color={color} strokeWidth={1.7} />
-              </View>
-              <Text style={styles.featureText}>{t(`paywall.features.${key}`)}</Text>
-              <CheckCircle2 size={17} color={T.accentText} strokeWidth={1.7} />
+          {/* Features */}
+          <Card style={styles.features}>
+            {FEATURE_KEYS.map((key, i) => (
+              <React.Fragment key={key}>
+                {i > 0 && <View style={styles.divider} />}
+                <View style={styles.featureRow}>
+                  <CheckIcon color={T.accent} />
+                  <Text style={styles.featureText}>{t(`paywall.features.${key}`, { limit: PRO_MONTHLY_LIMIT })}</Text>
+                </View>
+              </React.Fragment>
+            ))}
+          </Card>
+
+          {/* Preis */}
+          <View style={styles.priceCard}>
+            <View style={{ gap: 2 }}>
+              <Text style={styles.planName}>{t('paywall.monthly')}</Text>
+              <Text style={styles.planSub}>{t('paywall.cancelAnytime')}</Text>
             </View>
-          ))}
-        </View>
+            <View style={styles.priceRight}>
+              <Text style={styles.priceNum}>{price ?? '–'}</Text>
+              <Text style={styles.perMonth}>{t('paywall.perMonth')}</Text>
+            </View>
+          </View>
 
-        {/* Pricing */}
-        <View style={styles.pricingCard}>
-          <Text style={styles.pricingTag}>MOST POPULAR</Text>
-          <Text style={styles.priceNum}>{t('paywall.price')}</Text>
-          <Text style={styles.priceSub}>per month, billed monthly</Text>
-        </View>
-
-        {/* CTA */}
-        <View style={styles.cta}>
           <Button
-            label={t('paywall.trialButton')}
+            label={hasFreeTrial ? t('paywall.trialButton') : t('paywall.unlockButton')}
             onPress={handleSubscribe}
             loading={loading}
             fullWidth
-            size="lg"
-            style={{ marginBottom: S.s4 }}
+            prominent
+            style={{ marginTop: 6 }}
           />
-          <Text style={styles.disclaimer}>{t('paywall.disclaimer')}</Text>
-          <TouchableOpacity style={styles.restoreBtn} onPress={handleRestore} disabled={restoring}>
-            <Text style={styles.restoreText}>
-              {restoring ? t('common.loading') : t('paywall.restore')}
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.terms}>{t('paywall.termsNotice')}</Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+
+          {/* Automatische Verlängerung (Apple 3.1.2) */}
+          <Text style={styles.renew}>{renewText}</Text>
+
+          {/* Links — eine Zeile, nicht umbrechen */}
+          <View style={styles.links}>
+            <Pressable onPress={handleRestore} disabled={restoring} style={styles.link} accessibilityRole="button">
+              <Text style={[styles.linkText, styles.linkRestore]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                {restoring ? t('common.loading') : t('paywall.restore')}
+              </Text>
+            </Pressable>
+            <Pressable onPress={() => openUrl(TERMS_URL)} style={styles.link} accessibilityRole="link">
+              <Text style={styles.linkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('paywall.terms')}</Text>
+            </Pressable>
+            <Pressable onPress={() => openUrl(PRIVACY_URL)} style={styles.link} accessibilityRole="link">
+              <Text style={styles.linkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('paywall.privacy')}</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 export default PaywallScreen;
+
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  root:   { flex: 1, backgroundColor: T.bg },
+  scroll: { paddingHorizontal: SP.screen, paddingTop: SP.top, paddingBottom: 24, alignItems: 'center', gap: 6 },
+  closeRow: { alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'flex-end', height: 44 },
+
+  title: {
+    marginTop: 8, fontFamily: F.medium, fontSize: 36, lineHeight: 42, letterSpacing: -0.9,
+    color: T.text, textAlign: 'center',
+  },
+  subtitle: {
+    maxWidth: 300, fontFamily: F.regular, fontSize: 15, lineHeight: 22,
+    color: T.textSecondary, textAlign: 'center',
+  },
+
+  features:    { alignSelf: 'stretch', marginTop: 14, paddingVertical: 4, paddingHorizontal: 20 },
+  featureRow:  { flexDirection: 'row', alignItems: 'center', gap: 14, height: 42 },
+  featureText: { flex: 1, fontFamily: F.medium, fontSize: 15, color: T.text },
+  divider:     { height: 1, backgroundColor: T.hairline },
+
+  priceCard: {
+    alignSelf: 'stretch', marginTop: 2,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 14, paddingHorizontal: 20, borderRadius: R.card,
+    backgroundColor: T.card, borderWidth: 1.5, borderColor: T.accent, boxShadow: T.shadowPrice,
+  },
+  planName:   { fontFamily: F.semiBold, fontSize: 15, color: T.text },
+  planSub:    { fontFamily: F.regular, fontSize: 12.5, color: T.textSecondary },
+  priceRight: { flexDirection: 'row', alignItems: 'baseline', gap: 4, flexShrink: 1 },
+  priceNum:   {
+    fontFamily: F.regular, fontSize: 30, lineHeight: 32, letterSpacing: -0.9,
+    color: T.text, fontVariant: ['tabular-nums'],
+  },
+  perMonth: { fontFamily: F.medium, fontSize: 13, color: T.textSecondary },
+
+  renew: {
+    marginTop: 4, maxWidth: 330, fontFamily: F.regular, fontSize: 11.5, lineHeight: 16,
+    color: T.textSecondary, textAlign: 'center',
+  },
+
+  // Etwas breiter als der Seitenrand, damit alle drei Links in eine Zeile passen
+  links:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: -14, alignSelf: 'stretch' },
+  link:       { height: 44, justifyContent: 'center', paddingHorizontal: 5, flexShrink: 1 },
+  linkText:   { fontFamily: F.medium, fontSize: 12, color: T.textSecondary },
+  linkRestore:{ fontFamily: F.semiBold, color: T.accentText },
+});

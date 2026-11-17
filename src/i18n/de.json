@@ -377,16 +377,16 @@
     "photoError": "Profilbild konnte nicht gespeichert werden."
   },
   "paywall": {
-    "title": "Premium werden",
-    "subtitle": "Entfalte dein volles Potenzial als Kommunikator",
+    "title": "Prezence Pro",
+    "subtitle": "KI-Analysen und ehrliches Feedback zu jedem Auftritt.",
     "expiredTitle": "Willkommen zurück",
     "expiredSubtitle": "Dein Premium-Zugang ist ausgelaufen. Abonniere erneut, um wieder unbegrenzte Analysen und vollständiges Coaching-Feedback freizuschalten.",
     "features": {
-      "unlimited": "Unbegrenzte Video-Analysen",
-      "detailed": "Detaillierte KI-Coaching-Berichte",
-      "progress": "Fortschrittsverfolgung & Verlauf",
-      "exercises": "Wöchentliche Übungen & Drills",
-      "compare": "Frühere Auftritte vergleichen"
+      "monthly": "{{limit}} Videoanalysen pro Monat",
+      "detailed": "Detaillierte KI-Coaching-Reports",
+      "progress": "Fortschritt und Verlauf",
+      "compare": "Vergleich mit früheren Auftritten",
+      "exercises": "Wochenübungen zu jeder Analyse"
     },
     "price": "9,99 € / Monat",
     "trialButton": "Gratis testen",
@@ -400,7 +400,17 @@
       "restoreFailed": "Keine Käufe zum Wiederherstellen gefunden.",
       "notAvailable": "Abonnements sind derzeit nicht verfügbar. Bitte stelle sicher, dass du einen Produktions-Build verwendest, und versuche es später erneut.",
       "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
-    }
+    },
+    "monthly": "Monatlich",
+    "cancelAnytime": "Jederzeit kündbar",
+    "perMonth": "/ Monat",
+    "unlockButton": "Pro freischalten",
+    "renewNotice": "Das Abo verlängert sich automatisch jeden Monat für {{price}}, bis du es in den Einstellungen deiner Apple-ID kündigst.",
+    "renewNoticeAndroid": "Das Abo verlängert sich automatisch jeden Monat für {{price}}, bis du es in deinem Google-Play-Konto kündigst.",
+    "renewNoticeNoPrice": "Das Abo verlängert sich automatisch jeden Monat, bis du es in den Einstellungen deiner Apple-ID kündigst.",
+    "renewNoticeNoPriceAndroid": "Das Abo verlängert sich automatisch jeden Monat, bis du es in deinem Google-Play-Konto kündigst.",
+    "terms": "Nutzungsbedingungen",
+    "privacy": "Datenschutz"
   },
   "compare": {
     "title": "Vergleich",

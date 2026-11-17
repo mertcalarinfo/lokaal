@@ -48,8 +48,8 @@ function getGreeting(t: TFn, firstName: string): string {
 function formatRelative(t: TFn, d: Date | string): string {
   const date = d instanceof Date ? d : new Date(d);
   const days = Math.floor((Date.now() - date.getTime()) / 86400000);
-  const txt = days <= 0 ? t('common.today') : days === 1 ? t('common.yesterday') : t('common.daysAgo', { count: days });
-  return txt.charAt(0).toUpperCase() + txt.slice(1);
+  // Kleinschreibung wie in der Vorlage ("vor 3 Tagen")
+  return days <= 0 ? t('common.today') : days === 1 ? t('common.yesterday') : t('common.daysAgo', { count: days });
 }
 
 const formatDuration = (s: number) =>

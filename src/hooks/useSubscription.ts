@@ -5,8 +5,8 @@ import { getMonthlyUsage } from '../services/storage';
 import { useAuth } from './useAuth';
 
 // Freemium-Limits (Analysen pro Kalendermonat)
-const FREE_MONTHLY_LIMIT = 2;
-const PRO_MONTHLY_LIMIT  = 15;
+export const FREE_MONTHLY_LIMIT = 2;
+export const PRO_MONTHLY_LIMIT  = 15;
 
 interface SubscriptionHookState {
   subscription: Subscription;

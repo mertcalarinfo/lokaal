@@ -377,16 +377,16 @@
     "photoError": "Couldn't save profile picture."
   },
   "paywall": {
-    "title": "Go Premium",
-    "subtitle": "Unlock your full potential as a communicator",
+    "title": "Prezence Pro",
+    "subtitle": "AI analyses and honest feedback on every performance.",
     "expiredTitle": "Welcome Back",
     "expiredSubtitle": "Your Premium access has ended. Resubscribe to keep unlocking unlimited analyses and full coaching feedback.",
     "features": {
-      "unlimited": "Unlimited video analyses",
+      "monthly": "{{limit}} video analyses per month",
       "detailed": "Detailed AI coaching reports",
-      "progress": "Progress tracking & history",
-      "exercises": "Weekly exercises & drills",
-      "compare": "Compare past performances"
+      "progress": "Progress and history",
+      "compare": "Compare with past performances",
+      "exercises": "Weekly exercises for every analysis"
     },
     "price": "$9.99 / month",
     "trialButton": "Start Free Trial",
@@ -400,7 +400,17 @@
       "restoreFailed": "No purchases found to restore.",
       "notAvailable": "Subscriptions aren't available right now. Please make sure you're on a production build and try again later.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "monthly": "Monthly",
+    "cancelAnytime": "Cancel anytime",
+    "perMonth": "/ month",
+    "unlockButton": "Unlock Pro",
+    "renewNotice": "The subscription renews automatically every month for {{price}} until you cancel it in your Apple ID settings.",
+    "renewNoticeAndroid": "The subscription renews automatically every month for {{price}} until you cancel it in your Google Play account.",
+    "renewNoticeNoPrice": "The subscription renews automatically every month until you cancel it in your Apple ID settings.",
+    "renewNoticeNoPriceAndroid": "The subscription renews automatically every month until you cancel it in your Google Play account.",
+    "terms": "Terms of Use",
+    "privacy": "Privacy"
   },
   "compare": {
     "title": "Compare",
