@@ -54,8 +54,9 @@ const PaywallScreen: React.FC = () => {
   // "Gratis testen" nur, wenn das Produkt wirklich eine kostenlose Testphase hat
   const hasFreeTrial = pkg?.product?.introPrice != null && Number(pkg.product.introPrice.price) === 0;
   const android = Platform.OS === 'android';
+  // Geschütztes Leerzeichen, damit "9,99 €" nicht umbricht
   const renewText = price
-    ? t(android ? 'paywall.renewNoticeAndroid' : 'paywall.renewNotice', { price })
+    ? t(android ? 'paywall.renewNoticeAndroid' : 'paywall.renewNotice', { price: price.replace(/ /g, '\u00A0') })
     : t(android ? 'paywall.renewNoticeNoPriceAndroid' : 'paywall.renewNoticeNoPrice');
 
   const openUrl = (url: string) => { Linking.openURL(url).catch(() => {}); };

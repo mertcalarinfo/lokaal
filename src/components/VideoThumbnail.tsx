@@ -70,9 +70,11 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, size = 56, style }
             style={S.closeHit}
           >
             <Glass radius={R.buttonSm} shadow="sm" style={S.close}>
-              <Svg width={18} height={18} viewBox="0 0 24 24">
-                <Path d="M6 6l12 12M18 6L6 18" fill="none" stroke={T.text} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
+              <View pointerEvents="none">
+                <Svg width={18} height={18} viewBox="0 0 24 24">
+                  <Path d="M6 6l12 12M18 6L6 18" fill="none" stroke={T.text} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </View>
             </Glass>
           </Pressable>
         </View>

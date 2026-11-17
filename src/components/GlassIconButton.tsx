@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleProp, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, View, ViewStyle } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import Glass from './Glass';
 import { ChevronLeft, CloseIcon } from './Icons';
@@ -24,7 +24,10 @@ const GlassIconButton: React.FC<{
       style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }, style]}
     >
       <Glass radius={R.buttonSm} shadow="sm" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-        {icon === 'close' ? <CloseIcon color={T.text} /> : <ChevronLeft color={T.text} />}
+        {/* In einer View, damit das Icon sicher über der Glasschicht liegt */}
+        <View pointerEvents="none">
+          {icon === 'close' ? <CloseIcon color={T.text} /> : <ChevronLeft color={T.text} />}
+        </View>
       </Glass>
     </Pressable>
   );
