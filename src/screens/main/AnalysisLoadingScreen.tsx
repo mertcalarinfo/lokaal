@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -13,8 +13,11 @@ import { HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { incrementMonthlyUsage } from '../../services/storage';
-import PressableScale from '../../components/PressableScale';
-import { RC, MONO, MONO_MED, RS } from '../../theme/register';
+import AmbientBackground from '../../components/AmbientBackground';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import { useTheme } from '../../contexts/ThemeContext';
+import { ThemeColors, F, R, S as SP, TY } from '../../theme';
 
 import { useTabBarSpace } from '../../navigation/tabBarSpace';
 type LoadingRoute = RouteProp<HomeStackParamList, 'AnalysisLoading'>;
@@ -23,6 +26,8 @@ type LoadingNav   = NativeStackNavigationProp<HomeStackParamList, 'AnalysisLoadi
 const TIP_INTERVAL_MS = 4000;
 
 const AnalysisLoadingScreen: React.FC = () => {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   const { t }      = useTranslation();
   const tabSpace   = useTabBarSpace(0);
   const navigation = useNavigation<LoadingNav>();
@@ -108,42 +113,37 @@ const AnalysisLoadingScreen: React.FC = () => {
   }, [cancel, navigation, t]);
 
   return (
-    <SafeAreaView style={[S.safe, { paddingBottom: tabSpace }]} edges={['top', 'left', 'right']}>
-
-      {/* ── AKTENKOPF ── */}
-      <View style={S.head}>
-        <Text style={S.headTitle}>{t('analysis.headerTitle').toUpperCase()}</Text>
-      </View>
-
-      {/* ── LOADING (identische Struktur wie CompareScreen) ── */}
-      <View style={S.loadingBox}>
-        <Animated.View style={[S.loadingIconCircle, pulseStyle]}>
-          <Sparkles size={30} color={RC.accent} strokeWidth={1.6} />
-        </Animated.View>
-
-        <View style={{ height: 22 }} />
-        <Text style={S.loadingTitle}>{t('analysis.loading.title')}</Text>
-        <View style={{ height: 8 }} />
-        <Text style={S.loadingSubtitle}>{t('analysis.loading.subtitle')}</Text>
-
-        <View style={{ height: 30 }} />
-        <View style={S.barTrack}>
-          <View style={[S.barFill, { width: `${displayPct}%` }]} />
-        </View>
-        <View style={S.barRow}>
-          <Text style={S.barPct}>{displayPct}%</Text>
-          <Text style={S.barStatus} numberOfLines={1}>
-            {state === 'uploading' ? `${t('analysis.loading.uploadStatus')} ${uploadProgress}%` : tips[tipIndex]}
-          </Text>
+    <View style={S.safe}>
+      <AmbientBackground animated={false} />
+      <SafeAreaView style={{ flex: 1, paddingBottom: tabSpace }} edges={['top', 'left', 'right']}>
+        <View style={S.head}>
+          <Text style={S.label}>{t('analysis.headerTitle')}</Text>
         </View>
 
-        <View style={{ height: 30 }} />
-        <PressableScale onPress={handleCancel}>
-          <Text style={S.cancelTxt}>{t('analysis.loading.cancelButton')}</Text>
-        </PressableScale>
-      </View>
+        <View style={S.loadingBox}>
+          <Card style={S.card}>
+            <Animated.View style={[S.loadingIconCircle, pulseStyle]}>
+              <Sparkles size={26} color={T.accentText} strokeWidth={1.6} />
+            </Animated.View>
 
-    </SafeAreaView>
+            <Text style={S.loadingTitle}>{t('analysis.loading.title')}</Text>
+            <Text style={S.loadingSubtitle}>{t('analysis.loading.subtitle')}</Text>
+
+            <View style={S.barTrack}>
+              <View style={[S.barFill, { width: `${displayPct}%` }]} />
+            </View>
+            <View style={S.barRow}>
+              <Text style={S.barPct}>{displayPct}%</Text>
+              <Text style={S.barStatus} numberOfLines={1}>
+                {state === 'uploading' ? `${t('analysis.loading.uploadStatus')} ${uploadProgress}%` : tips[tipIndex]}
+              </Text>
+            </View>
+          </Card>
+
+          <Button label={t('analysis.loading.cancelButton')} variant="ghost" onPress={handleCancel} />
+        </View>
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -151,93 +151,25 @@ export default AnalysisLoadingScreen;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const S = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: RC.bg },
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe:  { flex: 1, backgroundColor: T.bg },
+  head:  { paddingHorizontal: SP.screen, paddingTop: SP.top, minHeight: 44, justifyContent: 'center' },
+  label: { ...TY.label, color: T.textSecondary },
 
-  // Aktenkopf — im Lade-Screen ohne Trennlinie (zu dominant bei transientem Vollbild)
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: RS.headTop,
-    paddingHorizontal: RS.screenH,
-    paddingBottom: RS.headPadB,
-  },
-  headTitle: {
-    fontFamily: MONO_MED,
-    fontSize: 12,
-    letterSpacing: 2,
-    color: RC.text,
-  },
-
-  // Loading (identisch mit CompareScreen)
-  loadingBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: RS.screenH,
-    paddingBottom: 40,
-  },
+  loadingBox: { flex: 1, justifyContent: 'center', paddingHorizontal: SP.screen, paddingBottom: 40, gap: 12 },
+  card:       { padding: 22, alignItems: 'center' },
   loadingIconCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: RC.accentWash,
-    borderWidth: 1.5,
-    borderColor: RC.accentLine,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 56, height: 56, borderRadius: R.tile, backgroundColor: T.accentTint,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 18,
   },
-  loadingTitle: {
-    fontSize: 19,
-    fontWeight: '600',
-    color: RC.text,
-    textAlign: 'center',
-    letterSpacing: -0.3,
-  },
-  loadingSubtitle: {
-    fontSize: 14,
-    color: RC.muted,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+  loadingTitle:    { ...TY.rowTitle, fontSize: 19, lineHeight: 24, color: T.text, textAlign: 'center' },
+  loadingSubtitle: { ...TY.bodySm, color: T.textSecondary, textAlign: 'center', marginTop: 6 },
   barTrack: {
-    width: '100%',
-    height: 2,
-    backgroundColor: RC.line,
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 8,
+    alignSelf: 'stretch', height: 4, backgroundColor: T.track, borderRadius: 2,
+    overflow: 'hidden', marginTop: 24, marginBottom: 8,
   },
-  barFill: {
-    height: 4,
-    marginTop: -1,
-    backgroundColor: RC.accent,
-    borderRadius: 2,
-  },
-  barRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    gap: 12,
-  },
-  barPct: {
-    fontFamily: MONO_MED,
-    fontSize: 13,
-    color: RC.accent,
-  },
-  barStatus: {
-    flex: 1,
-    fontFamily: MONO,
-    fontSize: 12,
-    color: RC.faint,
-    textAlign: 'right',
-  },
-  cancelTxt: {
-    fontFamily: MONO,
-    fontSize: 13,
-    color: RC.faint,
-    textDecorationLine: 'underline',
-  },
+  barFill:   { height: 4, backgroundColor: T.accentData, borderRadius: 2 },
+  barRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', alignSelf: 'stretch', gap: 12 },
+  barPct:    { fontFamily: F.semiBold, fontSize: 13, color: T.accentText, fontVariant: ['tabular-nums'] },
+  barStatus: { flex: 1, ...TY.captionSm, color: T.textSecondary, textAlign: 'right' },
 });

@@ -115,7 +115,7 @@ export class StartupErrorBoundary extends React.Component<
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: '#F3F5F9' },
   content: { padding: 20, paddingTop: 64 },
-  title: { fontSize: 20, fontWeight: '700', color: '#B00020', marginBottom: 8 },
+  title: { fontSize: 20, fontWeight: '700', color: '#0B1220', marginBottom: 8 },
   hint: { fontSize: 13, color: '#555555', marginBottom: 20, lineHeight: 18 },
   label: {
     fontSize: 11,

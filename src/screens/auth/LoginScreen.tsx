@@ -15,6 +15,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import PrezenceLogo from '../../components/PrezenceLogo';
+import AmbientBackground from '../../components/AmbientBackground';
 import { ThemeColors, F, R, S } from '../../theme';
 
 type LoginNav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -25,31 +26,31 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   logoWrap: { alignItems: 'center', marginBottom: S.s8 },
   card: {
     backgroundColor: T.card, borderRadius: R.card,
-    padding: S.s6, borderWidth: 1, borderColor: T.hairline,
+    padding: S.s5, borderWidth: 1, borderColor: T.cardBorder, boxShadow: T.shadowCard,
   },
-  cardTitle: { fontFamily: F.semiBold, fontSize: 24, color: T.text, letterSpacing: -0.48, marginBottom: 4 },
+  cardTitle: { fontFamily: F.medium, fontSize: 26, lineHeight: 32, color: T.text, letterSpacing: -0.6, marginBottom: 4 },
   cardSub:   { fontFamily: F.regular, fontSize: 14.5, color: T.textSecondary, marginBottom: S.s6 },
   divider:      { flexDirection: 'row', alignItems: 'center', marginVertical: S.s5 },
   dividerLine:  { flex: 1, height: 1, backgroundColor: T.hairline },
   dividerText:  { fontFamily: F.regular, fontSize: 13, color: T.textSecondary, marginHorizontal: S.s3 },
   googleBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: T.disabledBg, borderWidth: 1, borderColor: T.hairline,
-    borderRadius: R.button, paddingVertical: S.s4,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 52,
+    backgroundColor: T.card, borderWidth: 1, borderColor: T.cardBorder,
+    borderRadius: R.button,
   },
-  googleG:    { fontSize: 15, color: '#4285F4', marginRight: S.s2 },
+  googleG:    { fontFamily: F.semiBold, fontSize: 16, color: T.text, marginRight: S.s2 },
   googleText: { fontFamily: F.semiBold, fontSize: 14.5, color: T.text },
-  appleBtnWrap: { height: 44, marginTop: S.s3 },
-  footerRow:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: S.s6 },
+  appleBtnWrap: { height: 52, marginTop: S.s3 },
+  footerRow:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: S.s5, minHeight: 44 },
   footerText: { fontFamily: F.regular, fontSize: 14, color: T.textSecondary },
-  footerLink: { fontFamily: F.semiBold, fontSize: 14, color: T.accent },
+  footerLink: { fontFamily: F.semiBold, fontSize: 14, color: T.accentText },
 });
 
 const LoginScreen: React.FC = () => {
   const { t }        = useTranslation();
   const navigation   = useNavigation<LoginNav>();
   const { signIn, signInWithGoogle, signInWithApple } = useAuth();
-  const { T } = useTheme();
+  const { T, isDark } = useTheme();
   const styles = useMemo(() => createStyles(T), [T]);
 
   const [email,         setEmail]         = useState('');
@@ -108,7 +109,9 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
+      <AmbientBackground animated={false} />
+      <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           contentContainerStyle={styles.scroll}
@@ -185,7 +188,7 @@ const LoginScreen: React.FC = () => {
             {Platform.OS === 'ios' && (
               <AppleAuthentication.AppleAuthenticationButton
                 buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                buttonStyle={(isDark ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK)}
                 cornerRadius={R.button}
                 style={styles.appleBtnWrap}
                 accessibilityLabel={t('auth.login.appleButton')}
@@ -215,7 +218,8 @@ const LoginScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 };
 

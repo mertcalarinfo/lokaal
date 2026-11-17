@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal, View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Check } from 'lucide-react-native';
-import { RC, MONO, MONO_MED, RR, BTN_SHADOW, RS } from '../theme/register';
-import PressableScale from './PressableScale';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors, F, R, S as SP, TY } from '../theme';
+import Button from './Button';
+import { CheckIcon } from './Icons';
 
 interface ProPreviewModalProps {
   visible: boolean;
@@ -12,6 +13,8 @@ interface ProPreviewModalProps {
 }
 
 const ProPreviewModal: React.FC<ProPreviewModalProps> = ({ visible, onClose, onUnlock }) => {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   const { t } = useTranslation();
 
   const features = t('pro.previewFeatures', { returnObjects: true }) as string[];
@@ -40,9 +43,7 @@ const ProPreviewModal: React.FC<ProPreviewModalProps> = ({ visible, onClose, onU
             <View style={S.featureList}>
               {(Array.isArray(features) ? features : []).map((f, i) => (
                 <View key={i} style={S.featureRow}>
-                  <View style={S.checkCircle}>
-                    <Check size={13} color={RC.accent} strokeWidth={2.4} />
-                  </View>
+                  <CheckIcon size={18} color={T.accent} />
                   <Text style={S.featureText}>{f}</Text>
                 </View>
               ))}
@@ -50,15 +51,8 @@ const ProPreviewModal: React.FC<ProPreviewModalProps> = ({ visible, onClose, onU
           </ScrollView>
 
           <View style={S.footer}>
-            <PressableScale onPress={onUnlock} style={{ alignSelf: 'stretch' }}>
-              <View style={[S.btn, BTN_SHADOW]}>
-                <Text style={S.btnLabel}>{t('pro.unlockButton')}</Text>
-              </View>
-            </PressableScale>
-
-            <Pressable onPress={onClose} style={S.laterBtn} hitSlop={8}>
-              <Text style={S.laterLabel}>{t('pro.previewLater')}</Text>
-            </Pressable>
+            <Button label={t('pro.unlockButton')} onPress={onUnlock} fullWidth />
+            <Button label={t('pro.previewLater')} variant="ghost" onPress={onClose} fullWidth />
           </View>
         </Pressable>
       </Pressable>
@@ -68,101 +62,30 @@ const ProPreviewModal: React.FC<ProPreviewModalProps> = ({ visible, onClose, onU
 
 export default ProPreviewModal;
 
-const S = StyleSheet.create({
+const createStyles = (T: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: T.scrim,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: RS.screenH,
+    paddingHorizontal: SP.screen,
   },
   card: {
     width: '100%',
     maxHeight: '86%',
-    backgroundColor: RC.bgElevated,
-    borderRadius: 18,
-    borderTopWidth: 2.5,
-    borderTopColor: RC.accent,
+    backgroundColor: T.card,
+    borderRadius: R.card,
+    borderWidth: 1,
+    borderColor: T.cardBorder,
+    boxShadow: T.shadowCard,
     overflow: 'hidden',
   },
-  scrollBody: {
-    paddingHorizontal: 28,
-    paddingTop: 30,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-    color: RC.accent,
-  },
-  intro: {
-    fontFamily: MONO,
-    fontSize: 15,
-    lineHeight: 22,
-    color: RC.muted,
-    marginTop: 10,
-  },
-  divider: {
-    height: 1.5,
-    backgroundColor: RC.lineStrong,
-    marginTop: 22,
-    marginBottom: 6,
-  },
-  featureList: {
-    paddingBottom: 8,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: RC.lineFaint,
-  },
-  checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: RC.accentWash,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-  featureText: {
-    flex: 1,
-    fontFamily: MONO,
-    fontSize: 14.5,
-    lineHeight: 21,
-    color: RC.text,
-  },
-  footer: {
-    paddingHorizontal: 28,
-    paddingTop: 18,
-    paddingBottom: 22,
-  },
-  btn: {
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: RC.accent,
-    borderRadius: RR.button,
-    paddingVertical: 17,
-  },
-  btnLabel: {
-    fontFamily: MONO_MED,
-    fontSize: 14,
-    letterSpacing: 1.5,
-    color: RC.onAccent,
-  },
-  laterBtn: {
-    alignSelf: 'center',
-    paddingVertical: 14,
-    marginTop: 4,
-  },
-  laterLabel: {
-    fontFamily: MONO_MED,
-    fontSize: 13,
-    letterSpacing: 0.5,
-    color: RC.muted,
-  },
+  scrollBody:  { paddingHorizontal: 22, paddingTop: 24 },
+  title:       { fontFamily: F.medium, fontSize: 28, lineHeight: 34, letterSpacing: -0.7, color: T.text },
+  intro:       { ...TY.body, color: T.textSecondary, marginTop: 6 },
+  divider:     { height: 1, backgroundColor: T.hairline, marginVertical: 16 },
+  featureList: { gap: 12, paddingBottom: 8 },
+  featureRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  featureText: { flex: 1, ...TY.bodySm, fontFamily: F.medium, color: T.text },
+  footer:      { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 12, gap: 2 },
 });

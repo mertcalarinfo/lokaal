@@ -1,4 +1,4 @@
-import React, { useState, ReactNode } from 'react';
+import React, { useMemo, useState, ReactNode } from 'react';
 import {
   View, Text, StyleSheet, Image, Modal,
   ScrollView, Alert, Platform, Linking,
@@ -17,7 +17,12 @@ import { useSubscription } from '../../hooks/useSubscription';
 import { changeLanguage } from '../../i18n';
 import { uploadProfilePicture } from '../../services/storage';
 import PressableScale from '../../components/PressableScale';
-import { RC, MONO, MONO_MED, RS, HL, RR } from '../../theme/register';
+import AmbientBackground from '../../components/AmbientBackground';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import GlassIconButton from '../../components/GlassIconButton';
+import { useTheme } from '../../contexts/ThemeContext';
+import { ThemeColors, F, R, S as SP, TY } from '../../theme';
 
 import { useTabBarSpace } from '../../navigation/tabBarSpace';
 const APP_VERSION = '1.0.0';
@@ -25,19 +30,23 @@ const APP_VERSION = '1.0.0';
 // ─── Sub-Komponenten ──────────────────────────────────────────────────────────
 
 function SectionHead({ title }: { title: string }) {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   return <Text style={S.sectionHead}>{title}</Text>;
 }
 
 function Row({
   icon, label, right, onPress, isFirst,
 }: { icon: ReactNode; label: string; right?: ReactNode; onPress?: () => void; isFirst?: boolean }) {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   return (
     <PressableScale style={[S.row, isFirst && S.rowFirst]} onPress={onPress} disabled={!onPress}>
       <View style={S.rowIcon}>{icon}</View>
       <Text style={S.rowLabel}>{label}</Text>
       <View style={S.rowRight}>
         {right}
-        {onPress && !right && <ChevronRight size={16} color={RC.ghost} strokeWidth={1.7} />}
+        {onPress && !right && <ChevronRight size={18} color={T.textSecondary} strokeWidth={1.8} />}
       </View>
     </PressableScale>
   );
@@ -46,12 +55,14 @@ function Row({
 function RadioRow({
   active, label, icon, onPress, isFirst,
 }: { active: boolean; label: string; icon: ReactNode; onPress: () => void; isFirst?: boolean }) {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   return (
     <PressableScale style={[S.row, isFirst && S.rowFirst]} onPress={onPress}>
       <View style={S.rowIcon}>{icon}</View>
-      <Text style={[S.rowLabel, active && { color: RC.accent }]}>{label}</Text>
+      <Text style={[S.rowLabel, active && { color: T.accentText }]}>{label}</Text>
       {active ? (
-        <CheckCircle2 size={20} color={RC.accent} strokeWidth={1.8} />
+        <CheckCircle2 size={20} color={T.accentText} strokeWidth={1.8} />
       ) : (
         <View style={S.radioEmpty} />
       )}
@@ -62,6 +73,8 @@ function RadioRow({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 const SettingsScreen: React.FC = () => {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   const { t }      = useTranslation();
   const tabSpace   = useTabBarSpace();
   const navigation = useNavigation<any>();
@@ -156,21 +169,20 @@ const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: tabSpace }]} showsVerticalScrollIndicator={false}>
+    <View style={S.safe}>
+      <AmbientBackground animated={false} />
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+        <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: tabSpace }]} showsVerticalScrollIndicator={false}>
 
-        {/* ── AKTENKOPF ── */}
-        <View style={S.head}>
-          <Text style={S.headTitle}>{t('settings.title').toUpperCase()}</Text>
-          <Text style={S.headMeta}>v{APP_VERSION}</Text>
-        </View>
+          {/* Kopf */}
+          <View style={S.head}>
+            <Text style={S.headLabel}>{t('tabs.profile')}</Text>
+            <Text style={S.headTitle} accessibilityRole="header">{t('settings.title')}</Text>
+          </View>
 
-        <View style={{ height: 26 }} />
-
-        {/* Profil */}
-        <View style={S.subSection}>
-          <View style={S.profileRow}>
-            <PressableScale onPress={handleAvatarPress}>
+          {/* Profil */}
+          <Card style={S.profileRow}>
+            <PressableScale onPress={handleAvatarPress} accessibilityLabel={t('settings.photoChange')}>
               <View style={S.avatar}>
                 {photoURL ? (
                   <Image source={{ uri: photoURL }} style={S.avatarImg} />
@@ -180,104 +192,97 @@ const SettingsScreen: React.FC = () => {
                   </Text>
                 )}
                 <View style={S.avatarBadge}>
-                  <Camera size={11} color={RC.onAccent} strokeWidth={2} />
+                  <Camera size={11} color={T.onAccent} strokeWidth={2} />
                 </View>
               </View>
             </PressableScale>
-            <View style={{ flex: 1 }}>
-              <Text style={S.profileName}>{user?.displayName || '—'}</Text>
-              <Text style={S.profileEmail}>{user?.email || '—'}</Text>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={S.profileName} numberOfLines={1}>{user?.displayName || '—'}</Text>
+              <Text style={S.profileEmail} numberOfLines={1}>{user?.email || '—'}</Text>
             </View>
-            <Text style={[S.tierTxt, { color: isSubscribed ? RC.accent : RC.muted }]}>
+            <Text style={[S.tierTxt, { color: isSubscribed ? T.accentText : T.textSecondary }]}>
               {isSubscribed ? t('settings.tierPremium') : t('settings.tierFree')}
             </Text>
+          </Card>
+
+          {/* Sprache */}
+          <View style={S.subSection}>
+            <SectionHead title={t('settings.language')} />
+            <Card style={S.listCard}>
+              <RadioRow
+                isFirst
+                active={currentLang === 'en'}
+                label={t('settings.languageEn')}
+                icon={<Globe size={18} color={T.accentText} strokeWidth={1.7} />}
+                onPress={() => handleSelectLanguage('en')}
+              />
+              <RadioRow
+                active={currentLang === 'de'}
+                label={t('settings.languageDe')}
+                icon={<Globe size={18} color={T.accentText} strokeWidth={1.7} />}
+                onPress={() => handleSelectLanguage('de')}
+              />
+            </Card>
           </View>
-        </View>
 
-        <View style={{ height: 30 }} />
+          {/* Coaching-Ziele */}
+          <View style={S.subSection}>
+            <SectionHead title={t('settings.coachingGoals')} />
+            <Card style={S.listCard}>
+              <Row
+                isFirst
+                icon={<Pencil size={18} color={T.accentText} strokeWidth={1.7} />}
+                label={t('settings.editGoals')}
+                onPress={handleEditGoals}
+              />
+            </Card>
+          </View>
 
-        {/* Sprache */}
-        <View style={S.subSection}>
-          <SectionHead title={t('settings.language')} />
-          <RadioRow
-            isFirst
-            active={currentLang === 'en'}
-            label={t('settings.languageEn')}
-            icon={<Globe size={18} color={RC.muted} strokeWidth={1.7} />}
-            onPress={() => handleSelectLanguage('en')}
+          {/* Abo */}
+          <View style={S.subSection}>
+            <SectionHead title={t('settings.subscription')} />
+            <Card style={S.listCard}>
+              <Row
+                isFirst
+                icon={<Star size={18} color={isSubscribed ? T.accentText : T.textSecondary} strokeWidth={1.7} />}
+                label={isSubscribed ? t('settings.subscriptionPremium') : t('settings.subscriptionFree')}
+                right={
+                  <Text style={[S.rowValue, { color: isSubscribed ? T.accentText : T.textSecondary }]}>
+                    {isSubscribed ? t('settings.statusActive') : t('settings.statusFree')}
+                  </Text>
+                }
+              />
+              <Row
+                icon={<CreditCard size={18} color={T.accentText} strokeWidth={1.7} />}
+                label={t('settings.manageSubscription')}
+                onPress={handleManageSubscription}
+              />
+            </Card>
+          </View>
+
+          {/* Info */}
+          <View style={S.subSection}>
+            <SectionHead title={t('settings.appVersion')} />
+            <Card style={S.listCard}>
+              <Row
+                isFirst
+                icon={<Info size={18} color={T.textSecondary} strokeWidth={1.7} />}
+                label={t('settings.version', { version: APP_VERSION })}
+              />
+            </Card>
+          </View>
+
+          {/* Abmelden */}
+          <Button
+            label={signingOut ? t('common.loading') : t('settings.signOut')}
+            variant="secondary"
+            onPress={handleSignOut}
+            disabled={signingOut}
+            fullWidth
+            style={{ marginTop: 8 }}
           />
-          <RadioRow
-            active={currentLang === 'de'}
-            label={t('settings.languageDe')}
-            icon={<Globe size={18} color={RC.muted} strokeWidth={1.7} />}
-            onPress={() => handleSelectLanguage('de')}
-          />
-        </View>
-
-        <View style={{ height: 30 }} />
-
-        {/* Coaching-Ziele */}
-        <View style={S.subSection}>
-          <SectionHead title={t('settings.coachingGoals')} />
-          <Row
-            isFirst
-            icon={<Pencil size={18} color={RC.muted} strokeWidth={1.7} />}
-            label={t('settings.editGoals')}
-            onPress={handleEditGoals}
-          />
-        </View>
-
-        <View style={{ height: 30 }} />
-
-        {/* Abo */}
-        <View style={S.subSection}>
-          <SectionHead title={t('settings.subscription')} />
-          <Row
-            isFirst
-            icon={<Star size={18} color={isSubscribed ? RC.accent : RC.faint} strokeWidth={1.7} />}
-            label={isSubscribed ? t('settings.subscriptionPremium') : t('settings.subscriptionFree')}
-            right={
-              <Text style={[S.rowValue, { color: isSubscribed ? RC.accent : RC.faint }]}>
-                {isSubscribed ? t('settings.statusActive') : t('settings.statusFree')}
-              </Text>
-            }
-          />
-          <Row
-            icon={<CreditCard size={18} color={RC.muted} strokeWidth={1.7} />}
-            label={t('settings.manageSubscription')}
-            onPress={handleManageSubscription}
-          />
-        </View>
-
-        <View style={{ height: 30 }} />
-
-        {/* Info */}
-        <View style={S.subSection}>
-          <SectionHead title={t('settings.appVersion')} />
-          <Row
-            isFirst
-            icon={<Info size={18} color={RC.faint} strokeWidth={1.7} />}
-            label={t('settings.version', { version: APP_VERSION })}
-          />
-        </View>
-
-        <View style={{ height: 36 }} />
-
-        {/* Abmelden */}
-        <View style={S.subSection}>
-          <PressableScale onPress={handleSignOut} disabled={signingOut}>
-            <View style={S.signOutBtn}>
-              <LogOut size={16} color={RC.text} strokeWidth={1.7} />
-              <Text style={S.signOutTxt}>
-                {signingOut ? t('common.loading') : t('settings.signOut').toUpperCase()}
-              </Text>
-            </View>
-          </PressableScale>
-        </View>
-
-        <View style={{ height: 30 }} />
-
-      </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
 
       {/* ── Avatar-ActionSheet (wenn Bild vorhanden) ── */}
       <Modal
@@ -290,13 +295,13 @@ const SettingsScreen: React.FC = () => {
           <View style={S.sheet}>
             <PressableScale onPress={() => { setAvatarMenu(false); setViewerVisible(true); }}>
               <View style={S.sheetRow}>
-                <ImageIcon size={18} color={RC.text} strokeWidth={1.7} />
+                <ImageIcon size={18} color={T.text} strokeWidth={1.7} />
                 <Text style={S.sheetLabel}>{t('settings.photoView')}</Text>
               </View>
             </PressableScale>
             <PressableScale onPress={pickAndUploadPhoto}>
               <View style={[S.sheetRow, S.sheetRowBorder]}>
-                <Camera size={18} color={RC.text} strokeWidth={1.7} />
+                <Camera size={18} color={T.text} strokeWidth={1.7} />
                 <Text style={S.sheetLabel}>{t('settings.photoChange')}</Text>
               </View>
             </PressableScale>
@@ -312,15 +317,13 @@ const SettingsScreen: React.FC = () => {
         onRequestClose={() => setViewerVisible(false)}
       >
         <View style={S.viewerOverlay}>
-          <PressableScale style={S.viewerClose} onPress={() => setViewerVisible(false)}>
-            <X size={22} color={RC.onAccent} strokeWidth={2} />
-          </PressableScale>
+          <GlassIconButton icon="close" onPress={() => setViewerVisible(false)} accessibilityLabel={t('common.close')} style={S.viewerClose} />
           {photoURL && (
             <Image source={{ uri: photoURL }} style={S.viewerImg} resizeMode="contain" />
           )}
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -328,210 +331,57 @@ export default SettingsScreen;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const S = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: RC.bg },
-  scroll: { flexGrow: 1, paddingBottom: 40 },
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe:   { flex: 1, backgroundColor: T.bg },
+  scroll: { flexGrow: 1, paddingHorizontal: SP.screen, paddingTop: SP.top, gap: 14 },
 
-  // Aktenkopf
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: RS.headTop,
-    paddingHorizontal: RS.screenH,
-    paddingBottom: RS.headPadB,
-    borderBottomWidth: HL.strong,
-    borderBottomColor: RC.lineStrong,
-  },
-  headTitle: {
-    fontFamily: MONO_MED,
-    fontSize: 12,
-    letterSpacing: 2,
-    color: RC.text,
-  },
-  headMeta: {
-    fontFamily: MONO,
-    fontSize: 11,
-    letterSpacing: 1,
-    color: RC.muted,
-  },
+  head:      { gap: 4 },
+  headLabel: { ...TY.label, color: T.textSecondary },
+  headTitle: { ...TY.pageTitle, color: T.text },
+  headMeta:  { ...TY.captionSm, color: T.textSecondary },
 
-  subSection: {
-    paddingHorizontal: RS.screenH,
-  },
+  subSection:  { gap: 8 },
+  sectionHead: { ...TY.label, color: T.textSecondary, paddingHorizontal: 4 },
+  listCard:    { paddingHorizontal: 16 },
 
   // Profil
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 16 },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1.5,
-    borderColor: RC.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'visible',
+    width: 52, height: 52, borderRadius: 26, backgroundColor: T.accentTint,
+    alignItems: 'center', justifyContent: 'center',
   },
-  avatarImg: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
-  avatarText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: RC.text,
-  },
+  avatarImg:  { width: 52, height: 52, borderRadius: 26 },
+  avatarText: { fontFamily: F.semiBold, fontSize: 18, color: T.accentText },
   avatarBadge: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: RC.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: RC.bg,
+    position: 'absolute', right: -2, bottom: -2, width: 20, height: 20, borderRadius: 10,
+    backgroundColor: T.accent, borderWidth: 2, borderColor: T.card,
+    alignItems: 'center', justifyContent: 'center',
   },
-  profileName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: RC.text,
-  },
-  profileEmail: {
-    fontFamily: MONO,
-    fontSize: 12,
-    color: RC.faint,
-    marginTop: 3,
-  },
-  tierTxt: {
-    fontFamily: MONO_MED,
-    fontSize: 11,
-    letterSpacing: 1,
-  },
+  profileName:  { ...TY.rowTitle, color: T.text },
+  profileEmail: { ...TY.caption, color: T.textSecondary },
+  tierTxt:      { fontFamily: F.semiBold, fontSize: 12.5 },
 
-  // Section
-  sectionHead: {
-    fontFamily: MONO,
-    fontSize: 11,
-    letterSpacing: 1.5,
-    color: RC.faint,
-    textTransform: 'uppercase',
-    paddingBottom: 9,
-    marginBottom: 4,
-    borderBottomWidth: HL.strong,
-    borderBottomColor: RC.lineStrong,
-  },
+  // Zeilen
+  row:       { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, borderTopWidth: 1, borderTopColor: T.hairline },
+  rowFirst:  { borderTopWidth: 0 },
+  rowIcon:   { width: 24, alignItems: 'center' },
+  rowLabel:  { flex: 1, fontFamily: F.medium, fontSize: 15, color: T.text },
+  rowRight:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  rowValue:  { fontFamily: F.semiBold, fontSize: 13 },
+  radioEmpty: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: T.textSecondary },
 
-  // Rows
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 16,
-    borderTopWidth: HL.std,
-    borderTopColor: RC.line,
-  },
-  rowFirst: {
-    borderTopWidth: 0,
-  },
-  rowIcon: {
-    width: 22,
-    alignItems: 'center',
-  },
-  rowLabel: {
-    flex: 1,
-    fontSize: 15,
-    color: RC.text,
-  },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowValue: {
-    fontFamily: MONO_MED,
-    fontSize: 12,
-  },
-  radioEmpty: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: RC.ghost,
-  },
-
-  // Abmelden
-  signOutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    borderWidth: 1.5,
-    borderColor: RC.lineStrong,
-    borderRadius: 15,
-    paddingVertical: 15,
-  },
-  signOutTxt: {
-    fontFamily: MONO_MED,
-    fontSize: 13,
-    letterSpacing: 1.5,
-    color: RC.text,
-  },
-
-  // Avatar-ActionSheet
-  sheetOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(11,18,32,0.32)',
-    justifyContent: 'flex-end',
-  },
+  // Avatar-Menü
+  sheetOverlay: { flex: 1, backgroundColor: T.scrim, justifyContent: 'flex-end', padding: SP.screen, paddingBottom: 40 },
   sheet: {
-    backgroundColor: RC.bg,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingHorizontal: RS.screenH,
-    paddingTop: 8,
-    paddingBottom: 34,
+    backgroundColor: T.card, borderRadius: R.card, borderWidth: 1, borderColor: T.cardBorder,
+    boxShadow: T.shadowCard, paddingHorizontal: 16,
   },
-  sheetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 18,
-  },
-  sheetRowBorder: {
-    borderTopWidth: HL.std,
-    borderTopColor: RC.line,
-  },
-  sheetLabel: {
-    fontSize: 15,
-    color: RC.text,
-  },
+  sheetRow:       { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 54 },
+  sheetRowBorder: { borderTopWidth: 1, borderTopColor: T.hairline },
+  sheetLabel:     { fontFamily: F.medium, fontSize: 15, color: T.text },
 
   // Vollbild-Viewer
-  viewerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(20,18,15,0.96)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewerClose: {
-    position: 'absolute',
-    top: 56,
-    right: 22,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
-  },
-  viewerImg: {
-    width: '100%',
-    height: '70%',
-  },
+  viewerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.94)', alignItems: 'center', justifyContent: 'center' },
+  viewerClose:   { position: 'absolute', top: 58, right: 24, zIndex: 2 },
+  viewerImg:     { width: '100%', height: '78%' },
 });

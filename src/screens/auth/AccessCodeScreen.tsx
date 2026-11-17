@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
@@ -10,12 +10,18 @@ import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import PressableScale from '../../components/PressableScale';
-import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
+import AmbientBackground from '../../components/AmbientBackground';
+import GlassIconButton from '../../components/GlassIconButton';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import { useTheme } from '../../contexts/ThemeContext';
+import { ThemeColors, F, R, S as SP, TY } from '../../theme';
 
 type AccessNav = NativeStackNavigationProp<AuthStackParamList, 'AccessCode'>;
 
 const AccessCodeScreen: React.FC = () => {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   const { t }      = useTranslation();
   const navigation = useNavigation<AccessNav>();
   const { user, redeemCodeNow, stageAccessCode } = useAuth();
@@ -59,123 +65,70 @@ const AccessCodeScreen: React.FC = () => {
   }, [code, busy, user, redeemCodeNow, stageAccessCode, navigation, t]);
 
   return (
-    <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <View style={S.safe}>
+      <AmbientBackground animated={false} />
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={S.head}>
+            <GlassIconButton icon="back" onPress={() => navigation.goBack()} accessibilityLabel={t('progress.back')} />
+          </View>
 
-        {/* ── AKTENKOPF ── */}
-        <View style={S.head}>
-          <PressableScale onPress={() => navigation.goBack()} style={S.backBtn}>
-            <ArrowLeft size={16} color={RC.text} strokeWidth={1.8} />
-          </PressableScale>
-          <Text style={S.headTitle}>{t('access.title').toUpperCase()}</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <View style={S.body}>
-          <Text style={S.hint}>{t('access.hint')}</Text>
-
-          <TextInput
-            style={S.input}
-            value={code}
-            onChangeText={(v) => { setCode(v); if (error) setError(null); }}
-            placeholder={t('access.placeholder')}
-            placeholderTextColor={RC.ghost}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            autoFocus
-            editable={!busy}
-            onSubmitEditing={onSubmit}
-            returnKeyType="done"
-          />
-
-          {error && <Text style={S.error}>{error}</Text>}
-          {info  && <Text style={S.info}>{info}</Text>}
-
-          <View style={{ height: 22 }} />
-
-          <PressableScale onPress={onSubmit} disabled={busy || !code.trim()} style={{ alignSelf: 'stretch' }}>
-            <View style={[S.btn, BTN_SHADOW, (busy || !code.trim()) && S.btnDisabled]}>
-              <Text style={S.btnLabel}>{t('access.redeem')}</Text>
-              <ArrowRight size={18} color={RC.onAccent} strokeWidth={1.8} />
-            </View>
-          </PressableScale>
-        </View>
-
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          <View style={S.body}>
+            <Text style={S.title} accessibilityRole="header">{t('access.title')}</Text>
+            <Text style={S.hint}>{t('access.hint')}</Text>
+            <Card style={S.card}>
+              <TextInput
+                style={S.input}
+                value={code}
+                onChangeText={(v) => { setCode(v); if (error) setError(null); }}
+                placeholder={t('access.placeholder')}
+                placeholderTextColor={T.disabledText}
+                selectionColor={T.accent}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                autoFocus
+                editable={!busy}
+                onSubmitEditing={onSubmit}
+                returnKeyType="done"
+              />
+              {error && <Text style={S.error}>{error}</Text>}
+              {info  && <Text style={S.info}>{info}</Text>}
+              <Button
+                label={t('access.redeem')}
+                onPress={onSubmit}
+                disabled={!code.trim()}
+                loading={busy}
+                fullWidth
+                style={{ marginTop: 16 }}
+              />
+            </Card>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 export default AccessCodeScreen;
 
-const S = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: RC.bg },
-
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: RS.headTop,
-    paddingHorizontal: RS.screenH,
-    paddingBottom: RS.headPadB,
-    borderBottomWidth: HL.strong,
-    borderBottomColor: RC.lineStrong,
-  },
-  backBtn: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
-  headTitle: {
-    fontFamily: MONO_MED,
-    fontSize: 12,
-    letterSpacing: 2,
-    color: RC.text,
-  },
-
-  body: {
-    paddingHorizontal: RS.screenH,
-    paddingTop: 34,
-  },
-  hint: {
-    fontFamily: MONO,
-    fontSize: 14,
-    lineHeight: 21,
-    color: RC.muted,
-    marginBottom: 22,
-  },
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe:  { flex: 1, backgroundColor: T.bg },
+  head:  { paddingHorizontal: SP.screen, paddingTop: SP.top, minHeight: 44, flexDirection: 'row' },
+  body:  { paddingHorizontal: SP.screen, paddingTop: 20, gap: 6 },
+  title: { ...TY.pageTitle, color: T.text },
+  hint:  { ...TY.body, color: T.textSecondary, marginBottom: 14 },
+  card:  { padding: 18 },
   input: {
+    fontFamily: F.medium,
     fontSize: 18,
     letterSpacing: 2,
-    color: RC.text,
-    borderWidth: 1.5,
-    borderColor: RC.line,
-    borderRadius: 12,
-    paddingVertical: 14,
+    color: T.text,
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: T.cardBorder,
+    borderRadius: R.button,
     paddingHorizontal: 16,
   },
-  error: {
-    fontFamily: MONO,
-    fontSize: 13,
-    color: RC.faint,
-    marginTop: 12,
-  },
-  info: {
-    fontFamily: MONO_MED,
-    fontSize: 13,
-    color: RC.accent,
-    marginTop: 12,
-  },
-  btn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: RC.accent,
-    borderRadius: RR.button,
-    paddingVertical: 18,
-  },
-  btnDisabled: { opacity: 0.4 },
-  btnLabel: {
-    fontFamily: MONO_MED,
-    fontSize: 15,
-    letterSpacing: 1,
-    color: RC.onAccent,
-  },
+  error: { fontFamily: F.medium, fontSize: 13, color: T.text, marginTop: 10 },
+  info:  { fontFamily: F.medium, fontSize: 13, color: T.accentText, marginTop: 10 },
 });

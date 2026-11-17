@@ -4,7 +4,8 @@ import Animated, {
   useSharedValue, useAnimatedProps, withTiming, withDelay, Easing, SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Polygon, Line, Circle, Path, Text as SvgText, G } from 'react-native-svg';
-import { RC, MONO } from '../theme/register';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors, F, R, S as SP, TY } from '../theme';
 
 const AnimatedPath   = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -104,6 +105,7 @@ function RadarDot({
 // Achsen existieren in der SVG schlicht nicht.
 
 const RadarChart: React.FC<RadarChartProps> = ({ categories, focusIndex }) => {
+  const { T } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const svgW = screenW - 8;                 // nur 4 Padding je Seite
   const svgH = svgW * (300 / 384);
@@ -151,7 +153,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ categories, focusIndex }) => {
               key={`spoke-${i}`}
               x1={s.x1} y1={s.y1}
               x2={s.x2} y2={s.y2}
-              stroke={RC.radarRingInner}
+              stroke={T.hairline}
               strokeWidth={1}
             />
           );
@@ -162,7 +164,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ categories, focusIndex }) => {
       <Polygon
         points={polyPoints(MAX_R, N)}
         fill="none"
-        stroke={RC.radarRing}
+        stroke={T.track}
         strokeWidth={1}
       />
 
@@ -170,7 +172,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ categories, focusIndex }) => {
       <Polygon
         points={polyPoints(50, N)}
         fill="none"
-        stroke={RC.radarRingInner}
+        stroke={T.hairline}
         strokeWidth={1}
       />
 
@@ -178,8 +180,8 @@ const RadarChart: React.FC<RadarChartProps> = ({ categories, focusIndex }) => {
       {cats.length >= 3 && (
         <AnimatedPath
           animatedProps={dataAnimatedProps}
-          fill={RC.accentFill}
-          stroke={RC.accent}
+          fill={T.accentTint}
+          stroke={T.accentData}
           strokeWidth={2}
           strokeLinejoin="round"
         />
@@ -194,7 +196,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ categories, focusIndex }) => {
           total={cats.length}
           value={c.value}
           dotR={i === focusIndex ? 3.5 : 2.5}
-          fill={RC.accent}
+          fill={T.accentData}
         />
       ))}
 
@@ -209,10 +211,10 @@ const RadarChart: React.FC<RadarChartProps> = ({ categories, focusIndex }) => {
             x={pos.x}
             y={pos.y}
             textAnchor={pos.anchor}
-            fontFamily={MONO}
+            fontFamily={F.regular}
             fontSize={7.5}
             letterSpacing={0.4}
-            fill={isFocus ? RC.accent : RC.faint}
+            fill={isFocus ? T.accentText : T.textSecondary}
           >
             {c.label}
           </SvgText>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet,
   Animated, Dimensions, ScrollView,
@@ -11,7 +11,12 @@ import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { OnboardingAnswers } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import PressableScale from '../../components/PressableScale';
-import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
+import AmbientBackground from '../../components/AmbientBackground';
+import GlassIconButton from '../../components/GlassIconButton';
+import Button from '../../components/Button';
+import { IconTile } from '../../components/Card';
+import { useTheme } from '../../contexts/ThemeContext';
+import { ThemeColors, F, R, S as SP, TY } from '../../theme';
 
 // Lucide icons for option cards
 import {
@@ -89,63 +94,42 @@ const DEFAULTS: OnboardingAnswers = {
   feedbackStyle: 'balanced',
 };
 
-const ST = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: RC.bg },
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe:      { flex: 1, backgroundColor: T.bg },
   container: { flex: 1 },
 
-  // Aktenkopf
   head: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginTop: RS.headTop, paddingHorizontal: RS.screenH, paddingBottom: RS.headPadB,
-    borderBottomWidth: HL.strong, borderBottomColor: RC.lineStrong,
+    paddingTop: SP.top, paddingHorizontal: SP.screen, minHeight: 44,
   },
-  backBtn:       { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
-  stepIndicator: { fontFamily: MONO, fontSize: 11, color: RC.muted, letterSpacing: 1 },
+  stepIndicator: { fontFamily: F.semiBold, fontSize: 12, color: T.textSecondary, fontVariant: ['tabular-nums'] },
 
-  // Fortschrittsbalken
   progressTrack: {
-    height: 2, backgroundColor: RC.line,
-    marginHorizontal: RS.screenH, marginTop: 16, marginBottom: 28, overflow: 'hidden',
+    height: 4, borderRadius: 2, backgroundColor: T.track,
+    marginHorizontal: SP.screen, marginTop: 16, marginBottom: 24, overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: RC.accent },
-
+  progressFill: { height: '100%', borderRadius: 2, backgroundColor: T.accentData },
   animated:     { flex: 1 },
-  stepContent:  { flex: 1, paddingHorizontal: RS.screenH },
-  stepTitle: {
-    fontSize: 26, fontWeight: '600',
-    color: RC.text, marginBottom: 8, lineHeight: 32, letterSpacing: -0.6,
-  },
-  stepSub: {
-    fontFamily: MONO, fontSize: 14, color: RC.muted,
-    marginBottom: 24, lineHeight: 21,
-  },
-  optionsScroll: { flex: 1 },
+  stepContent:  { flex: 1, paddingHorizontal: SP.screen },
+  stepTitle:    { ...TY.pageTitle, fontSize: 28, lineHeight: 34, color: T.text, marginBottom: 8 },
+  stepSub:      { ...TY.body, color: T.textSecondary, marginBottom: 20 },
+  optionsScroll:{ flex: 1, marginHorizontal: -4, paddingHorizontal: 4 },
   option: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingVertical: 16,
-    borderTopWidth: HL.std, borderTopColor: RC.line,
+    paddingVertical: 12, paddingHorizontal: 14,
+    backgroundColor: T.card, borderRadius: R.card, borderWidth: 1, borderColor: T.cardBorder,
+    boxShadow: T.shadowCard,
   },
-  optionIconCircle: {
-    width: 44, height: 44, borderRadius: 22,
-    borderWidth: 1.5, borderColor: RC.line,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  optionIconCircleActive: { borderColor: RC.accent, backgroundColor: RC.accentWash },
-  optionLabel:   { flex: 1, fontFamily: MONO_MED, fontSize: 15, color: RC.muted },
-  optionLabelActive: { color: RC.text },
+  optionActive:      { borderColor: T.accent, borderWidth: 1.5 },
+  optionLabel:       { flex: 1, fontFamily: F.semiBold, fontSize: 15, color: T.text },
+  optionLabelActive: { color: T.text },
 
-  // Footer-Button
-  footer: { paddingHorizontal: RS.screenH, paddingBottom: 24, paddingTop: 16 },
-  btnPrimary: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: RC.accent, borderRadius: RR.button,
-    paddingVertical: 18, paddingHorizontal: 22,
-  },
-  btnDisabled: { opacity: 0.4 },
-  btnLabel: { fontFamily: MONO_MED, fontSize: 15, letterSpacing: 1, color: RC.onAccent },
+  footer: { paddingHorizontal: SP.screen, paddingBottom: 24, paddingTop: 12 },
 });
 
 const OnboardingScreen: React.FC = () => {
+  const { T } = useTheme();
+  const ST = useMemo(() => createStyles(T), [T]);
   const { t }          = useTranslation();
   const tabSpace   = useTabBarSpace(0);
   const navigation     = useNavigation<any>();
@@ -202,13 +186,13 @@ const OnboardingScreen: React.FC = () => {
   const ctaDisabled = !selected || isLoading;
 
   return (
-    <SafeAreaView style={[ST.safe, { paddingBottom: tabSpace }]} edges={['top', 'left', 'right']}>
+    <View style={ST.safe}>
+      <AmbientBackground animated={false} />
+      <SafeAreaView style={{ flex: 1, paddingBottom: tabSpace }} edges={['top', 'left', 'right']}>
       <View style={ST.container}>
         {/* Aktenkopf */}
         <View style={ST.head}>
-          <PressableScale style={ST.backBtn} onPress={handleBack}>
-            <ArrowLeft size={16} color={RC.text} strokeWidth={1.8} />
-          </PressableScale>
+          <GlassIconButton icon="back" onPress={handleBack} accessibilityLabel={t('progress.back')} />
           <Text style={ST.stepIndicator}>
             {t('onboarding.steps.stepOf', { current: step + 1, total })}
           </Text>
@@ -228,23 +212,24 @@ const OnboardingScreen: React.FC = () => {
             <Text style={ST.stepSub}>
               {t(`onboarding.steps.${current.i18nKey}.subtitle`)}
             </Text>
-            <ScrollView showsVerticalScrollIndicator={false} style={ST.optionsScroll}>
+            <ScrollView showsVerticalScrollIndicator={false} style={ST.optionsScroll} contentContainerStyle={{ gap: 10, paddingBottom: 12 }}>
               {current.options.map(({ value, Icon }) => {
                 const active = selected === value;
                 return (
                   <PressableScale
                     key={value}
                     onPress={() => setAnswers((p) => ({ ...p, [current.key]: value }))}
+                    style={[ST.option, active && ST.optionActive]}
                   >
-                    <View style={ST.option}>
-                      <View style={[ST.optionIconCircle, active && ST.optionIconCircleActive]}>
-                        <Icon size={20} color={active ? RC.accent : RC.text} strokeWidth={1.7} />
-                      </View>
+                    <View>
+                      <IconTile size={40}>
+                        <Icon size={19} color={T.accentText} strokeWidth={1.7} />
+                      </IconTile>
+                    </View>
                       <Text style={[ST.optionLabel, active && ST.optionLabelActive]}>
                         {t(`onboarding.steps.${current.i18nKey}.options.${value}`)}
                       </Text>
-                      {active && <CheckCircle2 size={20} color={RC.accent} strokeWidth={1.8} />}
-                    </View>
+                      {active && <CheckCircle2 size={20} color={T.accentText} strokeWidth={1.8} />}
                   </PressableScale>
                 );
               })}
@@ -254,17 +239,17 @@ const OnboardingScreen: React.FC = () => {
 
         {/* Footer */}
         <View style={ST.footer}>
-          <PressableScale onPress={handleNext} disabled={ctaDisabled} style={{ alignSelf: 'stretch' }}>
-            <View style={[ST.btnPrimary, !ctaDisabled && BTN_SHADOW, ctaDisabled && ST.btnDisabled]}>
-              <Text style={ST.btnLabel}>
-                {step === total - 1 ? t('common.done') : t('common.next')}
-              </Text>
-              <ArrowRight size={18} color={RC.onAccent} strokeWidth={1.8} />
-            </View>
-          </PressableScale>
+          <Button
+            label={step === total - 1 ? t('common.done') : t('common.next')}
+            onPress={handleNext}
+            disabled={ctaDisabled}
+            loading={isLoading}
+            fullWidth
+          />
         </View>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 };
 

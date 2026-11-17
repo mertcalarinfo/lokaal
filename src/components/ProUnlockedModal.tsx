@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal, View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LockOpen, AlertCircle } from 'lucide-react-native';
-import { RC, MONO, MONO_MED, RR, BTN_SHADOW, RS } from '../theme/register';
-import PressableScale from './PressableScale';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors, F, R, S as SP, TY } from '../theme';
+import Button from './Button';
 
 export type ProNoticeKind = 'success' | 'invalid' | 'used' | 'network';
 
@@ -13,6 +14,8 @@ interface ProUnlockedModalProps {
 }
 
 const ProUnlockedModal: React.FC<ProUnlockedModalProps> = ({ kind, onClose }) => {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   const { t } = useTranslation();
 
   const isSuccess = kind === 'success';
@@ -36,15 +39,15 @@ const ProUnlockedModal: React.FC<ProUnlockedModalProps> = ({ kind, onClose }) =>
           {isSuccess ? (
             <>
               <View style={S.iconCircle}>
-                <LockOpen size={26} color={RC.accent} strokeWidth={1.8} />
+                <LockOpen size={26} color={T.accentText} strokeWidth={1.8} />
               </View>
-              <Text style={S.title}>{t('pro.unlockedTitle').toUpperCase()}</Text>
+              <Text style={S.title}>{t('pro.unlockedTitle')}</Text>
               <Text style={S.body}>{t('pro.unlockedBody')}</Text>
             </>
           ) : (
             <>
               <View style={S.iconCircleError}>
-                <AlertCircle size={24} color={RC.faint} strokeWidth={1.8} />
+                <AlertCircle size={24} color={T.textSecondary} strokeWidth={1.8} />
               </View>
               <Text style={S.bodyError}>{errorText}</Text>
             </>
@@ -52,13 +55,7 @@ const ProUnlockedModal: React.FC<ProUnlockedModalProps> = ({ kind, onClose }) =>
 
           <View style={{ height: 24 }} />
 
-          <PressableScale onPress={onClose} style={{ alignSelf: 'stretch' }}>
-            <View style={[S.btn, BTN_SHADOW]}>
-              <Text style={S.btnLabel}>
-                {isSuccess ? t('pro.unlockedCta') : t('common.ok')}
-              </Text>
-            </View>
-          </PressableScale>
+          <Button label={isSuccess ? t('pro.unlockedCta') : t('common.ok')} onPress={onClose} fullWidth />
         </Pressable>
       </Pressable>
     </Modal>
@@ -67,77 +64,35 @@ const ProUnlockedModal: React.FC<ProUnlockedModalProps> = ({ kind, onClose }) =>
 
 export default ProUnlockedModal;
 
-const S = StyleSheet.create({
+const createStyles = (T: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: T.scrim,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: RS.screenH,
+    paddingHorizontal: SP.screen,
   },
   card: {
     width: '100%',
-    backgroundColor: RC.bgElevated,
-    borderRadius: 18,
-    borderTopWidth: 2.5,
-    borderTopColor: RC.accent,
+    backgroundColor: T.card,
+    borderRadius: R.card,
+    borderWidth: 1,
+    borderColor: T.cardBorder,
+    boxShadow: T.shadowCard,
     alignItems: 'center',
-    paddingHorizontal: 28,
-    paddingTop: 28,
-    paddingBottom: 28,
+    paddingHorizontal: 22,
+    paddingTop: 26,
+    paddingBottom: 18,
   },
   iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: RC.accentWash,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
+    width: 52, height: 52, borderRadius: R.tile, backgroundColor: T.accentTint,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
   iconCircleError: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: RC.lineFaint,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
+    width: 52, height: 52, borderRadius: R.tile, backgroundColor: T.disabledBg,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  title: {
-    fontFamily: MONO_MED,
-    fontSize: 14,
-    letterSpacing: 2,
-    color: RC.text,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  body: {
-    fontFamily: MONO,
-    fontSize: 14,
-    lineHeight: 22,
-    color: RC.muted,
-    textAlign: 'center',
-  },
-  bodyError: {
-    fontFamily: MONO,
-    fontSize: 15,
-    lineHeight: 22,
-    color: RC.text,
-    textAlign: 'center',
-  },
-  btn: {
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: RC.accent,
-    borderRadius: RR.button,
-    paddingVertical: 16,
-  },
-  btnLabel: {
-    fontFamily: MONO_MED,
-    fontSize: 14,
-    letterSpacing: 1.5,
-    color: RC.onAccent,
-  },
+  title:     { fontFamily: F.medium, fontSize: 24, lineHeight: 30, letterSpacing: -0.5, color: T.text, textAlign: 'center' },
+  body:      { ...TY.body, color: T.textSecondary, textAlign: 'center', marginTop: 6 },
+  bodyError: { ...TY.body, color: T.text, textAlign: 'center' },
 });

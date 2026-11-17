@@ -10,7 +10,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { changeLanguage } from '../../i18n';
 import Button from '../../components/Button';
 import PrezenceLogo from '../../components/PrezenceLogo';
-import { ThemeColors, F, R, S } from '../../theme';
+import { ThemeColors, F, R, S, TY } from '../../theme';
+import AmbientBackground from '../../components/AmbientBackground';
 
 type Language = 'en' | 'de';
 
@@ -19,19 +20,16 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   container: { flex: 1, paddingHorizontal: S.screen, paddingVertical: S.s6 },
   logoWrap:  { marginBottom: S.s10 },
   titleWrap: { marginBottom: S.s8 },
-  title: {
-    fontFamily: F.semiBold, fontSize: 28,
-    color: T.text, letterSpacing: -0.56, marginBottom: S.s2, lineHeight: 32,
-  },
+  title: { ...TY.pageTitle, color: T.text, marginBottom: S.s2 },
   sub:  { fontFamily: F.regular, fontSize: 14.5, color: T.textSecondary, lineHeight: 21 },
   cards: { flexDirection: 'row', gap: S.s4, flex: 1, alignItems: 'center' },
   card: {
     flex: 1, backgroundColor: T.card,
     borderRadius: R.card, padding: S.s6,
-    alignItems: 'center', borderWidth: 1.5, borderColor: T.hairline,
-    minHeight: 148, justifyContent: 'center',
+    alignItems: 'center', borderWidth: 1.5, borderColor: T.cardBorder,
+    minHeight: 148, justifyContent: 'center', boxShadow: T.shadowCard,
   },
-  cardActive: { borderColor: T.accent, backgroundColor: T.accentTint },
+  cardActive: { borderColor: T.accent },
   flag:      { fontSize: 36, marginBottom: S.s3 },
   langLabel: { fontFamily: F.semiBold, fontSize: 18, color: T.text, marginBottom: 3 },
   langSub:   { fontFamily: F.regular, fontSize: 13, color: T.textSecondary },
@@ -69,7 +67,9 @@ const LanguageSelectScreen: React.FC = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
+      <AmbientBackground animated={false} />
+      <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
         <View style={styles.logoWrap}>
           <PrezenceLogo size="sm" />
@@ -97,7 +97,7 @@ const LanguageSelectScreen: React.FC = () => {
                 activeOpacity={0.8}
               >
                 <Text style={styles.flag}>{lang.flag}</Text>
-                <Text style={[styles.langLabel, active && { color: T.accent }]}>{lang.label}</Text>
+                <Text style={[styles.langLabel, active && { color: T.accentText }]}>{lang.label}</Text>
                 <Text style={styles.langSub}>{lang.sub}</Text>
                 {active && (
                   <View style={styles.check}>
@@ -119,7 +119,8 @@ const LanguageSelectScreen: React.FC = () => {
           />
         </View>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 };
 

@@ -282,7 +282,9 @@
       "Voice Modulation": "STIMME",
       "Content Structure": "STRUKTUR",
       "Overall Confidence & Presence": "AUSSTRAHLUNG"
-    }
+    },
+    "categoryHead": "Kategorie",
+    "valueHead": "Wert"
   },
   "progress": {
     "title": "Fortschritt",

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import PressableScale from './PressableScale';
-import { RC, MONO_MED, RR } from '../theme/register';
+import Button from './Button';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors, F, R, S as SP, TY } from '../theme';
 
 interface RenameModalProps {
   visible: boolean;
@@ -16,6 +17,8 @@ interface RenameModalProps {
 const RenameModal: React.FC<RenameModalProps> = ({
   visible, initialValue, placeholder, title, onClose, onSave,
 }) => {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   const { t } = useTranslation();
   const [value, setValue] = useState(initialValue);
 
@@ -42,21 +45,18 @@ const RenameModal: React.FC<RenameModalProps> = ({
             value={value}
             onChangeText={setValue}
             placeholder={placeholder}
-            placeholderTextColor={RC.ghost}
+            placeholderTextColor={T.disabledText}
+            selectionColor={T.accent}
             autoFocus
             maxLength={60}
           />
           <View style={S.row}>
-            <PressableScale onPress={onClose} style={{ flex: 1 }}>
-              <View style={S.btnSecondary}>
-                <Text style={S.btnLabelSecondary}>{t('common.cancel').toUpperCase()}</Text>
-              </View>
-            </PressableScale>
-            <PressableScale onPress={handleSave} style={{ flex: 1 }}>
-              <View style={S.btnPrimary}>
-                <Text style={S.btnLabelPrimary}>{t('common.save').toUpperCase()}</Text>
-              </View>
-            </PressableScale>
+            <View style={{ flex: 1 }}>
+              <Button label={t('common.cancel')} variant="secondary" size="sm" onPress={onClose} fullWidth />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label={t('common.save')} size="sm" onPress={handleSave} fullWidth />
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -66,63 +66,34 @@ const RenameModal: React.FC<RenameModalProps> = ({
 
 export default RenameModal;
 
-const S = StyleSheet.create({
+const createStyles = (T: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(11,18,32,0.32)',
+    backgroundColor: T.scrim,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 28,
+    paddingHorizontal: SP.screen,
   },
   card: {
     width: '100%',
-    backgroundColor: RC.bg,
-    borderRadius: 18,
-    padding: 22,
+    backgroundColor: T.card,
+    borderRadius: R.card,
+    borderWidth: 1,
+    borderColor: T.cardBorder,
+    boxShadow: T.shadowCard,
+    padding: 18,
   },
-  title: {
-    fontFamily: MONO_MED,
-    fontSize: 12,
-    letterSpacing: 1.5,
-    color: RC.faint,
-    textTransform: 'uppercase',
-    marginBottom: 14,
-  },
+  title: { ...TY.label, color: T.textSecondary, marginBottom: 12 },
   input: {
+    fontFamily: F.regular,
     fontSize: 16,
-    color: RC.text,
-    borderBottomWidth: 1.5,
-    borderBottomColor: RC.lineStrong,
-    paddingBottom: 10,
-    marginBottom: 22,
+    color: T.text,
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: T.cardBorder,
+    borderRadius: R.button,
+    paddingHorizontal: 14,
+    marginBottom: 16,
   },
-  row: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  btnPrimary: {
-    backgroundColor: RC.accent,
-    borderRadius: RR.button,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  btnLabelPrimary: {
-    fontFamily: MONO_MED,
-    fontSize: 12,
-    letterSpacing: 1,
-    color: RC.onAccent,
-  },
-  btnSecondary: {
-    borderWidth: 1.5,
-    borderColor: RC.lineStrong,
-    borderRadius: RR.button,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  btnLabelSecondary: {
-    fontFamily: MONO_MED,
-    fontSize: 12,
-    letterSpacing: 1,
-    color: RC.text,
-  },
+  row: { flexDirection: 'row', gap: 10 },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, TextStyle, StyleProp } from 'react-native';
+import { F } from '../theme';
 
 interface RichTextProps {
   /** Raw text that may contain markdown-style emphasis: **bold** or *bold*. */
@@ -33,7 +34,7 @@ const RichText: React.FC<RichTextProps> = ({ text, style, boldStyle, numberOfLin
         if (isBold) {
           const inner = seg.replace(/^\*+/, '').replace(/\*+$/, '');
           return (
-            <Text key={i} style={[{ fontWeight: '700' }, boldStyle]}>
+            <Text key={i} style={[{ fontFamily: F.semiBold }, boldStyle]}>
               {inner}
             </Text>
           );

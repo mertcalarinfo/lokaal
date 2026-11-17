@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TextInput, Alert, Modal, FlatList, Share,
+  TextInput, Alert, Modal, Share,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,10 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing,
 } from 'react-native-reanimated';
-import {
-  Upload, X, ArrowLeft, ArrowRight, ChevronRight, TrendingUp,
-  Share2, Pencil, CheckCircle2, Sparkles, FileVideo,
-} from 'lucide-react-native';
+import { TrendingUp, Share2, Pencil, Sparkles } from 'lucide-react-native';
 
 import { v4 as uuidv4 } from 'uuid';
 import { AnalysisReport, ComparisonResult, SavedComparison } from '../../types';
@@ -24,7 +21,13 @@ import { getUserReports, saveComparison, updateComparisonName, uploadVideo } fro
 import PressableScale from '../../components/PressableScale';
 import RichText from '../../components/RichText';
 import RenameModal from '../../components/RenameModal';
-import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
+import AmbientBackground from '../../components/AmbientBackground';
+import GlassIconButton from '../../components/GlassIconButton';
+import Card, { IconTile } from '../../components/Card';
+import Button from '../../components/Button';
+import { ChevronRight, CheckIcon, UploadIcon } from '../../components/Icons';
+import { useTheme } from '../../contexts/ThemeContext';
+import { ThemeColors, F, R, S as SP, TY } from '../../theme';
 
 import { useTabBarSpace } from '../../navigation/tabBarSpace';
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -40,46 +43,49 @@ function score100(s: number): number {
 // ── Sub-Komponenten ──────────────────────────────────────────────────────────
 
 function VideoSelectorRows({ onPickReport, onPickGallery }: { onPickReport: () => void; onPickGallery: () => void }) {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   const { t } = useTranslation();
   return (
-    <View>
-      <PressableScale onPress={onPickReport}>
+    <Card style={S.selCard}>
+      <PressableScale onPress={onPickReport} accessibilityLabel={t('compare.fromAnalysis')}>
         <View style={S.selRow}>
-          <View style={S.selIconCircle}>
-            <TrendingUp size={20} color={RC.text} strokeWidth={1.7} />
-          </View>
+          <IconTile size={40}><TrendingUp size={19} color={T.accentText} strokeWidth={1.7} /></IconTile>
           <Text style={S.selLabel}>{t('compare.fromAnalysis')}</Text>
-          <ChevronRight size={16} color={RC.ghost} strokeWidth={1.7} />
+          <ChevronRight color={T.textSecondary} />
         </View>
       </PressableScale>
-      <PressableScale onPress={onPickGallery}>
-        <View style={[S.selRow, S.selRowBorder]}>
-          <View style={S.selIconCircle}>
-            <Upload size={20} color={RC.text} strokeWidth={1.7} />
-          </View>
+      <View style={S.divider} />
+      <PressableScale onPress={onPickGallery} accessibilityLabel={t('compare.fromGallery')}>
+        <View style={S.selRow}>
+          <IconTile size={40}><UploadIcon size={20} color={T.accentText} /></IconTile>
           <Text style={S.selLabel}>{t('compare.fromGallery')}</Text>
-          <ChevronRight size={16} color={RC.ghost} strokeWidth={1.7} />
+          <ChevronRight color={T.textSecondary} />
         </View>
       </PressableScale>
-    </View>
+    </Card>
   );
 }
 
 function SelectedRow({ label, onClear }: { label: string; onClear: () => void }) {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   const { t } = useTranslation();
   return (
-    <View style={S.selectedRow}>
-      <CheckCircle2 size={16} color={RC.accent} strokeWidth={2} />
+    <Card style={[S.selCard, S.selRow]}>
+      <IconTile size={40}><CheckIcon size={18} color={T.accentText} /></IconTile>
       <Text style={S.selectedLabel} numberOfLines={1}>{label}</Text>
-      <PressableScale onPress={onClear}>
+      <PressableScale onPress={onClear} style={S.removeHit}>
         <Text style={S.clearTxt}>{t('common.remove')}</Text>
       </PressableScale>
-    </View>
+    </Card>
   );
 }
 
 function DirectionGlyph({ direction }: { direction: 'improved' | 'declined' | 'same' }) {
-  const color  = direction === 'improved' ? RC.accent : direction === 'declined' ? RC.faint : RC.ghost;
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
+  const color  = direction === 'improved' ? T.accentText : T.textSecondary;
   const symbol = direction === 'improved' ? '↑' : direction === 'declined' ? '↓' : '→';
   return <Text style={[S.dirGlyph, { color }]}>{symbol}</Text>;
 }
@@ -87,6 +93,8 @@ function DirectionGlyph({ direction }: { direction: 'improved' | 'declined' | 's
 // ── Main component ────────────────────────────────────────────────────────────
 
 const CompareScreen: React.FC = () => {
+  const { T } = useTheme();
+  const S = useMemo(() => createStyles(T), [T]);
   const { t }    = useTranslation();
   const navigation = useNavigation<any>();
   const tabSpace   = useTabBarSpace();
@@ -304,263 +312,184 @@ const CompareScreen: React.FC = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
+    <View style={S.safe}>
+      <AmbientBackground animated={false} />
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
 
-      {/* ── AKTENKOPF ── */}
-      <View style={S.head}>
-        {viewState === 'result' ? (
-          <>
-            <PressableScale onPress={handleReset} style={S.iconBtn}>
-              <ArrowLeft size={16} color={RC.text} strokeWidth={1.8} />
-            </PressableScale>
-            <View style={S.headRight}>
-              <PressableScale onPress={() => setRenameVisible(true)} style={S.iconBtn}>
-                <Pencil size={14} color={RC.muted} strokeWidth={1.7} />
-              </PressableScale>
-              <PressableScale onPress={handleShare} style={S.iconBtn}>
-                <Share2 size={16} color={RC.muted} strokeWidth={1.7} />
-              </PressableScale>
-            </View>
-          </>
-        ) : (
-          <View style={S.headRight}>
-            {/* Seit Entwurf 5 im Verlauf-Stack: Zurück zum Verlauf */}
-            <PressableScale onPress={() => navigation.goBack()} style={S.iconBtn} accessibilityLabel={t('progress.back')}>
-              <ArrowLeft size={16} color={RC.text} strokeWidth={1.8} />
-            </PressableScale>
-            <Text style={S.headTitle}>{t('compare.title').toUpperCase()}</Text>
-          </View>
-        )}
-      </View>
+        {/* ── Kopf ── */}
+        <View style={S.head}>
+          {viewState === 'result' ? (
+            <>
+              <GlassIconButton icon="back" onPress={handleReset} accessibilityLabel={t('compare.newComparison')} />
+              <View style={S.headRight}>
+                <PressableScale onPress={() => setRenameVisible(true)} style={S.iconBtn} accessibilityLabel={t('progress.renameComparisonTitle')}>
+                  <Pencil size={18} color={T.accentText} strokeWidth={1.7} />
+                </PressableScale>
+                <PressableScale onPress={handleShare} style={S.iconBtn} accessibilityLabel={t('common.share', { defaultValue: 'Share' })}>
+                  <Share2 size={18} color={T.accentText} strokeWidth={1.7} />
+                </PressableScale>
+              </View>
+            </>
+          ) : (
+            // Seit Entwurf 5 im Verlauf-Stack: Zurück zum Verlauf
+            <GlassIconButton icon="back" onPress={() => navigation.goBack()} accessibilityLabel={t('progress.back')} />
+          )}
+        </View>
 
-      <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: tabSpace }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: tabSpace }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-        {/* ── IDLE ── */}
-        {viewState === 'idle' && (
-          <>
-            <View style={S.hero}>
-              <Text style={S.heroSub}>{t('compare.subtitle')}</Text>
-            </View>
+          {/* ── IDLE ── */}
+          {viewState === 'idle' && (
+            <>
+              <View style={S.hero}>
+                <Text style={S.label}>{t('progress.historyTitle')}</Text>
+                <Text style={S.title} accessibilityRole="header">{t('compare.title')}</Text>
+                <Text style={S.heroSub}>{t('compare.subtitle')}</Text>
+              </View>
 
-            <View style={{ height: 28 }} />
+              <View style={S.subSection}>
+                <Text style={S.label}>{t('compare.video1Label')}</Text>
+                {video1 ? (
+                  <SelectedRow label={video1.label} onClear={() => setVideo1(null)} />
+                ) : (
+                  <VideoSelectorRows onPickReport={() => openReportPicker('v1')} onPickGallery={() => pickFromGallery('v1')} />
+                )}
+              </View>
 
-            <View style={S.subSection}>
-              <Text style={S.fieldLabel}>{t('compare.video1Label')}</Text>
-              {video1 ? (
-                <SelectedRow label={video1.label} onClear={() => setVideo1(null)} />
-              ) : (
-                <VideoSelectorRows
-                  onPickReport={() => openReportPicker('v1')}
-                  onPickGallery={() => pickFromGallery('v1')}
+              <View style={S.subSection}>
+                <Text style={S.label}>{t('compare.video2Label')}</Text>
+                {video2 ? (
+                  <SelectedRow label={video2.label} onClear={() => setVideo2(null)} />
+                ) : (
+                  <VideoSelectorRows onPickReport={() => openReportPicker('v2')} onPickGallery={() => pickFromGallery('v2')} />
+                )}
+              </View>
+
+              <View style={S.subSection}>
+                <Text style={S.label}>{t('compare.contextLabel')}</Text>
+                <TextInput
+                  style={S.contextInput}
+                  placeholder={t('compare.contextPlaceholder')}
+                  placeholderTextColor={T.disabledText}
+                  selectionColor={T.accent}
+                  value={userContext}
+                  onChangeText={setUserContext}
+                  multiline
+                  maxLength={500}
                 />
-              )}
-            </View>
+              </View>
 
-            <View style={{ height: 24 }} />
-
-            <View style={S.subSection}>
-              <Text style={S.fieldLabel}>{t('compare.video2Label')}</Text>
-              {video2 ? (
-                <SelectedRow label={video2.label} onClear={() => setVideo2(null)} />
-              ) : (
-                <VideoSelectorRows
-                  onPickReport={() => openReportPicker('v2')}
-                  onPickGallery={() => pickFromGallery('v2')}
-                />
-              )}
-            </View>
-
-            <View style={{ height: 24 }} />
-
-            <View style={S.subSection}>
-              <Text style={S.fieldLabel}>{t('compare.contextLabel')}</Text>
-              <TextInput
-                style={S.contextInput}
-                placeholder={t('compare.contextPlaceholder')}
-                placeholderTextColor={RC.ghost}
-                value={userContext}
-                onChangeText={setUserContext}
-                multiline
-                maxLength={500}
-              />
-            </View>
-
-            <View style={{ height: 8 }} />
-
-            <View style={S.cta}>
-              <PressableScale
+              <Button
+                label={t('compare.compareButton')}
                 onPress={handleCompare}
                 disabled={!video1 || !video2}
-                style={{ alignSelf: 'stretch' }}
-              >
-                <View style={[S.btnPrimary, BTN_SHADOW, (!video1 || !video2) && S.btnDisabled]}>
-                  <View style={S.btnLeft}>
-                    <Sparkles size={18} color={RC.onAccent} strokeWidth={1.8} />
-                    <Text style={S.btnLabelPrimary}>{t('compare.compareButton')}</Text>
-                  </View>
-                </View>
-              </PressableScale>
-            </View>
-          </>
-        )}
+                fullWidth
+              />
+            </>
+          )}
 
-        {/* ── LOADING ── */}
-        {viewState === 'loading' && (
-          <View style={S.loadingBox}>
-            <Animated.View style={[S.loadingIconCircle, pulseStyle]}>
-              <Sparkles size={30} color={RC.accent} strokeWidth={1.6} />
-            </Animated.View>
-
-            <View style={{ height: 22 }} />
-            <Text style={S.loadingTitle}>{t('compare.loadingTitle')}</Text>
-            <View style={{ height: 8 }} />
-            <Text style={S.loadingSubtitle}>{t('compare.loadingSubtitle')}</Text>
-
-            <View style={{ height: 30 }} />
-            <View style={S.barTrack}>
-              <View style={[S.barFill, { width: `${Math.round(progress * 100)}%` }]} />
-            </View>
-            <View style={S.barRow}>
-              <Text style={S.barPct}>{Math.round(progress * 100)}%</Text>
-              <Text style={S.barStatus}>{statusLabel(progress)}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* ── RESULT ── */}
-        {viewState === 'result' && result && (
-          <>
-            {customName ? (
-              <View style={S.subSection}>
-                <Text style={S.customName} numberOfLines={1}>{customName}</Text>
-                <View style={{ height: 18 }} />
+          {/* ── LOADING ── */}
+          {viewState === 'loading' && (
+            <Card style={S.loadingCard}>
+              <Animated.View style={[S.loadingIconCircle, pulseStyle]}>
+                <Sparkles size={26} color={T.accentText} strokeWidth={1.6} />
+              </Animated.View>
+              <Text style={S.loadingTitle}>{t('compare.loadingTitle')}</Text>
+              <Text style={S.loadingSubtitle}>{t('compare.loadingSubtitle')}</Text>
+              <View style={S.barTrack}>
+                <View style={[S.barFill, { width: `${Math.round(progress * 100)}%` }]} />
               </View>
-            ) : null}
+              <View style={S.barRow}>
+                <Text style={S.barPct}>{Math.round(progress * 100)}%</Text>
+                <Text style={S.barStatus}>{statusLabel(progress)}</Text>
+              </View>
+            </Card>
+          )}
 
-            {/* Videos */}
-            {(video1?.uri || video2?.uri) && (
-              <View style={[S.subSection, S.videosRow]}>
-                {[video1, video2].map((v, idx) => (
-                  <View key={idx} style={{ flex: 1 }}>
-                    <Text style={S.videoLabel} numberOfLines={1}>
-                      {v?.label ?? `Video ${idx + 1}`}
-                    </Text>
-                    <View style={S.videoBox}>
-                      {v?.uri ? (
-                        <Video
-                          source={{ uri: v.uri }}
-                          style={S.video}
-                          useNativeControls
-                          resizeMode={ResizeMode.CONTAIN}
-                          isLooping={false}
-                        />
-                      ) : (
-                        <Text style={S.videoEmpty}>—</Text>
-                      )}
+          {/* ── RESULT ── */}
+          {viewState === 'result' && result && (
+            <>
+              <View style={S.hero}>
+                <Text style={S.label}>{t('compare.resultTitle')}</Text>
+                {customName ? <Text style={S.title} numberOfLines={2}>{customName}</Text> : null}
+              </View>
+
+              {/* Videos */}
+              {(video1?.uri || video2?.uri) && (
+                <View style={S.videosRow}>
+                  {[video1, video2].map((v, idx) => (
+                    <View key={idx} style={{ flex: 1, gap: 6 }}>
+                      <Text style={S.videoLabel} numberOfLines={1}>{v?.label ?? `Video ${idx + 1}`}</Text>
+                      <View style={S.videoBox}>
+                        {v?.uri ? (
+                          <Video source={{ uri: v.uri }} style={S.video} useNativeControls resizeMode={ResizeMode.CONTAIN} isLooping={false} />
+                        ) : (
+                          <Text style={S.videoEmpty}>—</Text>
+                        )}
+                      </View>
                     </View>
-                  </View>
-                ))}
-              </View>
-            )}
+                  ))}
+                </View>
+              )}
 
-            <View style={{ height: 28 }} />
+              <Card style={S.section}>
+                <Text style={S.label}>{t('compare.overallLabel')}</Text>
+                <RichText text={result.overallChange} style={S.bodyText} />
+              </Card>
 
-            {/* Overall */}
-            <View style={S.subSection}>
-              <Text style={S.subHead}>{t('compare.overallLabel').toUpperCase()}</Text>
-              <RichText text={result.overallChange} style={S.bodyText} />
-            </View>
-
-            {/* Category comparisons */}
-            {result.categoryComparisons.length > 0 && (
-              <>
-                <View style={{ height: 28 }} />
-                <View style={S.subSection}>
-                  <Text style={S.subHead}>{t('compare.categoriesLabel').toUpperCase()}</Text>
+              {result.categoryComparisons.length > 0 && (
+                <Card style={S.section}>
+                  <Text style={S.label}>{t('compare.categoriesLabel')}</Text>
                   {result.categoryComparisons.map((item, i) => (
-                    <View key={i} style={S.catRow}>
-                      <View style={{ flex: 1 }}>
+                    <View key={i} style={[S.catRow, i > 0 && S.catDivider]}>
+                      <View style={{ flex: 1, gap: 2 }}>
                         <Text style={S.catName}>{item.category}</Text>
                         {item.observation ? <RichText text={item.observation} style={S.catObs} /> : null}
                       </View>
                       <DirectionGlyph direction={item.direction} />
                     </View>
                   ))}
-                </View>
-              </>
-            )}
-
-            {/* Context response */}
-            {result.contextResponse && (
-              <>
-                <View style={{ height: 28 }} />
-                <View style={S.subSection}>
-                  <Text style={S.subHead}>{t('compare.contextResponseLabel').toUpperCase()}</Text>
-                  <RichText text={result.contextResponse} style={S.bodyText} />
-                </View>
-              </>
-            )}
-
-            {/* Coach comment */}
-            {result.coachComment && (
-              <>
-                <View style={{ height: 28 }} />
-                <View style={S.subSection}>
-                  <Text style={S.subHead}>{t('compare.coachLabel').toUpperCase()}</Text>
-                  <RichText text={result.coachComment} style={[S.bodyText, { fontStyle: 'italic' }]} />
-                </View>
-              </>
-            )}
-
-            <View style={{ height: 28 }} />
-
-            <View style={S.subSection}>
-              {!isSaved ? (
-                <PressableScale onPress={handleSaveComparison} disabled={isSaving} style={{ marginBottom: 12 }}>
-                  <View style={[S.btnPrimary, BTN_SHADOW, isSaving && { opacity: 0.7 }]}>
-                    <View style={S.btnLeft}>
-                      <View style={S.btnDot} />
-                      <Text style={S.btnLabelPrimary}>
-                        {isSaving ? t('common.loading') : t('compare.saveComparison').toUpperCase()}
-                      </Text>
-                    </View>
-                    <ArrowRight size={16} color={RC.onAccent} strokeWidth={1.8} />
-                  </View>
-                </PressableScale>
-              ) : (
-                <View style={S.savedRow}>
-                  <CheckCircle2 size={13} color={RC.text} strokeWidth={2} />
-                  <Text style={S.savedTxt}>{t('compare.comparisonSaved').toUpperCase()}</Text>
-                </View>
+                </Card>
               )}
 
-              <PressableScale onPress={handleReset}>
-                <View style={S.btnSecondary}>
-                  <Text style={S.btnLabelSecondary}>{t('compare.newComparison').toUpperCase()}</Text>
-                </View>
-              </PressableScale>
-            </View>
-          </>
-        )}
+              {result.contextResponse && (
+                <Card style={S.section}>
+                  <Text style={S.label}>{t('compare.contextResponseLabel')}</Text>
+                  <RichText text={result.contextResponse} style={S.bodyText} />
+                </Card>
+              )}
 
-        {/* ── ERROR ── */}
-        {viewState === 'error' && (
-          <View style={S.loadingBox}>
-            <Text style={S.loadingTitle}>{t('compare.errorTitle')}</Text>
-            <View style={{ height: 8 }} />
-            <Text style={[S.loadingSubtitle, { color: RC.faint }]} numberOfLines={4}>
-              {friendlyError(errorMsg)}
-            </Text>
-            <View style={{ height: 24 }} />
-            <PressableScale onPress={handleReset}>
-              <View style={S.btnSecondary}>
-                <Text style={S.btnLabelSecondary}>{t('compare.errorRetry').toUpperCase()}</Text>
+              {result.coachComment && (
+                <Card style={S.section}>
+                  <Text style={S.label}>{t('compare.coachLabel')}</Text>
+                  <RichText text={result.coachComment} style={S.bodyText} />
+                </Card>
+              )}
+
+              <View style={S.actions}>
+                {!isSaved ? (
+                  <Button label={t('compare.saveComparison')} onPress={handleSaveComparison} loading={isSaving} fullWidth />
+                ) : (
+                  <View style={S.savedRow}>
+                    <CheckIcon size={16} color={T.accentText} />
+                    <Text style={S.savedTxt}>{t('compare.comparisonSaved')}</Text>
+                  </View>
+                )}
+                <Button label={t('compare.newComparison')} variant="secondary" onPress={handleReset} fullWidth />
               </View>
-            </PressableScale>
-          </View>
-        )}
+            </>
+          )}
 
-      </ScrollView>
+          {/* ── ERROR ── */}
+          {viewState === 'error' && (
+            <Card style={S.loadingCard}>
+              <Text style={S.loadingTitle}>{t('compare.errorTitle')}</Text>
+              <Text style={S.loadingSubtitle} numberOfLines={4}>{friendlyError(errorMsg)}</Text>
+              <Button label={t('compare.errorRetry')} variant="secondary" onPress={handleReset} fullWidth style={{ marginTop: 18 }} />
+            </Card>
+          )}
+        </ScrollView>
+      </SafeAreaView>
 
       {/* ── Report Picker Modal ── */}
       <Modal
@@ -569,57 +498,51 @@ const CompareScreen: React.FC = () => {
         presentationStyle="pageSheet"
         onRequestClose={() => setPickerSlot(null)}
       >
-        <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
-          <View style={S.head}>
-            <Text style={S.headTitle}>{t('compare.selectReport')}</Text>
-            <PressableScale onPress={() => setPickerSlot(null)} style={S.iconBtn}>
-              <X size={18} color={RC.muted} strokeWidth={1.7} />
-            </PressableScale>
-          </View>
-          <Text style={S.modalHint}>{t('compare.selectReportHint')}</Text>
+        <View style={S.safe}>
+          <AmbientBackground animated={false} />
+          <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+            <View style={S.head}>
+              <GlassIconButton icon="close" onPress={() => setPickerSlot(null)} accessibilityLabel={t('common.close')} />
+            </View>
+            <View style={[S.hero, { paddingHorizontal: SP.screen, paddingTop: 8 }]}>
+              <Text style={S.title}>{t('compare.selectReport')}</Text>
+              <Text style={S.heroSub}>{t('compare.selectReportHint')}</Text>
+            </View>
 
-          {reportsLoading ? (
-            <View style={S.emptyBox}>
-              <Text style={S.emptyText}>{t('common.loading')}</Text>
-            </View>
-          ) : savedReports.length === 0 ? (
-            <View style={S.emptyBox}>
-              <Text style={S.emptyText}>{t('compare.noReports')}</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={savedReports}
-              keyExtractor={(item) => item.id}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ paddingHorizontal: RS.screenH, paddingBottom: 24 }}
-              renderItem={({ item, index }) => (
-                <PressableScale onPress={() => selectFromReport(item)}>
-                  <View style={[S.reportRow, index === 0 && S.reportRowFirst]}>
-                    <View style={S.reportIconCircle}>
-                      <FileVideo size={18} color={RC.text} strokeWidth={1.7} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={S.reportDate}>{fmtDate(item.createdAt)}</Text>
-                      <Text style={S.reportScore}>{score100(item.averageScore)}/100</Text>
-                    </View>
-                    <ChevronRight size={16} color={RC.ghost} strokeWidth={1.7} />
-                  </View>
-                </PressableScale>
-              )}
-            />
-          )}
-        </SafeAreaView>
+            {reportsLoading ? (
+              <View style={S.emptyBox}><Text style={S.emptyText}>{t('common.loading')}</Text></View>
+            ) : savedReports.length === 0 ? (
+              <View style={S.emptyBox}><Text style={S.emptyText}>{t('compare.noReports')}</Text></View>
+            ) : (
+              <ScrollView contentContainerStyle={{ padding: SP.screen, paddingBottom: 40 }}>
+                <Card style={{ paddingHorizontal: 16 }}>
+                  {savedReports.map((item, index) => (
+                    <PressableScale key={item.id} onPress={() => selectFromReport(item)}>
+                      <View style={[S.reportRow, index > 0 && S.catDivider]}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={S.reportDate}>{fmtDate(item.createdAt)}</Text>
+                          <Text style={S.reportScore}>{score100(item.averageScore)} / 100</Text>
+                        </View>
+                        <ChevronRight color={T.textSecondary} />
+                      </View>
+                    </PressableScale>
+                  ))}
+                </Card>
+              </ScrollView>
+            )}
+          </SafeAreaView>
+        </View>
       </Modal>
 
       <RenameModal
         visible={renameVisible}
         initialValue={customName}
         placeholder={t('progress.renameComparisonPlaceholder')}
-        title={t('progress.renameComparisonTitle').toUpperCase()}
+        title={t('progress.renameComparisonTitle')}
         onClose={() => setRenameVisible(false)}
         onSave={handleRename}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -627,356 +550,72 @@ export default CompareScreen;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const S = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: RC.bg },
-  scroll: { flexGrow: 1, paddingBottom: 56 },
+const createStyles = (T: ThemeColors) => StyleSheet.create({
+  safe:   { flex: 1, backgroundColor: T.bg },
+  scroll: { flexGrow: 1, paddingHorizontal: SP.screen, paddingTop: 8, gap: 14 },
 
-  // Aktenkopf
   head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: RS.headTop,
-    paddingHorizontal: RS.screenH,
-    paddingBottom: RS.headPadB,
-    borderBottomWidth: HL.strong,
-    borderBottomColor: RC.lineStrong,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: SP.screen, paddingTop: SP.top, minHeight: 44,
   },
-  headRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  headTitle: {
-    fontFamily: MONO_MED,
-    fontSize: 12,
-    letterSpacing: 2,
-    color: RC.text,
-  },
-  iconBtn: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  headRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  iconBtn:   { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
-  // Hero (idle)
-  hero: {
-    paddingHorizontal: RS.screenH,
-    paddingTop: 34,
-  },
-  heroSub: {
-    fontFamily: MONO,
-    fontSize: 14,
-    lineHeight: 21,
-    color: RC.muted,
-  },
+  hero:    { gap: 4 },
+  label:   { ...TY.label, color: T.textSecondary },
+  title:   { ...TY.pageTitle, color: T.text },
+  heroSub: { ...TY.body, color: T.textSecondary, marginTop: 4 },
 
-  subSection: {
-    paddingHorizontal: RS.screenH,
-  },
-  fieldLabel: {
-    fontFamily: MONO,
-    fontSize: 11,
-    letterSpacing: 1.5,
-    color: RC.faint,
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
+  subSection: { gap: 8 },
+  selCard:    { paddingHorizontal: 14 },
+  selRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64 },
+  selLabel:   { flex: 1, fontFamily: F.semiBold, fontSize: 15, color: T.text },
+  selectedLabel: { flex: 1, fontFamily: F.semiBold, fontSize: 15, color: T.text },
+  removeHit:  { minHeight: 44, justifyContent: 'center' },
+  clearTxt:   { fontFamily: F.semiBold, fontSize: 14, color: T.accentText },
+  divider:    { height: 1, backgroundColor: T.hairline },
 
-  // Video-Auswahl
-  selRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 16,
-    borderTopWidth: HL.std,
-    borderTopColor: RC.line,
-  },
-  selRowBorder: {
-    borderBottomWidth: HL.std,
-    borderBottomColor: RC.line,
-  },
-  selIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: RC.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selLabel: {
-    flex: 1,
-    fontFamily: MONO_MED,
-    fontSize: 14,
-    color: RC.text,
-  },
-  selectedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 16,
-    borderTopWidth: HL.std,
-    borderTopColor: RC.line,
-  },
-  selectedLabel: {
-    flex: 1,
-    fontFamily: MONO_MED,
-    fontSize: 14,
-    color: RC.accent,
-  },
-  clearTxt: {
-    fontFamily: MONO,
-    fontSize: 12,
-    color: RC.ghost,
-    textDecorationLine: 'underline',
-  },
-
-  // Kontext-Feld
   contextInput: {
-    fontSize: 14.5,
-    color: RC.text,
-    lineHeight: 22,
-    minHeight: 80,
-    textAlignVertical: 'top',
-    borderWidth: 1.5,
-    borderColor: RC.line,
-    borderRadius: 12,
-    padding: 14,
+    minHeight: 110, textAlignVertical: 'top',
+    backgroundColor: T.card, borderWidth: 1, borderColor: T.cardBorder, borderRadius: R.button,
+    padding: 14, ...TY.bodySm, color: T.text,
   },
 
-  // CTA
-  cta: {
-    paddingHorizontal: RS.screenH,
-  },
-  btnPrimary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: RC.accent,
-    borderRadius: RR.button,
-    paddingVertical: 18,
-    paddingHorizontal: 22,
-  },
-  btnDisabled: {
-    opacity: 0.4,
-  },
-  btnLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  btnDot: {
-    width: 11,
-    height: 11,
-    borderRadius: 5.5,
-    backgroundColor: RC.onAccent,
-  },
-  btnLabelPrimary: {
-    fontFamily: MONO_MED,
-    fontSize: 14,
-    letterSpacing: 1,
-    color: RC.onAccent,
-  },
-  btnSecondary: {
-    borderWidth: 1.5,
-    borderColor: RC.lineStrong,
-    borderRadius: RR.button,
-    paddingVertical: 15,
-    paddingHorizontal: 22,
-    alignItems: 'center',
-  },
-  btnLabelSecondary: {
-    fontFamily: MONO_MED,
-    fontSize: 13,
-    letterSpacing: 1.5,
-    color: RC.text,
-  },
-  savedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 14,
-  },
-  savedTxt: {
-    fontFamily: MONO,
-    fontSize: 11,
-    letterSpacing: 1,
-    color: RC.text,
-  },
-
-  // Loading
-  loadingBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: RS.screenH,
-    paddingTop: 60,
-    paddingBottom: 60,
-  },
+  // Laden / Fehler
+  loadingCard: { padding: 22, alignItems: 'center', marginTop: 24 },
   loadingIconCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: RC.accentWash,
-    borderWidth: 1.5,
-    borderColor: RC.accentLine,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 56, height: 56, borderRadius: R.tile, backgroundColor: T.accentTint,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 18,
   },
-  loadingTitle: {
-    fontSize: 19,
-    fontWeight: '600',
-    color: RC.text,
-    textAlign: 'center',
-    letterSpacing: -0.3,
-  },
-  loadingSubtitle: {
-    fontSize: 14,
-    color: RC.muted,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  barTrack: {
-    width: '100%',
-    height: 2,
-    backgroundColor: RC.line,
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  barFill: {
-    height: 4,
-    marginTop: -1,
-    backgroundColor: RC.accent,
-    borderRadius: 2,
-  },
-  barRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  barPct: {
-    fontFamily: MONO_MED,
-    fontSize: 13,
-    color: RC.accent,
-  },
-  barStatus: {
-    fontFamily: MONO,
-    fontSize: 12,
-    color: RC.faint,
-  },
+  loadingTitle:    { ...TY.rowTitle, fontSize: 19, lineHeight: 24, color: T.text, textAlign: 'center' },
+  loadingSubtitle: { ...TY.bodySm, color: T.textSecondary, textAlign: 'center', marginTop: 6 },
+  barTrack: { alignSelf: 'stretch', height: 4, backgroundColor: T.track, borderRadius: 2, overflow: 'hidden', marginTop: 24, marginBottom: 8 },
+  barFill:  { height: 4, backgroundColor: T.accentData, borderRadius: 2 },
+  barRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', alignSelf: 'stretch', gap: 12 },
+  barPct:   { fontFamily: F.semiBold, fontSize: 13, color: T.accentText, fontVariant: ['tabular-nums'] },
+  barStatus:{ flex: 1, ...TY.captionSm, color: T.textSecondary, textAlign: 'right' },
 
   // Ergebnis
-  customName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: RC.text,
-  },
-  videosRow: {
-    flexDirection: 'row',
-    gap: 14,
-  },
-  videoLabel: {
-    fontFamily: MONO,
-    fontSize: 10,
-    letterSpacing: 1,
-    color: RC.faint,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  videoBox: {
-    aspectRatio: 9 / 16,
-    backgroundColor: '#000',
-    borderWidth: 1,
-    borderColor: RC.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  video: { width: '100%', height: '100%' },
-  videoEmpty: { fontFamily: MONO, fontSize: 12, color: RC.ghost },
+  videosRow:  { flexDirection: 'row', gap: 10 },
+  videoLabel: { ...TY.captionSm, fontFamily: F.medium, color: T.textSecondary },
+  videoBox:   { height: 180, borderRadius: R.tile, overflow: 'hidden', backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
+  video:      { width: '100%', height: '100%' },
+  videoEmpty: { ...TY.caption, color: T.textSecondary },
+  section:    { padding: 18, gap: 8 },
+  bodyText:   { ...TY.body, color: T.text },
+  catRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 10 },
+  catDivider: { borderTopWidth: 1, borderTopColor: T.hairline },
+  catName:    { fontFamily: F.semiBold, fontSize: 14.5, color: T.text },
+  catObs:     { ...TY.caption, color: T.textSecondary },
+  dirGlyph:   { fontFamily: F.semiBold, fontSize: 16, width: 18, textAlign: 'right' },
+  actions:    { gap: 10 },
+  savedRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 44 },
+  savedTxt:   { fontFamily: F.semiBold, fontSize: 14, color: T.accentText },
 
-  subHead: {
-    fontFamily: MONO,
-    fontSize: 11,
-    letterSpacing: 1.5,
-    color: RC.faint,
-    textTransform: 'uppercase',
-    paddingBottom: 9,
-    marginBottom: 16,
-    borderBottomWidth: HL.strong,
-    borderBottomColor: RC.lineStrong,
-  },
-  bodyText: {
-    fontSize: 14.5,
-    lineHeight: 22,
-    color: RC.text,
-  },
-  catRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    paddingVertical: 14,
-    borderTopWidth: HL.faint,
-    borderTopColor: RC.lineFaint,
-  },
-  catName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: RC.text,
-  },
-  catObs: {
-    fontSize: 13,
-    color: RC.muted,
-    lineHeight: 19,
-    marginTop: 3,
-  },
-  dirGlyph: {
-    fontSize: 18,
-    marginTop: 1,
-  },
-
-  // Report-Picker-Modal
-  modalHint: {
-    fontSize: 13.5,
-    color: RC.muted,
-    paddingHorizontal: RS.screenH,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
-  emptyText: { fontFamily: MONO, fontSize: 13, color: RC.faint },
-  reportRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 16,
-    borderTopWidth: HL.std,
-    borderTopColor: RC.line,
-  },
-  reportRowFirst: {
-    borderTopWidth: 0,
-  },
-  reportIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: RC.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reportDate: {
-    fontFamily: MONO_MED,
-    fontSize: 14,
-    color: RC.text,
-  },
-  reportScore: {
-    fontFamily: MONO,
-    fontSize: 12,
-    color: RC.muted,
-    marginTop: 3,
-  },
+  // Auswahl-Sheet
+  emptyBox:    { flex: 1, alignItems: 'center', justifyContent: 'center', padding: SP.screen },
+  emptyText:   { ...TY.body, color: T.textSecondary, textAlign: 'center' },
+  reportRow:   { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56 },
+  reportDate:  { fontFamily: F.medium, fontSize: 14.5, color: T.text },
+  reportScore: { ...TY.captionSm, color: T.textSecondary, fontVariant: ['tabular-nums'] },
 });
