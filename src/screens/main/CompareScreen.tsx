@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, {
@@ -87,6 +88,7 @@ function DirectionGlyph({ direction }: { direction: 'improved' | 'declined' | 's
 
 const CompareScreen: React.FC = () => {
   const { t }    = useTranslation();
+  const navigation = useNavigation<any>();
   const tabSpace   = useTabBarSpace();
   const { user } = useAuth();
 
@@ -321,7 +323,13 @@ const CompareScreen: React.FC = () => {
             </View>
           </>
         ) : (
-          <Text style={S.headTitle}>{t('compare.title').toUpperCase()}</Text>
+          <View style={S.headRight}>
+            {/* Seit Entwurf 5 im Verlauf-Stack: Zurück zum Verlauf */}
+            <PressableScale onPress={() => navigation.goBack()} style={S.iconBtn} accessibilityLabel={t('progress.back')}>
+              <ArrowLeft size={16} color={RC.text} strokeWidth={1.8} />
+            </PressableScale>
+            <Text style={S.headTitle}>{t('compare.title').toUpperCase()}</Text>
+          </View>
         )}
       </View>
 

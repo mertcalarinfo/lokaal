@@ -297,7 +297,7 @@
     "tabAnalyses": "Analysen",
     "tabComparisons": "Vergleiche",
     "noComparisons": "Noch keine Vergleiche",
-    "noComparisonsSub": "Vergleiche zwei Videos im Vergleich-Tab",
+    "noComparisonsSub": "Stell zwei Auftritte gegenüber und sieh, was sich verändert hat.",
     "comparisonImproved": "{{n}} verbessert",
     "comparisonDeclined": "{{n}} Rückgang",
     "comparisonSame": "{{n}} gleich",
@@ -333,7 +333,17 @@
     "comparisonTitle": "Vergleich",
     "categoriesHead": "Kategorien",
     "renameComparisonTitle": "Vergleich umbenennen",
-    "renameComparisonPlaceholder": "z. B. Vorher / Nachher Pitch"
+    "renameComparisonPlaceholder": "z. B. Vorher / Nachher Pitch",
+    "headline": "Dein Fortschritt",
+    "window3Months": "3 Monate",
+    "sinceDate": "seit dem {{date}}",
+    "newComparisonSub": "Zwei Auftritte gegenüberstellen",
+    "analysesHead": "Analysen",
+    "allCount": "Alle {{count}}",
+    "allTitle": "Alle Analysen",
+    "comparisonsHead": "Vergleiche",
+    "startComparison": "Vergleich starten",
+    "back": "Zurück"
   },
   "settings": {
     "title": "Einstellungen",

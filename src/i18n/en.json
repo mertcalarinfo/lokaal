@@ -297,7 +297,7 @@
     "tabAnalyses": "Analyses",
     "tabComparisons": "Comparisons",
     "noComparisons": "No comparisons yet",
-    "noComparisonsSub": "Compare two videos in the Compare tab",
+    "noComparisonsSub": "Put two performances side by side and see what changed.",
     "comparisonImproved": "{{n}} improved",
     "comparisonDeclined": "{{n}} declined",
     "comparisonSame": "{{n}} same",
@@ -333,7 +333,17 @@
     "comparisonTitle": "Comparison",
     "categoriesHead": "Categories",
     "renameComparisonTitle": "Rename comparison",
-    "renameComparisonPlaceholder": "e.g. Before / After pitch"
+    "renameComparisonPlaceholder": "e.g. Before / After pitch",
+    "headline": "Your progress",
+    "window3Months": "3 months",
+    "sinceDate": "since {{date}}",
+    "newComparisonSub": "Put two performances side by side",
+    "analysesHead": "Analyses",
+    "allCount": "All {{count}}",
+    "allTitle": "All analyses",
+    "comparisonsHead": "Comparisons",
+    "startComparison": "Start comparison",
+    "back": "Back"
   },
   "settings": {
     "title": "Settings",

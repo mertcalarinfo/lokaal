@@ -111,8 +111,10 @@ export type MainTabParamList = {
 
 /** Verlauf-Stack: Übersicht + KI-Vergleich (seit Entwurf 5 kein eigener Tab mehr). */
 export type ProgressStackParamList = {
-  Progress: undefined;
-  Compare:  undefined;
+  Progress:    undefined;
+  /** Volle Analysen-Liste inkl. Zahlenvergleich zweier Analysen */
+  AllAnalyses: undefined;
+  Compare:     undefined;
 };
 
 // ── Video-Vergleich ───────────────────────────────────────────────────────────

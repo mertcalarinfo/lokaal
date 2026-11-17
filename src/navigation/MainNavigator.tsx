@@ -10,6 +10,7 @@ import AnalysisLoadingScreen from '../screens/main/AnalysisLoadingScreen';
 import ReportScreen from '../screens/main/ReportScreen';
 import ProgressScreen from '../screens/main/ProgressScreen';
 import CompareScreen from '../screens/main/CompareScreen';
+import AnalysesListScreen from '../screens/main/AnalysesListScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import PaywallScreen from '../screens/paywall/PaywallScreen';
@@ -60,8 +61,9 @@ const ProgressStackNavigator: React.FC = () => {
         animation: 'slide_from_right',
       }}
     >
-      <ProgressStack.Screen name="Progress" component={ProgressScreen} />
-      <ProgressStack.Screen name="Compare"  component={CompareScreen} />
+      <ProgressStack.Screen name="Progress"    component={ProgressScreen} />
+      <ProgressStack.Screen name="AllAnalyses" component={AnalysesListScreen} />
+      <ProgressStack.Screen name="Compare"     component={CompareScreen} />
     </ProgressStack.Navigator>
   );
 };
