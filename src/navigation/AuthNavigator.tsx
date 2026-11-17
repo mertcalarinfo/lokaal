@@ -5,6 +5,7 @@ import { AuthStackParamList } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import AccessCodeScreen from '../screens/auth/AccessCodeScreen';
 import LanguageSelectScreen from '../screens/onboarding/LanguageSelectScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -22,6 +23,7 @@ const AuthNavigator: React.FC = () => {
     >
       <Stack.Screen name="Login"          component={LoginScreen} />
       <Stack.Screen name="Register"       component={RegisterScreen} />
+      <Stack.Screen name="AccessCode"     component={AccessCodeScreen} />
       <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} />
     </Stack.Navigator>
   );

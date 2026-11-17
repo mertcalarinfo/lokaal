@@ -39,6 +39,22 @@ export const darkPalette = {
   error:          '#E8927C',
   errorBg:        'rgba(232,146,124,0.10)',
 
+  // Karten-Gradient + Ränder
+  cardTop:        '#15273f',
+  cardBot:        '#0f1f34',
+  cardLine:       'rgba(255,255,255,0.06)',
+  cardEdge:       'rgba(255,255,255,0.07)',
+
+  // Accent-Erweiterungen
+  accentDeep:     '#caa86a',
+  accentGlow:     'rgba(230,212,168,0.22)',
+
+  // Schatten + Tracks
+  shadowColor:    '#000',
+  cardTrack:      'rgba(255,255,255,0.07)',
+  ringTrack:      'rgba(255,255,255,0.08)',
+  gridLine:       'rgba(255,255,255,0.05)',
+
   // Button-Vordergrund — Label-Farbe auf Primary-Button (T.text-Fläche)
   // Dark:  warmweißer Button → dunkles Label
   btnFg:          '#101A28',
@@ -73,6 +89,22 @@ export const lightPalette = {
   successBg:      'rgba(63,155,110,0.12)',
   error:          '#C75B43',
   errorBg:        'rgba(199,91,67,0.10)',
+
+  // Karten-Gradient + Ränder
+  cardTop:        '#FDFCF9',
+  cardBot:        '#F5F2EB',
+  cardLine:       'rgba(15,27,45,0.06)',
+  cardEdge:       'rgba(255,255,255,0.70)',
+
+  // Accent-Erweiterungen
+  accentDeep:     '#8f7140',
+  accentGlow:     'rgba(202,168,106,0.20)',
+
+  // Schatten + Tracks
+  shadowColor:    '#1a2740',
+  cardTrack:      'rgba(15,27,45,0.08)',
+  ringTrack:      'rgba(15,27,45,0.10)',
+  gridLine:       'rgba(15,27,45,0.06)',
 
   // Button-Vordergrund — Label-Farbe auf Primary-Button (T.text-Fläche)
   // Light: navy Button → off-white Label

@@ -1,14 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  LayoutAnimation,
   Platform,
   UIManager,
 } from 'react-native';
-import { ChevronDown, ChevronUp, Zap } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ChevronDown, Zap } from 'lucide-react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  Easing,
+} from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { CategoryResult } from '../types';
 import RichText from './RichText';
@@ -50,11 +57,12 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
     flex:       1,
   },
   score: {
-    fontFamily:    F.xBold,
-    fontSize:      18,
-    fontWeight:    '800',
-    color:         T.accent,
+    fontFamily:   F.xBold,
+    fontSize:     18,
+    fontWeight:   '800',
+    color:        T.accent,
     letterSpacing: -0.36,
+    fontVariant:  ['tabular-nums'],
   },
   outOf: {
     fontFamily: F.regular,
@@ -66,15 +74,19 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
     marginLeft: 4,
   },
   barTrack: {
-    height:           2,
-    backgroundColor:  T.line,
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.07)',
     marginHorizontal: 2,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
   barFill: {
-    height:          4,
-    marginTop:       -1,
-    backgroundColor: T.accent,
-    borderRadius:    2,
+    height: 6,
+    borderRadius: 3,
+    ...Platform.select({
+      ios: { shadowColor: 'rgba(230,212,168,0.5)', shadowOpacity: 1, shadowRadius: 12, shadowOffset: { width: 0, height: 0 } },
+      android: { elevation: 2 },
+    }),
   },
   expanded: {
     paddingHorizontal: 2,
@@ -127,19 +139,49 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
   const [expanded, setExpanded] = useState(false);
   const { t } = useTranslation();
 
+  const enterOpacity = useSharedValue(0);
+  const enterY       = useSharedValue(12);
+  useEffect(() => {
+    const delay = 700 + index * 55;
+    enterOpacity.value = withDelay(delay, withTiming(1, { duration: 380 }));
+    enterY.value       = withDelay(delay, withTiming(0, { duration: 380 }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const enterStyle = useAnimatedStyle(() => ({
+    opacity:   enterOpacity.value,
+    transform: [{ translateY: enterY.value }],
+  }));
+
+  const [trackWidth, setTrackWidth] = useState(0);
+  const barWidth = useSharedValue(0);
+  useEffect(() => {
+    if (trackWidth <= 0) return;
+    const target = (category.score / 10) * trackWidth;
+    barWidth.value = withDelay(700 + index * 55, withTiming(target, {
+      duration: 900,
+      easing: Easing.bezier(0.2, 0.8, 0.2, 1),
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackWidth, category.score]);
+  const barAnimStyle = useAnimatedStyle(() => ({ width: barWidth.value }));
+
+  const chevronAngle = useSharedValue(0);
+  const chevronAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${chevronAngle.value}deg` }],
+  }));
+
   const translatedName = t(`report.categoryNames.${category.name}`, {
     defaultValue: category.name,
   });
 
   const toggle = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded((v) => !v);
+    const next = !expanded;
+    setExpanded(next);
+    chevronAngle.value = withTiming(next ? 180 : 0, { duration: 280 });
   };
 
-  const barWidth = `${(category.score / 10) * 100}%`;
-
   return (
-    <View style={styles.card}>
+    <Animated.View style={[styles.card, enterStyle]}>
       <TouchableOpacity style={styles.header} onPress={toggle} activeOpacity={0.8}>
         <Text style={styles.index}>{String(index + 1).padStart(2, '0')}</Text>
         <Text style={styles.name}>{translatedName}</Text>
@@ -147,15 +189,24 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
           {category.score}
           <Text style={styles.outOf}>/10</Text>
         </Text>
-        {expanded
-          ? <ChevronUp   size={16} color={T.textFaint} strokeWidth={1.7} style={styles.chev} />
-          : <ChevronDown size={16} color={T.textFaint} strokeWidth={1.7} style={styles.chev} />
-        }
+        <Animated.View style={[styles.chev, chevronAnimStyle]}>
+          <ChevronDown size={16} color={T.textFaint} strokeWidth={1.7} />
+        </Animated.View>
       </TouchableOpacity>
 
-      {/* Score bar — 2px track, 4px fill, --accent */}
-      <View style={styles.barTrack}>
-        <View style={[styles.barFill, { width: barWidth as any }]} />
+      {/* Score bar — animated gradient */}
+      <View
+        style={styles.barTrack}
+        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+      >
+        <Animated.View style={barAnimStyle}>
+          <LinearGradient
+            colors={[T.accentDeep, T.accent] as const}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.barFill}
+          />
+        </Animated.View>
       </View>
 
       {expanded && (
@@ -184,7 +235,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
           )}
         </View>
       )}
-    </View>
+    </Animated.View>
   );
 };
 

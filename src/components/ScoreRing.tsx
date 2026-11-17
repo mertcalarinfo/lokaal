@@ -1,119 +1,47 @@
-import React, { useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, AccessibilityInfo } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { useTheme } from '../contexts/ThemeContext';
-import { ThemeColors, F } from '../theme';
+import Animated, {
+  useSharedValue, useAnimatedProps, withDelay, withTiming, Easing,
+} from 'react-native-reanimated';
+import { useColors } from './theme';
 
-// Design system rule: score color is ALWAYS --accent (Sand / Bronze per Theme).
-// No colour-coding per value (no red/green). No gradient.
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const R = 27;
+const CIRC = 2 * Math.PI * R;
 
-interface ScoreRingProps {
-  score: number;
-  size?: number;
-  strokeWidth?: number;
-  showLabel?: boolean;
-  labelText?: string;
-  animate?: boolean;
-}
+type Props = { value: number; max?: number; delay?: number; mode?: 'light' | 'dark' };
 
-const createStyles = (T: ThemeColors) => StyleSheet.create({
-  container: {
-    alignItems:     'center',
-    justifyContent: 'center',
-  },
-  labelContainer: {
-    position:       'absolute',
-    alignItems:     'center',
-    justifyContent: 'center',
-  },
-  scoreText: {
-    fontFamily:    F.xBold,
-    fontWeight:    '800',
-    letterSpacing: -1,
-    color:         T.accent,
-  },
-  subText: {
-    fontFamily: F.regular,
-    fontWeight: '400',
-    color:      T.textMuted,
-    marginTop:  2,
-  },
-});
-
-const ScoreRing: React.FC<ScoreRingProps> = ({
-  score,
-  size        = 120,
-  strokeWidth = 10,
-  showLabel   = true,
-  labelText,
-  animate     = true,
-}) => {
-  const { T } = useTheme();
-  const styles = useMemo(() => createStyles(T), [T]);
-
-  const animatedValue = useRef(new Animated.Value(0)).current;
-  const radius        = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const clampedScore  = Math.min(10, Math.max(0, score));
-  const fillPercent   = clampedScore / 10;
+export default function ScoreRing({ value, max = 10, delay = 0, mode }: Props) {
+  const c = useColors(mode);
+  const p = useSharedValue(0);
 
   useEffect(() => {
-    if (animate) {
-      Animated.timing(animatedValue, {
-        toValue:         fillPercent,
-        duration:        1200,
-        useNativeDriver: false,
-      }).start();
-    } else {
-      animatedValue.setValue(fillPercent);
-    }
-  }, [fillPercent, animate]);
+    AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
+      if (reduce) { p.value = value / max; return; }
+      p.value = withDelay(delay, withTiming(value / max, {
+        duration: 1000, easing: Easing.bezier(0.2, 0.8, 0.2, 1),
+      }));
+    });
+  }, [value]);
 
-  const staticOffset = circumference * (1 - fillPercent);
+  const props = useAnimatedProps(() => ({ strokeDashoffset: CIRC * (1 - p.value) }));
 
   return (
-    <View style={[styles.container, { width: size, height: size }]}>
-      <Svg width={size} height={size}>
-        {/* Track — --hairline */}
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={T.hairline}
-          strokeWidth={strokeWidth}
-        />
-        {/* Fill — always --accent */}
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={T.accent}
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={staticOffset}
-          strokeLinecap="round"
-          rotation="-90"
-          origin={`${size / 2}, ${size / 2}`}
+    <View style={{ width: 62, height: 62, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={62} height={62} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
+        <Circle cx={31} cy={31} r={R} stroke={c.ringTrack} strokeWidth={4.5} fill="none" />
+        <AnimatedCircle
+          cx={31} cy={31} r={R} stroke={c.accent} strokeWidth={4.5} fill="none"
+          strokeLinecap="round" strokeDasharray={CIRC} animatedProps={props}
         />
       </Svg>
-      {showLabel && (
-        <View style={styles.labelContainer}>
-          <Text style={[styles.scoreText, { fontSize: size * 0.22 }]}>
-            {clampedScore % 1 === 0
-              ? clampedScore.toFixed(0)
-              : clampedScore.toFixed(1)}
-          </Text>
-          {labelText ? (
-            <Text style={[styles.subText, { fontSize: size * 0.1 }]}>{labelText}</Text>
-          ) : (
-            <Text style={[styles.subText, { fontSize: size * 0.1 }]}>/10</Text>
-          )}
-        </View>
-      )}
+      <View style={{ alignItems: 'center' }}>
+        <Text style={{ fontSize: 17, fontWeight: '800', color: c.text, fontVariant: ['tabular-nums'] }}>
+          {value.toFixed(1)}
+        </Text>
+        <Text style={{ fontSize: 9, color: c.faint, fontWeight: '500', marginTop: -2 }}>/{max}</Text>
+      </View>
     </View>
   );
-};
-
-export default ScoreRing;
+}

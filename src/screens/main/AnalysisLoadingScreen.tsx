@@ -1,158 +1,31 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Animated, Alert, Image } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { Upload, Sparkles } from 'lucide-react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing,
+} from 'react-native-reanimated';
+import { Sparkles } from 'lucide-react-native';
 
 import { HomeStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { useTheme } from '../../contexts/ThemeContext';
 import { useAnalysis } from '../../hooks/useAnalysis';
-
-// Theme-abhängige P-Mark-Quellen (Spec §3 P-Mark)
-const P_DARK  = require('../../../assets/branding/P-warmwhite.png');
-const P_LIGHT = require('../../../assets/branding/P-navy.png');
-import Button from '../../components/Button';
-import { ThemeColors, F, R, S } from '../../theme';
+import { incrementMonthlyUsage } from '../../services/storage';
+import PressableScale from '../../components/PressableScale';
+import { RC, MONO, MONO_MED, RS } from '../../theme/register';
 
 type LoadingRoute = RouteProp<HomeStackParamList, 'AnalysisLoading'>;
 type LoadingNav   = NativeStackNavigationProp<HomeStackParamList, 'AnalysisLoading'>;
 
 const TIP_INTERVAL_MS = 4000;
 
-const createStyles = (T: ThemeColors) => StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: T.bg,
-  },
-  container: {
-    flex:              1,
-    paddingHorizontal: S.s8,
-    justifyContent:    'center',
-    alignItems:        'center',
-    paddingVertical:   S.s10,
-  },
-  logoSection: {
-    alignItems:   'center',
-    marginBottom: S.s6,
-  },
-  logoImg: {
-    width:        56,
-    height:       56,
-    marginBottom: S.s3,
-  },
-  wordmark: {
-    fontFamily:    F.xBold,
-    fontSize:      16,
-    fontWeight:    '800',
-    color:         T.text,
-    letterSpacing: 5,
-  },
-  titleSection: {
-    alignItems:   'center',
-    marginBottom: S.s6,
-  },
-  title: {
-    fontFamily:    F.bold,
-    fontSize:      20,
-    fontWeight:    '700',
-    color:         T.text,
-    marginBottom:  S.s2,
-    textAlign:     'center',
-    letterSpacing: -0.4,
-  },
-  subtitle: {
-    fontFamily: F.regular,
-    fontSize:   14.5,
-    color:      T.textMuted,
-    textAlign:  'center',
-    lineHeight: 21,
-  },
-  barSection: {
-    width:        '100%',
-    marginBottom: S.s8,
-  },
-  barTrack: {
-    height:          2,
-    backgroundColor: T.line,
-    borderRadius:    2,
-    overflow:        'hidden',
-    marginBottom:    S.s2,
-  },
-  barFill: {
-    height:          4,
-    marginTop:       -1,
-    backgroundColor: T.accent,
-    borderRadius:    2,
-  },
-  barLabels: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-  },
-  barPct: {
-    fontFamily: F.semiBold,
-    fontSize:   13,
-    fontWeight: '600',
-    color:      T.accent,
-  },
-  barEta: {
-    fontFamily: F.regular,
-    fontSize:   12,
-    color:      T.textFaint,
-  },
-  tipCard: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    backgroundColor: T.surface,
-    borderRadius:    R.md,
-    padding:         S.s4,
-    marginBottom:    S.s6,
-    width:           '100%',
-    borderWidth:     1,
-    borderColor:     T.hairline,
-    minHeight:       52,
-  },
-  tipDot: {
-    width:           6,
-    height:          6,
-    borderRadius:    3,
-    backgroundColor: T.accent,
-    marginRight:     S.s3,
-    flexShrink:      0,
-  },
-  tipText: {
-    flex:       1,
-    fontFamily: F.regular,
-    fontSize:   14,
-    color:      T.textMuted,
-    lineHeight: 20,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           6,
-    minHeight:     24,
-    marginBottom:  S.s4,
-  },
-  statusText: {
-    fontFamily: F.regular,
-    fontSize:   12,
-    color:      T.textFaint,
-  },
-  cancelBtn: {
-    marginTop: S.s4,
-  },
-});
-
 const AnalysisLoadingScreen: React.FC = () => {
   const { t }      = useTranslation();
   const navigation = useNavigation<LoadingNav>();
   const route      = useRoute<LoadingRoute>();
   const { user }   = useAuth();
-  const { T, isDark } = useTheme();
-  const styles        = useMemo(() => createStyles(T), [T]);
   const { videoUri, answers } = route.params;
   const {
     state, uploadProgress, progress: realProgress,
@@ -161,27 +34,25 @@ const AnalysisLoadingScreen: React.FC = () => {
 
   const [tipIndex,   setTipIndex]   = useState(0);
   const [displayPct, setDisplayPct] = useState(0);
-  const pulseAnim  = useRef(new Animated.Value(1)).current;
   const hasStarted = useRef(false);
-
-  const secondsRemaining = Math.max(1, Math.round(((100 - displayPct) / 100) * 60));
 
   const rawTips = t('analysis.loading.tips', { returnObjects: true });
   const tips: string[] = Array.isArray(rawTips) && rawTips.length > 0
     ? rawTips
     : ['Analyzing…', 'Processing…', 'Generating insights…'];
 
-  // Pulse logo
+  // Pulsierendes Lade-Icon (identisch mit CompareScreen)
+  const pulse = useSharedValue(1);
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.06, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1,    duration: 900, useNativeDriver: true }),
-      ])
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1.18, { duration: 700, easing: Easing.inOut(Easing.cubic) }),
+        withTiming(1,    { duration: 700, easing: Easing.inOut(Easing.cubic) }),
+      ),
+      -1, true,
     );
-    loop.start();
-    return () => loop.stop();
   }, []);
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
   // Cycle tips
   useEffect(() => {
@@ -211,18 +82,19 @@ const AnalysisLoadingScreen: React.FC = () => {
     (async () => {
       const result = await startAnalysis(videoUri, answers, user?.uid || 'anonymous', user?.language || 'en');
       if (result) {
+        // Monatszähler nur bei erfolgreich abgeschlossener Analyse hochzählen.
+        if (user?.uid) incrementMonthlyUsage(user.uid).catch(() => {});
         setDisplayPct(100);
         setTimeout(() => navigation.replace('Report', { report: result }), 300);
       }
     })();
   }, []);
 
-  // Error alert
+  // Error alert — show only the i18n message; raw technical details stay in console only
   useEffect(() => {
     if (state === 'error' && error) {
-      const msg  = t(`analysis.errors.${error}`, { defaultValue: t('analysis.errors.generic') });
-      const full = rawError ? `${msg}\n\n— Debug —\n${rawError}` : msg;
-      Alert.alert(t('common.error'), full, [{ text: t('common.ok'), onPress: () => navigation.goBack() }]);
+      const msg = t(`analysis.errors.${error}`, { defaultValue: t('analysis.errors.generic') });
+      Alert.alert(t('common.error'), msg, [{ text: t('common.ok'), onPress: () => navigation.goBack() }]);
     }
   }, [state, error]);
 
@@ -234,70 +106,136 @@ const AnalysisLoadingScreen: React.FC = () => {
   }, [cancel, navigation, t]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={styles.container}>
+    <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
 
-        {/* Logo */}
-        <View style={styles.logoSection}>
-          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-            <Image source={isDark ? P_DARK : P_LIGHT} style={styles.logoImg} resizeMode="contain" />
-          </Animated.View>
-          <Text style={styles.wordmark}>PREZENCE</Text>
-        </View>
-
-        {/* Title */}
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>{t('analysis.loading.title')}</Text>
-          <Text style={styles.subtitle}>{t('analysis.loading.subtitle')}</Text>
-        </View>
-
-        {/* Progress bar */}
-        <View style={styles.barSection}>
-          <View style={styles.barTrack}>
-            <View style={[styles.barFill, { width: `${displayPct}%` }]} />
-          </View>
-          <View style={styles.barLabels}>
-            <Text style={styles.barPct}>{displayPct}%</Text>
-            <Text style={styles.barEta}>
-              {t('analysis.loading.estimatedTime', { seconds: secondsRemaining })}
-            </Text>
-          </View>
-        </View>
-
-        {/* Rotating tip */}
-        <View style={styles.tipCard}>
-          <View style={styles.tipDot} />
-          <Text style={styles.tipText}>{tips[tipIndex]}</Text>
-        </View>
-
-        {/* Status */}
-        <View style={styles.statusRow}>
-          {state === 'uploading' && (
-            <>
-              <Upload size={14} color={T.textFaint} strokeWidth={1.7} />
-              <Text style={styles.statusText}>Uploading… {uploadProgress}%</Text>
-            </>
-          )}
-          {state === 'analyzing' && (
-            <>
-              <Sparkles size={14} color={T.accent} strokeWidth={1.7} />
-              <Text style={styles.statusText}>AI analysiert…</Text>
-            </>
-          )}
-        </View>
-
-        {/* Cancel */}
-        <Button
-          label={t('analysis.loading.cancelButton')}
-          onPress={handleCancel}
-          variant="ghost"
-          size="sm"
-          style={styles.cancelBtn}
-        />
-
+      {/* ── AKTENKOPF ── */}
+      <View style={S.head}>
+        <Text style={S.headTitle}>{t('analysis.headerTitle').toUpperCase()}</Text>
       </View>
+
+      {/* ── LOADING (identische Struktur wie CompareScreen) ── */}
+      <View style={S.loadingBox}>
+        <Animated.View style={[S.loadingIconCircle, pulseStyle]}>
+          <Sparkles size={30} color={RC.accent} strokeWidth={1.6} />
+        </Animated.View>
+
+        <View style={{ height: 22 }} />
+        <Text style={S.loadingTitle}>{t('analysis.loading.title')}</Text>
+        <View style={{ height: 8 }} />
+        <Text style={S.loadingSubtitle}>{t('analysis.loading.subtitle')}</Text>
+
+        <View style={{ height: 30 }} />
+        <View style={S.barTrack}>
+          <View style={[S.barFill, { width: `${displayPct}%` }]} />
+        </View>
+        <View style={S.barRow}>
+          <Text style={S.barPct}>{displayPct}%</Text>
+          <Text style={S.barStatus} numberOfLines={1}>
+            {state === 'uploading' ? `${t('analysis.loading.uploadStatus')} ${uploadProgress}%` : tips[tipIndex]}
+          </Text>
+        </View>
+
+        <View style={{ height: 30 }} />
+        <PressableScale onPress={handleCancel}>
+          <Text style={S.cancelTxt}>{t('analysis.loading.cancelButton')}</Text>
+        </PressableScale>
+      </View>
+
     </SafeAreaView>
   );
 };
 
 export default AnalysisLoadingScreen;
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const S = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: RC.bg },
+
+  // Aktenkopf — im Lade-Screen ohne Trennlinie (zu dominant bei transientem Vollbild)
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: RS.headTop,
+    paddingHorizontal: RS.screenH,
+    paddingBottom: RS.headPadB,
+  },
+  headTitle: {
+    fontFamily: MONO_MED,
+    fontSize: 12,
+    letterSpacing: 2,
+    color: RC.text,
+  },
+
+  // Loading (identisch mit CompareScreen)
+  loadingBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: RS.screenH,
+    paddingBottom: 40,
+  },
+  loadingIconCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: RC.accentWash,
+    borderWidth: 1.5,
+    borderColor: RC.accentLine,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingTitle: {
+    fontSize: 19,
+    fontWeight: '600',
+    color: RC.text,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  loadingSubtitle: {
+    fontSize: 14,
+    color: RC.muted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  barTrack: {
+    width: '100%',
+    height: 2,
+    backgroundColor: RC.line,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  barFill: {
+    height: 4,
+    marginTop: -1,
+    backgroundColor: RC.accent,
+    borderRadius: 2,
+  },
+  barRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    gap: 12,
+  },
+  barPct: {
+    fontFamily: MONO_MED,
+    fontSize: 13,
+    color: RC.accent,
+  },
+  barStatus: {
+    flex: 1,
+    fontFamily: MONO,
+    fontSize: 12,
+    color: RC.faint,
+    textAlign: 'right',
+  },
+  cancelTxt: {
+    fontFamily: MONO,
+    fontSize: 13,
+    color: RC.faint,
+    textDecorationLine: 'underline',
+  },
+});

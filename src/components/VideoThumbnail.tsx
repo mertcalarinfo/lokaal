@@ -1,20 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
-import { Video as VideoIcon, X } from 'lucide-react-native';
-import { useTheme } from '../contexts/ThemeContext';
-import { ThemeColors, F, R } from '../theme';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Modal } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
+import { Play, X } from 'lucide-react-native';
+import PressableScale from './PressableScale';
+import { RC, MONO_MED, HL } from '../theme/register';
 
 interface VideoThumbnailProps {
   uri: string;
-  thumbnailUri?: string;
   duration?: number;
-  onPress?: () => void;
   onRemove?: () => void;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -25,142 +18,135 @@ const formatDuration = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const createStyles = (T: ThemeColors) => StyleSheet.create({
-  container: {
-    position:     'relative',
-    borderRadius: R.sm,
-    overflow:     'hidden',
-  },
-  touchable: {
-    flex: 1,
-  },
-  thumbnail: {
-    width:      '100%',
-    height:     '100%',
-    resizeMode: 'cover',
-  },
-  placeholder: {
-    flex:            1,
-    backgroundColor: T.surface2,
-    alignItems:      'center',
-    justifyContent:  'center',
-    borderWidth:     1,
-    borderColor:     T.hairline,
-    borderRadius:    R.sm,
-  },
-  playOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems:      'center',
-    justifyContent:  'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  playButton: {
-    width:           36,
-    height:          36,
-    borderRadius:    18,
-    backgroundColor: T.accent,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  durationBadge: {
-    position:          'absolute',
-    bottom:            6,
-    right:             6,
-    backgroundColor:   'rgba(0,0,0,0.7)',
-    borderRadius:      R.xs,
-    paddingHorizontal: 6,
-    paddingVertical:   2,
-  },
-  durationText: {
-    fontFamily: F.monoMd,
-    color:      '#FFFFFF',
-    fontSize:   10,
-    fontWeight: '600',
-  },
-  removeButton: {
-    position:        'absolute',
-    top:             -4,
-    right:           -4,
-    zIndex:          10,
-    backgroundColor: T.error,
-    borderRadius:    10,
-    width:           20,
-    height:          20,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-});
+const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ uri, duration, onRemove, size = 'lg' }) => {
+  const [viewerVisible, setViewerVisible] = useState(false);
 
-const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
-  uri,
-  thumbnailUri,
-  duration,
-  onPress,
-  onRemove,
-  size = 'md',
-}) => {
-  const { T } = useTheme();
-  const styles = useMemo(() => createStyles(T), [T]);
-  const [imageError, setImageError] = useState(false);
-
-  const dimensions = {
-    sm: { width: 80,     height: 60  },
-    md: { width: 160,    height: 110 },
-    lg: { width: '100%' as any, height: 200 },
-  };
-
-  const dim = dimensions[size];
+  const boxHeight = size === 'sm' ? 80 : size === 'md' ? 130 : 200;
 
   return (
-    <View style={[styles.container, { width: dim.width, height: dim.height }]}>
-      <TouchableOpacity
-        style={styles.touchable}
-        onPress={onPress}
-        activeOpacity={onPress ? 0.8 : 1}
-        disabled={!onPress}
-      >
-        {thumbnailUri && !imageError ? (
-          <Image
-            source={{ uri: thumbnailUri }}
-            style={styles.thumbnail}
-            onError={() => setImageError(true)}
+    <View>
+      <PressableScale onPress={() => setViewerVisible(true)}>
+        <View style={[S.box, { height: boxHeight }]}>
+          {/* Erster Frame als statische Vorschau (expo-av, pausiert) */}
+          <Video
+            source={{ uri }}
+            style={StyleSheet.absoluteFill}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay={false}
+            isMuted
+            positionMillis={1}
           />
-        ) : (
-          <View style={styles.placeholder}>
-            <VideoIcon
-              size={size === 'sm' ? 20 : 32}
-              color={T.textMuted}
-              strokeWidth={1.7}
-            />
-          </View>
-        )}
 
-        {/* Play overlay */}
-        {onPress && (
-          <View style={styles.playOverlay}>
-            <View style={styles.playButton}>
-              {/* Filled play triangle per spec §05 */}
-              <VideoIcon size={16} color={T.onAccent} strokeWidth={1.7} />
+          {/* Play-Badge */}
+          <View style={S.playBadge}>
+            <Play size={20} color={RC.onAccent} strokeWidth={2} fill={RC.onAccent} />
+          </View>
+
+          {/* Dauer */}
+          {duration !== undefined && (
+            <View style={S.durationBadge}>
+              <Text style={S.durationTxt}>{formatDuration(duration)}</Text>
             </View>
-          </View>
-        )}
+          )}
+        </View>
+      </PressableScale>
 
-        {/* Duration badge */}
-        {duration !== undefined && (
-          <View style={styles.durationBadge}>
-            <Text style={styles.durationText}>{formatDuration(duration)}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-
-      {/* Remove button */}
+      {/* Entfernen */}
       {onRemove && (
-        <TouchableOpacity style={styles.removeButton} onPress={onRemove} activeOpacity={0.8}>
-          <X size={12} color="#FFFFFF" strokeWidth={2.5} />
-        </TouchableOpacity>
+        <PressableScale style={S.removeBtn} onPress={onRemove}>
+          <X size={13} color={RC.onAccent} strokeWidth={2.5} />
+        </PressableScale>
       )}
+
+      {/* Vollbild-Viewer */}
+      <Modal
+        visible={viewerVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setViewerVisible(false)}
+      >
+        <View style={S.overlay}>
+          <PressableScale style={S.close} onPress={() => setViewerVisible(false)}>
+            <X size={22} color={RC.onAccent} strokeWidth={2} />
+          </PressableScale>
+          <Video
+            source={{ uri }}
+            style={S.fullVideo}
+            useNativeControls
+            resizeMode={ResizeMode.CONTAIN}
+            shouldPlay
+            isLooping={false}
+          />
+        </View>
+      </Modal>
     </View>
   );
 };
 
 export default VideoThumbnail;
+
+const S = StyleSheet.create({
+  box: {
+    width: '100%',
+    backgroundColor: '#000',
+    borderWidth: HL.std,
+    borderColor: RC.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  playBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: RC.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  durationBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(20,18,15,0.78)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  durationTxt: {
+    fontFamily: MONO_MED,
+    color: '#FFFFFF',
+    fontSize: 10,
+  },
+  removeBtn: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    zIndex: 10,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: RC.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(20,18,15,0.96)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  close: {
+    position: 'absolute',
+    top: 56,
+    right: 22,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  fullVideo: {
+    width: '100%',
+    height: '78%',
+  },
+});

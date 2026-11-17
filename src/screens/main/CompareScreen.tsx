@@ -1,24 +1,29 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Alert, Modal, FlatList, Animated,
+  View, Text, StyleSheet, ScrollView,
+  TextInput, Alert, Modal, FlatList, Share,
 } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing,
+} from 'react-native-reanimated';
 import {
-  Upload, X, ChevronRight, TrendingUp, TrendingDown,
-  Minus, RotateCcw, GitCompare,
+  Upload, X, ArrowLeft, ArrowRight, ChevronRight, TrendingUp,
+  Share2, Pencil, CheckCircle2, Sparkles, FileVideo,
 } from 'lucide-react-native';
 
-import { AnalysisReport, ComparisonResult, ComparisonCategoryItem } from '../../types';
+import { v4 as uuidv4 } from 'uuid';
+import { AnalysisReport, ComparisonResult, SavedComparison } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { useTheme } from '../../contexts/ThemeContext';
 import { compareVideos } from '../../services/gemini';
-import { getUserReports } from '../../services/storage';
-import ScoreRing from '../../components/ScoreRing';
-import Button from '../../components/Button';
-import { ThemeColors, F, R, S } from '../../theme';
+import { getUserReports, saveComparison, updateComparisonName, uploadVideo } from '../../services/storage';
+import PressableScale from '../../components/PressableScale';
+import RichText from '../../components/RichText';
+import RenameModal from '../../components/RenameModal';
+import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -26,177 +31,62 @@ type VideoSelection = { uri: string; label: string } | null;
 type ViewState      = 'idle' | 'loading' | 'result' | 'error';
 type PickerSlot     = 'v1' | 'v2' | null;
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+function score100(s: number): number {
+  return Math.round(s * 10);
+}
 
-const createStyles = (T: ThemeColors) => StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: T.bg },
-  scroll: { flexGrow: 1, paddingHorizontal: S.screen, paddingBottom: S.s8 },
+// ── Sub-Komponenten ──────────────────────────────────────────────────────────
 
-  // Header
-  pageTitle: {
-    fontFamily: F.xBold, fontSize: 34, fontWeight: '800',
-    color: T.text, letterSpacing: -1.02,
-    marginTop: S.s4, marginBottom: 4,
-  },
-  pageSub: {
-    fontFamily: F.regular, fontSize: 14.5, color: T.textMuted,
-    lineHeight: 22, marginBottom: S.s6,
-  },
-
-  // Section label
-  sectionLabel: {
-    fontFamily: F.semiBold, fontSize: 10, fontWeight: '600',
-    color: T.textFaint, letterSpacing: 1.8, textTransform: 'uppercase',
-    marginBottom: S.s2, marginTop: S.s5,
-  },
-
-  // Video selector card
-  selectorCard: {
-    backgroundColor: T.surface, borderRadius: R.lg,
-    borderWidth: 1, borderColor: T.hairline, overflow: 'hidden',
-  },
-  selectorRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: S.s4, paddingVertical: S.s4, gap: S.s3,
-  },
-  selectorRowBorder: { borderBottomWidth: 1, borderBottomColor: T.line },
-  selectorIcon: {
-    width: 36, height: 36, borderRadius: R.pill,
-    borderWidth: 1, borderColor: T.hairline,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  selectorText:  { flex: 1, fontFamily: F.medium, fontSize: 15, fontWeight: '500', color: T.text },
-  selectorArrow: { color: T.textFaint },
-
-  // Selected chip
-  selectedChip: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: T.surfaceAccent,
-    borderRadius: R.lg, borderWidth: 1.5, borderColor: T.accent,
-    paddingHorizontal: S.s4, paddingVertical: S.s3,
-    gap: S.s3,
-  },
-  selectedLabel: { flex: 1, fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.text },
-  selectedScore: { fontFamily: F.xBold, fontSize: 15, fontWeight: '800', color: T.accent },
-  clearBtn:      { padding: 4 },
-
-  // Context input
-  contextCard: {
-    backgroundColor: T.surface, borderRadius: R.lg,
-    borderWidth: 1, borderColor: T.hairline,
-    padding: S.s4, marginTop: S.s5,
-  },
-  contextLabel: {
-    fontFamily: F.semiBold, fontSize: 10, fontWeight: '600',
-    color: T.textFaint, letterSpacing: 1.8, textTransform: 'uppercase',
-    marginBottom: S.s2,
-  },
-  contextInput: {
-    fontFamily: F.regular, fontSize: 14.5, color: T.text,
-    lineHeight: 22, minHeight: 80, textAlignVertical: 'top',
-  },
-
-  // CTA
-  cta: { marginTop: S.s6 },
-
-  // ── Loading state ──────────────────────────────────────────────────────────
-  loadingBox: { flex: 1, paddingTop: 60, alignItems: 'center', paddingHorizontal: S.screen },
-  loadingEyebrow: {
-    fontFamily: F.semiBold, fontSize: 10, fontWeight: '600',
-    color: T.textMuted, letterSpacing: 3, textTransform: 'uppercase',
-    marginBottom: S.s3,
-  },
-  loadingTitle: {
-    fontFamily: F.bold, fontSize: 20, fontWeight: '700',
-    color: T.text, textAlign: 'center', letterSpacing: -0.4, marginBottom: S.s2,
-  },
-  loadingSubtitle: {
-    fontFamily: F.regular, fontSize: 14, color: T.textMuted,
-    textAlign: 'center', lineHeight: 20, marginBottom: S.s8,
-  },
-  barTrack: {
-    width: '100%', height: 2, backgroundColor: T.line,
-    borderRadius: 2, overflow: 'hidden', marginBottom: S.s2,
-  },
-  barFill: { height: 4, marginTop: -1, backgroundColor: T.accent, borderRadius: 2 },
-  barRow:  { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
-  barPct:  { fontFamily: F.semiBold, fontSize: 13, fontWeight: '600', color: T.accent },
-  barStatus: { fontFamily: F.regular, fontSize: 12, color: T.textFaint },
-
-  // ── Result state ───────────────────────────────────────────────────────────
-  resultSection: {
-    borderTopWidth: 1, borderTopColor: T.hairline,
-    paddingTop: S.s5, marginTop: S.s5,
-  },
-  resultLabel: {
-    fontFamily: F.semiBold, fontSize: 10, fontWeight: '600',
-    color: T.textMuted, letterSpacing: 2, textTransform: 'uppercase',
-    marginBottom: S.s3,
-  },
-  resultText: {
-    fontFamily: F.regular, fontSize: 15, color: T.text,
-    lineHeight: 24,
-  },
-  catRow: {
-    flexDirection: 'row', alignItems: 'flex-start',
-    paddingVertical: S.s3, gap: S.s3,
-    borderBottomWidth: 1, borderBottomColor: T.line,
-  },
-  catDirChip: {
-    flexDirection: 'row', alignItems: 'center',
-    borderRadius: R.xs, paddingHorizontal: 8, paddingVertical: 4, gap: 4,
-    minWidth: 92,
-  },
-  catDirText: { fontFamily: F.semiBold, fontSize: 11, fontWeight: '700' },
-  catName:    { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.text, marginBottom: 2 },
-  catObs:     { fontFamily: F.regular, fontSize: 13, color: T.textMuted, lineHeight: 19 },
-  catContent: { flex: 1 },
-
-  // ── Report Picker Modal ────────────────────────────────────────────────────
-  modal:        { flex: 1, backgroundColor: T.bg, paddingHorizontal: S.screen, paddingTop: S.s6 },
-  modalHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: S.s5 },
-  modalTitle:   { fontFamily: F.bold, fontSize: 20, fontWeight: '700', color: T.text },
-  modalHint:    { fontFamily: F.regular, fontSize: 14, color: T.textMuted, marginBottom: S.s4 },
-  reportItem:   {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: T.surface, borderRadius: R.md,
-    padding: S.s4, marginBottom: S.s2,
-    borderWidth: 1, borderColor: T.hairline, gap: S.s3,
-  },
-  reportItemContent: { flex: 1 },
-  reportItemDate:    { fontFamily: F.semiBold, fontSize: 14, fontWeight: '600', color: T.text, marginBottom: 2 },
-  reportItemPurpose: { fontFamily: F.regular, fontSize: 12, color: T.textFaint },
-  emptyBox:  { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
-  emptyText: { fontFamily: F.regular, fontSize: 15, color: T.textFaint, textAlign: 'center' },
-});
-
-// ── Direction chip ─────────────────────────────────────────────────────────────
-
-const DirectionChip: React.FC<{ direction: ComparisonCategoryItem['direction']; T: ThemeColors }> = ({ direction, T }) => {
+function VideoSelectorRows({ onPickReport, onPickGallery }: { onPickReport: () => void; onPickGallery: () => void }) {
   const { t } = useTranslation();
-  const cfg = {
-    improved: { color: T.success,    bg: T.successBg,  Icon: TrendingUp,   key: 'compare.improved' },
-    declined: { color: T.error,      bg: T.errorBg,    Icon: TrendingDown,  key: 'compare.declined' },
-    same:     { color: T.textMuted,  bg: T.surfaceAlt, Icon: Minus,         key: 'compare.same'     },
-  }[direction];
-
   return (
-    <View style={[{ flexDirection: 'row', alignItems: 'center', borderRadius: R.xs, paddingHorizontal: 8, paddingVertical: 4, gap: 4, backgroundColor: cfg.bg }]}>
-      <cfg.Icon size={12} color={cfg.color} strokeWidth={2} />
-      <Text style={{ fontFamily: F.semiBold, fontSize: 11, fontWeight: '700', color: cfg.color }}>
-        {t(cfg.key)}
-      </Text>
+    <View>
+      <PressableScale onPress={onPickReport}>
+        <View style={S.selRow}>
+          <View style={S.selIconCircle}>
+            <TrendingUp size={20} color={RC.text} strokeWidth={1.7} />
+          </View>
+          <Text style={S.selLabel}>{t('compare.fromAnalysis')}</Text>
+          <ChevronRight size={16} color={RC.ghost} strokeWidth={1.7} />
+        </View>
+      </PressableScale>
+      <PressableScale onPress={onPickGallery}>
+        <View style={[S.selRow, S.selRowBorder]}>
+          <View style={S.selIconCircle}>
+            <Upload size={20} color={RC.text} strokeWidth={1.7} />
+          </View>
+          <Text style={S.selLabel}>{t('compare.fromGallery')}</Text>
+          <ChevronRight size={16} color={RC.ghost} strokeWidth={1.7} />
+        </View>
+      </PressableScale>
     </View>
   );
-};
+}
+
+function SelectedRow({ label, onClear }: { label: string; onClear: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <View style={S.selectedRow}>
+      <CheckCircle2 size={16} color={RC.accent} strokeWidth={2} />
+      <Text style={S.selectedLabel} numberOfLines={1}>{label}</Text>
+      <PressableScale onPress={onClear}>
+        <Text style={S.clearTxt}>{t('common.remove')}</Text>
+      </PressableScale>
+    </View>
+  );
+}
+
+function DirectionGlyph({ direction }: { direction: 'improved' | 'declined' | 'same' }) {
+  const color  = direction === 'improved' ? RC.accent : direction === 'declined' ? RC.faint : RC.ghost;
+  const symbol = direction === 'improved' ? '↑' : direction === 'declined' ? '↓' : '→';
+  return <Text style={[S.dirGlyph, { color }]}>{symbol}</Text>;
+}
 
 // ── Main component ────────────────────────────────────────────────────────────
 
 const CompareScreen: React.FC = () => {
   const { t }    = useTranslation();
   const { user } = useAuth();
-  const { T }    = useTheme();
-  const styles   = useMemo(() => createStyles(T), [T]);
 
   // View state
   const [viewState,    setViewState]    = useState<ViewState>('idle');
@@ -206,18 +96,29 @@ const CompareScreen: React.FC = () => {
   const [progress,     setProgress]     = useState(0);
   const [result,       setResult]       = useState<ComparisonResult | null>(null);
   const [errorMsg,     setErrorMsg]     = useState('');
+  const [isSaved,      setIsSaved]      = useState(false);
+  const [isSaving,     setIsSaving]     = useState(false);
+  const [customName,   setCustomName]   = useState('');
+  const [renameVisible, setRenameVisible] = useState(false);
+  const savedComparisonIdRef = useRef<string | null>(null);
 
   // Report picker modal
-  const [pickerSlot,         setPickerSlot]         = useState<PickerSlot>(null);
-  const [savedReports,       setSavedReports]       = useState<AnalysisReport[]>([]);
-  const [reportsLoading,     setReportsLoading]     = useState(false);
+  const [pickerSlot,     setPickerSlot]     = useState<PickerSlot>(null);
+  const [savedReports,   setSavedReports]   = useState<AnalysisReport[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
 
-  // Animated progress bar
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  // Pulsierendes Lade-Icon
+  const pulse = useSharedValue(1);
   useEffect(() => {
-    Animated.timing(progressAnim, { toValue: progress, duration: 300, useNativeDriver: false }).start();
-  }, [progress]);
-  const barWidth = progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1.18, { duration: 700, easing: Easing.inOut(Easing.cubic) }),
+        withTiming(1,    { duration: 700, easing: Easing.inOut(Easing.cubic) }),
+      ),
+      -1, true,
+    );
+  }, []);
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -256,7 +157,7 @@ const CompareScreen: React.FC = () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('common.error'), 'Mediathek-Zugriff erforderlich.');
+        Alert.alert(t('common.error'), t('home.mediaPermission'));
         return;
       }
       await new Promise<void>((r) => setTimeout(r, 300));
@@ -270,7 +171,7 @@ const CompareScreen: React.FC = () => {
         const asset = result.assets[0];
         const dur   = asset.duration ? Math.round(asset.duration / 1000) : null;
         const mins  = dur ? `${Math.floor(dur / 60)}:${String(dur % 60).padStart(2, '0')}` : '';
-        const sel: VideoSelection = { uri: asset.uri, label: `Galerie${mins ? ` · ${mins}` : ''}` };
+        const sel: VideoSelection = { uri: asset.uri, label: `${t('compare.galleryLabel')}${mins ? ` · ${mins}` : ''}` };
         if (slot === 'v1') setVideo1(sel);
         if (slot === 'v2') setVideo2(sel);
       }
@@ -321,78 +222,152 @@ const CompareScreen: React.FC = () => {
     setProgress(0);
     setResult(null);
     setErrorMsg('');
+    setIsSaved(false);
+    setCustomName('');
+    savedComparisonIdRef.current = null;
   }, []);
 
-  // ── VideoSelector ──────────────────────────────────────────────────────────
+  const handleSaveComparison = useCallback(async () => {
+    if (!result || !user?.uid) return;
+    setIsSaving(true);
+    try {
+      const isLocal = (uri: string) =>
+        uri.startsWith('file://') || uri.startsWith('content://');
 
-  const VideoSelector = ({ slot, selection, onClear }: {
-    slot:      'v1' | 'v2';
-    selection: VideoSelection;
-    onClear:   () => void;
-  }) => {
-    if (selection) {
-      return (
-        <View style={styles.selectedChip}>
-          <Text style={styles.selectedLabel} numberOfLines={1}>{selection.label}</Text>
-          <TouchableOpacity style={styles.clearBtn} onPress={onClear} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <X size={16} color={T.textMuted} strokeWidth={1.7} />
-          </TouchableOpacity>
-        </View>
-      );
+      const resolveUrl = async (uri: string): Promise<string | undefined> => {
+        if (!uri) return undefined;
+        if (!isLocal(uri)) return uri; // already a Firebase Storage URL
+        try {
+          return await uploadVideo(uri, user.uid!);
+        } catch (e) {
+          console.warn('[Compare] Video upload failed:', e);
+          return undefined;
+        }
+      };
+
+      const [v1Url, v2Url] = await Promise.all([
+        resolveUrl(video1?.uri ?? ''),
+        resolveUrl(video2?.uri ?? ''),
+      ]);
+
+      // Firestore lehnt `undefined` ab — daher alle optionalen Felder mit leerem
+      // String absichern statt undefined durchzulassen.
+      const comparison: SavedComparison = {
+        id:          uuidv4(),
+        userId:      user.uid,
+        createdAt:   new Date(),
+        video1Label: video1?.label ?? 'Video 1',
+        video2Label: video2?.label ?? 'Video 2',
+        video1Url:   v1Url ?? '',
+        video2Url:   v2Url ?? '',
+        userContext: userContext.trim(),
+        result,
+        customName:  customName || '',
+      };
+      await saveComparison(comparison);
+      savedComparisonIdRef.current = comparison.id;
+      setIsSaved(true);
+    } catch (err: any) {
+      Alert.alert(t('common.error'), err?.message || t('common.error'));
+    } finally {
+      setIsSaving(false);
     }
-    return (
-      <View style={styles.selectorCard}>
-        <TouchableOpacity
-          style={[styles.selectorRow, styles.selectorRowBorder]}
-          onPress={() => openReportPicker(slot)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.selectorIcon}>
-            <TrendingUp size={18} color={T.textMuted} strokeWidth={1.7} />
-          </View>
-          <Text style={styles.selectorText}>{t('compare.fromAnalysis')}</Text>
-          <ChevronRight size={16} color={T.textFaint} strokeWidth={1.7} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.selectorRow}
-          onPress={() => pickFromGallery(slot)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.selectorIcon}>
-            <Upload size={18} color={T.textMuted} strokeWidth={1.7} />
-          </View>
-          <Text style={styles.selectorText}>{t('compare.fromGallery')}</Text>
-          <ChevronRight size={16} color={T.textFaint} strokeWidth={1.7} />
-        </TouchableOpacity>
-      </View>
-    );
+  }, [result, user?.uid, video1, video2, userContext, customName, t]);
+
+  const handleRename = useCallback(async (value: string) => {
+    setCustomName(value);
+    if (savedComparisonIdRef.current) {
+      try {
+        await updateComparisonName(savedComparisonIdRef.current, value);
+      } catch (err: any) {
+        console.warn('[Compare] Failed to rename comparison:', err?.message);
+      }
+    }
+  }, []);
+
+  const handleShare = useCallback(() => {
+    if (!result) return;
+    Share.share({ message: `${result.overallChange}\n\n${result.coachComment}` });
+  }, [result]);
+
+  const friendlyError = (msg: string): string => {
+    if (msg.startsWith('UPLOAD_FAILED_V1')) return t('compare.errorUploadV1');
+    if (msg.startsWith('UPLOAD_FAILED_V2')) return t('compare.errorUploadV2');
+    if (msg.startsWith('TIMEOUT'))          return t('compare.errorTimeout');
+    return t('compare.errorGeneric');
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
+
+      {/* ── AKTENKOPF ── */}
+      <View style={S.head}>
+        {viewState === 'result' ? (
+          <>
+            <PressableScale onPress={handleReset} style={S.iconBtn}>
+              <ArrowLeft size={16} color={RC.text} strokeWidth={1.8} />
+            </PressableScale>
+            <View style={S.headRight}>
+              <PressableScale onPress={() => setRenameVisible(true)} style={S.iconBtn}>
+                <Pencil size={14} color={RC.muted} strokeWidth={1.7} />
+              </PressableScale>
+              <PressableScale onPress={handleShare} style={S.iconBtn}>
+                <Share2 size={16} color={RC.muted} strokeWidth={1.7} />
+              </PressableScale>
+            </View>
+          </>
+        ) : (
+          <Text style={S.headTitle}>{t('compare.title').toUpperCase()}</Text>
+        )}
+      </View>
+
+      <ScrollView contentContainerStyle={S.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* ── IDLE ── */}
         {viewState === 'idle' && (
           <>
-            <Text style={styles.pageTitle}>{t('compare.title')}</Text>
-            <Text style={styles.pageSub}>{t('compare.subtitle')}</Text>
+            <View style={S.hero}>
+              <Text style={S.heroSub}>{t('compare.subtitle')}</Text>
+            </View>
 
-            <Text style={styles.sectionLabel}>{t('compare.video1Label')}</Text>
-            <VideoSelector slot="v1" selection={video1} onClear={() => setVideo1(null)} />
+            <View style={{ height: 28 }} />
 
-            <Text style={styles.sectionLabel}>{t('compare.video2Label')}</Text>
-            <VideoSelector slot="v2" selection={video2} onClear={() => setVideo2(null)} />
+            <View style={S.subSection}>
+              <Text style={S.fieldLabel}>{t('compare.video1Label')}</Text>
+              {video1 ? (
+                <SelectedRow label={video1.label} onClear={() => setVideo1(null)} />
+              ) : (
+                <VideoSelectorRows
+                  onPickReport={() => openReportPicker('v1')}
+                  onPickGallery={() => pickFromGallery('v1')}
+                />
+              )}
+            </View>
 
-            {/* Context */}
-            <View style={styles.contextCard}>
-              <Text style={styles.contextLabel}>{t('compare.contextLabel')}</Text>
+            <View style={{ height: 24 }} />
+
+            <View style={S.subSection}>
+              <Text style={S.fieldLabel}>{t('compare.video2Label')}</Text>
+              {video2 ? (
+                <SelectedRow label={video2.label} onClear={() => setVideo2(null)} />
+              ) : (
+                <VideoSelectorRows
+                  onPickReport={() => openReportPicker('v2')}
+                  onPickGallery={() => pickFromGallery('v2')}
+                />
+              )}
+            </View>
+
+            <View style={{ height: 24 }} />
+
+            <View style={S.subSection}>
+              <Text style={S.fieldLabel}>{t('compare.contextLabel')}</Text>
               <TextInput
-                style={styles.contextInput}
+                style={S.contextInput}
                 placeholder={t('compare.contextPlaceholder')}
-                placeholderTextColor={T.textFaint}
+                placeholderTextColor={RC.ghost}
                 value={userContext}
                 onChangeText={setUserContext}
                 multiline
@@ -400,33 +375,44 @@ const CompareScreen: React.FC = () => {
               />
             </View>
 
-            <View style={styles.cta}>
-              <Button
-                label={t('compare.compareButton')}
+            <View style={{ height: 8 }} />
+
+            <View style={S.cta}>
+              <PressableScale
                 onPress={handleCompare}
-                fullWidth
-                size="lg"
                 disabled={!video1 || !video2}
-                style={{ paddingVertical: 19 }}
-                textStyle={{ fontSize: 15, letterSpacing: 2 }}
-              />
+                style={{ alignSelf: 'stretch' }}
+              >
+                <View style={[S.btnPrimary, BTN_SHADOW, (!video1 || !video2) && S.btnDisabled]}>
+                  <View style={S.btnLeft}>
+                    <Sparkles size={18} color={RC.onAccent} strokeWidth={1.8} />
+                    <Text style={S.btnLabelPrimary}>{t('compare.compareButton')}</Text>
+                  </View>
+                </View>
+              </PressableScale>
             </View>
           </>
         )}
 
         {/* ── LOADING ── */}
         {viewState === 'loading' && (
-          <View style={styles.loadingBox}>
-            <Text style={styles.loadingEyebrow}>{t('compare.loadingEyebrow')}</Text>
-            <Text style={styles.loadingTitle}>{t('compare.loadingTitle')}</Text>
-            <Text style={styles.loadingSubtitle}>{t('compare.loadingSubtitle')}</Text>
+          <View style={S.loadingBox}>
+            <Animated.View style={[S.loadingIconCircle, pulseStyle]}>
+              <Sparkles size={30} color={RC.accent} strokeWidth={1.6} />
+            </Animated.View>
 
-            <View style={styles.barTrack}>
-              <Animated.View style={[styles.barFill, { width: barWidth }]} />
+            <View style={{ height: 22 }} />
+            <Text style={S.loadingTitle}>{t('compare.loadingTitle')}</Text>
+            <View style={{ height: 8 }} />
+            <Text style={S.loadingSubtitle}>{t('compare.loadingSubtitle')}</Text>
+
+            <View style={{ height: 30 }} />
+            <View style={S.barTrack}>
+              <View style={[S.barFill, { width: `${Math.round(progress * 100)}%` }]} />
             </View>
-            <View style={styles.barRow}>
-              <Text style={styles.barPct}>{Math.round(progress * 100)}%</Text>
-              <Text style={styles.barStatus}>{statusLabel(progress)}</Text>
+            <View style={S.barRow}>
+              <Text style={S.barPct}>{Math.round(progress * 100)}%</Text>
+              <Text style={S.barStatus}>{statusLabel(progress)}</Text>
             </View>
           </View>
         )}
@@ -434,71 +420,133 @@ const CompareScreen: React.FC = () => {
         {/* ── RESULT ── */}
         {viewState === 'result' && result && (
           <>
-            <Text style={styles.pageTitle}>{t('compare.resultTitle')}</Text>
+            {customName ? (
+              <View style={S.subSection}>
+                <Text style={S.customName} numberOfLines={1}>{customName}</Text>
+                <View style={{ height: 18 }} />
+              </View>
+            ) : null}
 
-            {/* Overall */}
-            <View style={styles.resultSection}>
-              <Text style={styles.resultLabel}>{t('compare.overallLabel')}</Text>
-              <Text style={styles.resultText}>{result.overallChange}</Text>
-            </View>
-
-            {/* Category comparisons */}
-            {result.categoryComparisons.length > 0 && (
-              <View style={styles.resultSection}>
-                <Text style={styles.resultLabel}>{t('compare.categoriesLabel')}</Text>
-                {result.categoryComparisons.map((item, i) => (
-                  <View key={i} style={[styles.catRow, i === result.categoryComparisons.length - 1 && { borderBottomWidth: 0 }]}>
-                    <View style={styles.catContent}>
-                      <Text style={styles.catName}>{item.category}</Text>
-                      <Text style={styles.catObs}>{item.observation}</Text>
+            {/* Videos */}
+            {(video1?.uri || video2?.uri) && (
+              <View style={[S.subSection, S.videosRow]}>
+                {[video1, video2].map((v, idx) => (
+                  <View key={idx} style={{ flex: 1 }}>
+                    <Text style={S.videoLabel} numberOfLines={1}>
+                      {v?.label ?? `Video ${idx + 1}`}
+                    </Text>
+                    <View style={S.videoBox}>
+                      {v?.uri ? (
+                        <Video
+                          source={{ uri: v.uri }}
+                          style={S.video}
+                          useNativeControls
+                          resizeMode={ResizeMode.CONTAIN}
+                          isLooping={false}
+                        />
+                      ) : (
+                        <Text style={S.videoEmpty}>—</Text>
+                      )}
                     </View>
-                    <DirectionChip direction={item.direction} T={T} />
                   </View>
                 ))}
               </View>
             )}
 
+            <View style={{ height: 28 }} />
+
+            {/* Overall */}
+            <View style={S.subSection}>
+              <Text style={S.subHead}>{t('compare.overallLabel').toUpperCase()}</Text>
+              <RichText text={result.overallChange} style={S.bodyText} />
+            </View>
+
+            {/* Category comparisons */}
+            {result.categoryComparisons.length > 0 && (
+              <>
+                <View style={{ height: 28 }} />
+                <View style={S.subSection}>
+                  <Text style={S.subHead}>{t('compare.categoriesLabel').toUpperCase()}</Text>
+                  {result.categoryComparisons.map((item, i) => (
+                    <View key={i} style={S.catRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={S.catName}>{item.category}</Text>
+                        {item.observation ? <RichText text={item.observation} style={S.catObs} /> : null}
+                      </View>
+                      <DirectionGlyph direction={item.direction} />
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
             {/* Context response */}
             {result.contextResponse && (
-              <View style={styles.resultSection}>
-                <Text style={styles.resultLabel}>{t('compare.contextResponseLabel')}</Text>
-                <Text style={styles.resultText}>{result.contextResponse}</Text>
-              </View>
+              <>
+                <View style={{ height: 28 }} />
+                <View style={S.subSection}>
+                  <Text style={S.subHead}>{t('compare.contextResponseLabel').toUpperCase()}</Text>
+                  <RichText text={result.contextResponse} style={S.bodyText} />
+                </View>
+              </>
             )}
 
             {/* Coach comment */}
             {result.coachComment && (
-              <View style={styles.resultSection}>
-                <Text style={styles.resultLabel}>{t('compare.coachLabel')}</Text>
-                <Text style={styles.resultText}>{result.coachComment}</Text>
-              </View>
+              <>
+                <View style={{ height: 28 }} />
+                <View style={S.subSection}>
+                  <Text style={S.subHead}>{t('compare.coachLabel').toUpperCase()}</Text>
+                  <RichText text={result.coachComment} style={[S.bodyText, { fontStyle: 'italic' }]} />
+                </View>
+              </>
             )}
 
-            <View style={styles.cta}>
-              <Button
-                label={t('compare.newComparison')}
-                onPress={handleReset}
-                variant="outline"
-                fullWidth
-                size="lg"
-              />
+            <View style={{ height: 28 }} />
+
+            <View style={S.subSection}>
+              {!isSaved ? (
+                <PressableScale onPress={handleSaveComparison} disabled={isSaving} style={{ marginBottom: 12 }}>
+                  <View style={[S.btnPrimary, BTN_SHADOW, isSaving && { opacity: 0.7 }]}>
+                    <View style={S.btnLeft}>
+                      <View style={S.btnDot} />
+                      <Text style={S.btnLabelPrimary}>
+                        {isSaving ? t('common.loading') : t('compare.saveComparison').toUpperCase()}
+                      </Text>
+                    </View>
+                    <ArrowRight size={16} color={RC.onAccent} strokeWidth={1.8} />
+                  </View>
+                </PressableScale>
+              ) : (
+                <View style={S.savedRow}>
+                  <CheckCircle2 size={13} color={RC.text} strokeWidth={2} />
+                  <Text style={S.savedTxt}>{t('compare.comparisonSaved').toUpperCase()}</Text>
+                </View>
+              )}
+
+              <PressableScale onPress={handleReset}>
+                <View style={S.btnSecondary}>
+                  <Text style={S.btnLabelSecondary}>{t('compare.newComparison').toUpperCase()}</Text>
+                </View>
+              </PressableScale>
             </View>
           </>
         )}
 
         {/* ── ERROR ── */}
         {viewState === 'error' && (
-          <View style={styles.loadingBox}>
-            <Text style={styles.loadingTitle}>{t('compare.errorTitle')}</Text>
-            <Text style={[styles.loadingSubtitle, { color: T.error }]} numberOfLines={4}>
-              {errorMsg}
+          <View style={S.loadingBox}>
+            <Text style={S.loadingTitle}>{t('compare.errorTitle')}</Text>
+            <View style={{ height: 8 }} />
+            <Text style={[S.loadingSubtitle, { color: RC.faint }]} numberOfLines={4}>
+              {friendlyError(errorMsg)}
             </Text>
-            <Button
-              label={t('compare.errorRetry')}
-              onPress={handleReset}
-              variant="outline"
-              style={{ marginTop: S.s4 }}
-            />
+            <View style={{ height: 24 }} />
+            <PressableScale onPress={handleReset}>
+              <View style={S.btnSecondary}>
+                <Text style={S.btnLabelSecondary}>{t('compare.errorRetry').toUpperCase()}</Text>
+              </View>
+            </PressableScale>
           </View>
         )}
 
@@ -511,44 +559,414 @@ const CompareScreen: React.FC = () => {
         presentationStyle="pageSheet"
         onRequestClose={() => setPickerSlot(null)}
       >
-        <View style={styles.modal}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t('compare.selectReport')}</Text>
-            <TouchableOpacity onPress={() => setPickerSlot(null)}>
-              <X size={22} color={T.textMuted} strokeWidth={1.7} />
-            </TouchableOpacity>
+        <SafeAreaView style={S.safe} edges={['top', 'left', 'right']}>
+          <View style={S.head}>
+            <Text style={S.headTitle}>{t('compare.selectReport')}</Text>
+            <PressableScale onPress={() => setPickerSlot(null)} style={S.iconBtn}>
+              <X size={18} color={RC.muted} strokeWidth={1.7} />
+            </PressableScale>
           </View>
-          <Text style={styles.modalHint}>{t('compare.selectReportHint')}</Text>
+          <Text style={S.modalHint}>{t('compare.selectReportHint')}</Text>
 
           {reportsLoading ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>{t('common.loading')}</Text>
+            <View style={S.emptyBox}>
+              <Text style={S.emptyText}>{t('common.loading')}</Text>
             </View>
           ) : savedReports.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>{t('compare.noReports')}</Text>
+            <View style={S.emptyBox}>
+              <Text style={S.emptyText}>{t('compare.noReports')}</Text>
             </View>
           ) : (
             <FlatList
               data={savedReports}
               keyExtractor={(item) => item.id}
               style={{ flex: 1 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.reportItem} onPress={() => selectFromReport(item)} activeOpacity={0.8}>
-                  <ScoreRing score={item.averageScore} size={48} strokeWidth={4} animate={false} />
-                  <View style={styles.reportItemContent}>
-                    <Text style={styles.reportItemDate}>{fmtDate(item.createdAt)}</Text>
-                    <Text style={styles.reportItemPurpose}>{item.averageScore}/10</Text>
+              contentContainerStyle={{ paddingHorizontal: RS.screenH, paddingBottom: 24 }}
+              renderItem={({ item, index }) => (
+                <PressableScale onPress={() => selectFromReport(item)}>
+                  <View style={[S.reportRow, index === 0 && S.reportRowFirst]}>
+                    <View style={S.reportIconCircle}>
+                      <FileVideo size={18} color={RC.text} strokeWidth={1.7} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={S.reportDate}>{fmtDate(item.createdAt)}</Text>
+                      <Text style={S.reportScore}>{score100(item.averageScore)}/100</Text>
+                    </View>
+                    <ChevronRight size={16} color={RC.ghost} strokeWidth={1.7} />
                   </View>
-                  <ChevronRight size={16} color={T.textFaint} strokeWidth={1.7} />
-                </TouchableOpacity>
+                </PressableScale>
               )}
             />
           )}
-        </View>
+        </SafeAreaView>
       </Modal>
+
+      <RenameModal
+        visible={renameVisible}
+        initialValue={customName}
+        placeholder={t('progress.renameComparisonPlaceholder')}
+        title={t('progress.renameComparisonTitle').toUpperCase()}
+        onClose={() => setRenameVisible(false)}
+        onSave={handleRename}
+      />
     </SafeAreaView>
   );
 };
 
 export default CompareScreen;
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const S = StyleSheet.create({
+  safe:   { flex: 1, backgroundColor: RC.bg },
+  scroll: { flexGrow: 1, paddingBottom: 56 },
+
+  // Aktenkopf
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: RS.headTop,
+    paddingHorizontal: RS.screenH,
+    paddingBottom: RS.headPadB,
+    borderBottomWidth: HL.strong,
+    borderBottomColor: RC.lineStrong,
+  },
+  headRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headTitle: {
+    fontFamily: MONO_MED,
+    fontSize: 12,
+    letterSpacing: 2,
+    color: RC.text,
+  },
+  iconBtn: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Hero (idle)
+  hero: {
+    paddingHorizontal: RS.screenH,
+    paddingTop: 34,
+  },
+  heroSub: {
+    fontFamily: MONO,
+    fontSize: 14,
+    lineHeight: 21,
+    color: RC.muted,
+  },
+
+  subSection: {
+    paddingHorizontal: RS.screenH,
+  },
+  fieldLabel: {
+    fontFamily: MONO,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: RC.faint,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+  },
+
+  // Video-Auswahl
+  selRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 16,
+    borderTopWidth: HL.std,
+    borderTopColor: RC.line,
+  },
+  selRowBorder: {
+    borderBottomWidth: HL.std,
+    borderBottomColor: RC.line,
+  },
+  selIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: RC.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selLabel: {
+    flex: 1,
+    fontFamily: MONO_MED,
+    fontSize: 14,
+    color: RC.text,
+  },
+  selectedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 16,
+    borderTopWidth: HL.std,
+    borderTopColor: RC.line,
+  },
+  selectedLabel: {
+    flex: 1,
+    fontFamily: MONO_MED,
+    fontSize: 14,
+    color: RC.accent,
+  },
+  clearTxt: {
+    fontFamily: MONO,
+    fontSize: 12,
+    color: RC.ghost,
+    textDecorationLine: 'underline',
+  },
+
+  // Kontext-Feld
+  contextInput: {
+    fontSize: 14.5,
+    color: RC.text,
+    lineHeight: 22,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    borderWidth: 1.5,
+    borderColor: RC.line,
+    borderRadius: 12,
+    padding: 14,
+  },
+
+  // CTA
+  cta: {
+    paddingHorizontal: RS.screenH,
+  },
+  btnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: RC.accent,
+    borderRadius: RR.button,
+    paddingVertical: 18,
+    paddingHorizontal: 22,
+  },
+  btnDisabled: {
+    opacity: 0.4,
+  },
+  btnLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  btnDot: {
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
+    backgroundColor: RC.onAccent,
+  },
+  btnLabelPrimary: {
+    fontFamily: MONO_MED,
+    fontSize: 14,
+    letterSpacing: 1,
+    color: RC.onAccent,
+  },
+  btnSecondary: {
+    borderWidth: 1.5,
+    borderColor: RC.lineStrong,
+    borderRadius: RR.button,
+    paddingVertical: 15,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+  },
+  btnLabelSecondary: {
+    fontFamily: MONO_MED,
+    fontSize: 13,
+    letterSpacing: 1.5,
+    color: RC.text,
+  },
+  savedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  savedTxt: {
+    fontFamily: MONO,
+    fontSize: 11,
+    letterSpacing: 1,
+    color: RC.text,
+  },
+
+  // Loading
+  loadingBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: RS.screenH,
+    paddingTop: 60,
+    paddingBottom: 60,
+  },
+  loadingIconCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: RC.accentWash,
+    borderWidth: 1.5,
+    borderColor: RC.accentLine,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingTitle: {
+    fontSize: 19,
+    fontWeight: '600',
+    color: RC.text,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  loadingSubtitle: {
+    fontSize: 14,
+    color: RC.muted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  barTrack: {
+    width: '100%',
+    height: 2,
+    backgroundColor: RC.line,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  barFill: {
+    height: 4,
+    marginTop: -1,
+    backgroundColor: RC.accent,
+    borderRadius: 2,
+  },
+  barRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  barPct: {
+    fontFamily: MONO_MED,
+    fontSize: 13,
+    color: RC.accent,
+  },
+  barStatus: {
+    fontFamily: MONO,
+    fontSize: 12,
+    color: RC.faint,
+  },
+
+  // Ergebnis
+  customName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: RC.text,
+  },
+  videosRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  videoLabel: {
+    fontFamily: MONO,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: RC.faint,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  videoBox: {
+    aspectRatio: 9 / 16,
+    backgroundColor: '#000',
+    borderWidth: 1,
+    borderColor: RC.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  video: { width: '100%', height: '100%' },
+  videoEmpty: { fontFamily: MONO, fontSize: 12, color: RC.ghost },
+
+  subHead: {
+    fontFamily: MONO,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: RC.faint,
+    textTransform: 'uppercase',
+    paddingBottom: 9,
+    marginBottom: 16,
+    borderBottomWidth: HL.strong,
+    borderBottomColor: RC.lineStrong,
+  },
+  bodyText: {
+    fontSize: 14.5,
+    lineHeight: 22,
+    color: RC.text,
+  },
+  catRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+    paddingVertical: 14,
+    borderTopWidth: HL.faint,
+    borderTopColor: RC.lineFaint,
+  },
+  catName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: RC.text,
+  },
+  catObs: {
+    fontSize: 13,
+    color: RC.muted,
+    lineHeight: 19,
+    marginTop: 3,
+  },
+  dirGlyph: {
+    fontSize: 18,
+    marginTop: 1,
+  },
+
+  // Report-Picker-Modal
+  modalHint: {
+    fontSize: 13.5,
+    color: RC.muted,
+    paddingHorizontal: RS.screenH,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
+  emptyText: { fontFamily: MONO, fontSize: 13, color: RC.faint },
+  reportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 16,
+    borderTopWidth: HL.std,
+    borderTopColor: RC.line,
+  },
+  reportRowFirst: {
+    borderTopWidth: 0,
+  },
+  reportIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: RC.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reportDate: {
+    fontFamily: MONO_MED,
+    fontSize: 14,
+    color: RC.text,
+  },
+  reportScore: {
+    fontFamily: MONO,
+    fontSize: 12,
+    color: RC.muted,
+    marginTop: 3,
+  },
+});

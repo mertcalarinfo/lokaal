@@ -1,18 +1,17 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet,
   Animated, Dimensions, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 
 import { OnboardingAnswers } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { useTheme } from '../../contexts/ThemeContext';
-import Button from '../../components/Button';
-import { ThemeColors, F, R, S } from '../../theme';
+import PressableScale from '../../components/PressableScale';
+import { RC, MONO, MONO_MED, RS, BTN_SHADOW, HL, RR } from '../../theme/register';
 
 // Lucide icons for option cards
 import {
@@ -89,41 +88,60 @@ const DEFAULTS: OnboardingAnswers = {
   feedbackStyle: 'balanced',
 };
 
-const createStyles = (T: ThemeColors) => StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: T.bg },
-  container: { flex: 1, paddingHorizontal: S.screen, paddingVertical: S.s4 },
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: S.s4,
+const ST = StyleSheet.create({
+  safe:      { flex: 1, backgroundColor: RC.bg },
+  container: { flex: 1 },
+
+  // Aktenkopf
+  head: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginTop: RS.headTop, paddingHorizontal: RS.screenH, paddingBottom: RS.headPadB,
+    borderBottomWidth: HL.strong, borderBottomColor: RC.lineStrong,
   },
-  backBtn:       { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  stepIndicator: { fontFamily: F.monoMd, fontSize: 12, color: T.textFaint, letterSpacing: 0.3 },
+  backBtn:       { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  stepIndicator: { fontFamily: MONO, fontSize: 11, color: RC.muted, letterSpacing: 1 },
+
+  // Fortschrittsbalken
   progressTrack: {
-    height: 2, backgroundColor: T.line, borderRadius: 2,
-    marginBottom: S.s6, overflow: 'hidden',
+    height: 2, backgroundColor: RC.line,
+    marginHorizontal: RS.screenH, marginTop: 16, marginBottom: 28, overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: T.accent, borderRadius: 2 },
+  progressFill: { height: '100%', backgroundColor: RC.accent },
+
   animated:     { flex: 1 },
-  stepContent:  { flex: 1 },
+  stepContent:  { flex: 1, paddingHorizontal: RS.screenH },
   stepTitle: {
-    fontFamily: F.xBold, fontSize: 24, fontWeight: '800',
-    color: T.text, marginBottom: 6, lineHeight: 30, letterSpacing: -0.48,
+    fontSize: 26, fontWeight: '600',
+    color: RC.text, marginBottom: 8, lineHeight: 32, letterSpacing: -0.6,
   },
   stepSub: {
-    fontFamily: F.regular, fontSize: 14.5, color: T.textMuted,
-    marginBottom: S.s5, lineHeight: 21,
+    fontFamily: MONO, fontSize: 14, color: RC.muted,
+    marginBottom: 24, lineHeight: 21,
   },
   optionsScroll: { flex: 1 },
   option: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: T.surface, borderRadius: R.md,
-    padding: S.s4, marginBottom: S.s2,
-    borderWidth: 1.5, borderColor: T.hairline,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingVertical: 16,
+    borderTopWidth: HL.std, borderTopColor: RC.line,
   },
-  optionActive:  { borderColor: T.accent, backgroundColor: T.surfaceAccent },
-  optionIcon:    { marginRight: S.s3, flexShrink: 0 },
-  optionLabel:   { flex: 1, fontFamily: F.medium, fontSize: 15, fontWeight: '500', color: T.text },
-  footer:        { paddingBottom: S.s2, paddingTop: S.s4 },
+  optionIconCircle: {
+    width: 44, height: 44, borderRadius: 22,
+    borderWidth: 1.5, borderColor: RC.line,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  optionIconCircleActive: { borderColor: RC.accent, backgroundColor: RC.accentWash },
+  optionLabel:   { flex: 1, fontFamily: MONO_MED, fontSize: 15, color: RC.muted },
+  optionLabelActive: { color: RC.text },
+
+  // Footer-Button
+  footer: { paddingHorizontal: RS.screenH, paddingBottom: 24, paddingTop: 16 },
+  btnPrimary: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: RC.accent, borderRadius: RR.button,
+    paddingVertical: 18, paddingHorizontal: 22,
+  },
+  btnDisabled: { opacity: 0.4 },
+  btnLabel: { fontFamily: MONO_MED, fontSize: 15, letterSpacing: 1, color: RC.onAccent },
 });
 
 const OnboardingScreen: React.FC = () => {
@@ -131,8 +149,6 @@ const OnboardingScreen: React.FC = () => {
   const navigation     = useNavigation<any>();
   const route          = useRoute<any>();
   const { user, completeOnboarding, saveOnboardingAnswers } = useAuth();
-  const { T }          = useTheme();
-  const styles         = useMemo(() => createStyles(T), [T]);
 
   const mode     = route.params?.mode;
   const videoUri = route.params?.videoUri;
@@ -181,50 +197,53 @@ const OnboardingScreen: React.FC = () => {
     else if (navigation.canGoBack()) navigation.goBack();
   };
 
+  const ctaDisabled = !selected || isLoading;
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
-            <ChevronLeft size={22} color={T.textMuted} strokeWidth={1.8} />
-          </TouchableOpacity>
-          <Text style={styles.stepIndicator}>
+    <SafeAreaView style={ST.safe} edges={['top', 'left', 'right']}>
+      <View style={ST.container}>
+        {/* Aktenkopf */}
+        <View style={ST.head}>
+          <PressableScale style={ST.backBtn} onPress={handleBack}>
+            <ArrowLeft size={16} color={RC.text} strokeWidth={1.8} />
+          </PressableScale>
+          <Text style={ST.stepIndicator}>
             {t('onboarding.steps.stepOf', { current: step + 1, total })}
           </Text>
-          <View style={styles.backBtn} />
         </View>
 
-        {/* Progress bar */}
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${((step + 1) / total) * 100}%` }]} />
+        {/* Fortschrittsbalken */}
+        <View style={ST.progressTrack}>
+          <View style={[ST.progressFill, { width: `${((step + 1) / total) * 100}%` }]} />
         </View>
 
         {/* Step content */}
-        <Animated.View style={[styles.animated, { transform: [{ translateX: tx }] }]}>
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>
+        <Animated.View style={[ST.animated, { transform: [{ translateX: tx }] }]}>
+          <View style={ST.stepContent}>
+            <Text style={ST.stepTitle}>
               {t(`onboarding.steps.${current.i18nKey}.title`)}
             </Text>
-            <Text style={styles.stepSub}>
+            <Text style={ST.stepSub}>
               {t(`onboarding.steps.${current.i18nKey}.subtitle`)}
             </Text>
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.optionsScroll}>
+            <ScrollView showsVerticalScrollIndicator={false} style={ST.optionsScroll}>
               {current.options.map(({ value, Icon }) => {
                 const active = selected === value;
                 return (
-                  <TouchableOpacity
+                  <PressableScale
                     key={value}
-                    style={[styles.option, active && styles.optionActive]}
                     onPress={() => setAnswers((p) => ({ ...p, [current.key]: value }))}
-                    activeOpacity={0.8}
                   >
-                    <Icon size={20} color={active ? T.accent : T.textFaint} strokeWidth={1.7} style={styles.optionIcon} />
-                    <Text style={[styles.optionLabel, active && { color: T.accent }]}>
-                      {t(`onboarding.steps.${current.i18nKey}.options.${value}`)}
-                    </Text>
-                    {active && <CheckCircle2 size={17} color={T.accent} strokeWidth={1.7} />}
-                  </TouchableOpacity>
+                    <View style={ST.option}>
+                      <View style={[ST.optionIconCircle, active && ST.optionIconCircleActive]}>
+                        <Icon size={20} color={active ? RC.accent : RC.text} strokeWidth={1.7} />
+                      </View>
+                      <Text style={[ST.optionLabel, active && ST.optionLabelActive]}>
+                        {t(`onboarding.steps.${current.i18nKey}.options.${value}`)}
+                      </Text>
+                      {active && <CheckCircle2 size={20} color={RC.accent} strokeWidth={1.8} />}
+                    </View>
+                  </PressableScale>
                 );
               })}
             </ScrollView>
@@ -232,15 +251,15 @@ const OnboardingScreen: React.FC = () => {
         </Animated.View>
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Button
-            label={step === total - 1 ? t('common.done') : t('common.next')}
-            onPress={handleNext}
-            disabled={!selected || isLoading}
-            loading={isLoading}
-            fullWidth
-            size="lg"
-          />
+        <View style={ST.footer}>
+          <PressableScale onPress={handleNext} disabled={ctaDisabled} style={{ alignSelf: 'stretch' }}>
+            <View style={[ST.btnPrimary, !ctaDisabled && BTN_SHADOW, ctaDisabled && ST.btnDisabled]}>
+              <Text style={ST.btnLabel}>
+                {step === total - 1 ? t('common.done') : t('common.next')}
+              </Text>
+              <ArrowRight size={18} color={RC.onAccent} strokeWidth={1.8} />
+            </View>
+          </PressableScale>
         </View>
       </View>
     </SafeAreaView>

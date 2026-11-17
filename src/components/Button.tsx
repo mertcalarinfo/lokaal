@@ -1,11 +1,16 @@
 import React from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext';
 import { F, R } from '../theme';
 
@@ -37,8 +42,20 @@ const Button: React.FC<ButtonProps> = ({
   const { T } = useTheme();
   const isDisabled = disabled || loading;
 
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (isDisabled) return;
+    scale.value = withTiming(0.972, { duration: 140 });
+  };
+  const handlePressOut = () => {
+    scale.value = withTiming(1, { duration: 140 });
+  };
+
   const getContainerStyle = (): ViewStyle => {
-    // Padding scales with size; font stays 14/700/UPPER/ls .14em per spec.
     const sizeStyles: Record<string, ViewStyle> = {
       sm: { paddingHorizontal: 16, paddingVertical: 9,  minHeight: 36 },
       md: { paddingHorizontal: 22, paddingVertical: 13, minHeight: 48 },
@@ -46,32 +63,27 @@ const Button: React.FC<ButtonProps> = ({
     };
 
     const variantBg: Record<ButtonVariant, ViewStyle> = {
-      // Primary: --text surface, dark label (Design System spec)
       primary:   { backgroundColor: isDisabled ? T.textFaint : T.text },
-      // Secondary: --surface-2 + hairline border
       secondary: { backgroundColor: T.surface2, borderWidth: 1, borderColor: T.hairline },
-      // Outline / Ghost: transparent + hairline
       outline:   { backgroundColor: 'transparent', borderWidth: 1, borderColor: T.hairline },
       ghost:     { backgroundColor: 'transparent' },
-      // Danger: error surface
       danger:    { backgroundColor: isDisabled ? T.errorBg : T.error },
     };
 
     return {
-      borderRadius: R.sm,
-      alignItems: 'center',
+      borderRadius:   R.sm,
+      alignItems:     'center',
       justifyContent: 'center',
-      flexDirection: 'row',
+      flexDirection:  'row',
       ...sizeStyles[size],
       ...variantBg[variant],
-      ...(fullWidth ? { width: '100%' } : {}),
-      ...(isDisabled ? { opacity: 0.45 } : {}),
+      ...(fullWidth    ? { width: '100%' } : {}),
+      ...(isDisabled   ? { opacity: 0.45 } : {}),
     };
   };
 
   const getTextStyle = (): TextStyle => {
     const variantTextColor: Record<ButtonVariant, string> = {
-      // Primary: T.btnFg = dark on warm-white (dark) / off-white on navy (light)
       primary:   isDisabled ? T.textMuted : T.btnFg,
       secondary: T.text,
       outline:   T.text,
@@ -83,28 +95,30 @@ const Button: React.FC<ButtonProps> = ({
       fontFamily:    F.bold,
       fontSize:      14,
       fontWeight:    '700',
-      letterSpacing: 1.96,           // 0.14em of 14px
+      letterSpacing: 1.96,
       textTransform: 'uppercase',
       color:         variantTextColor[variant],
     };
   };
 
   return (
-    <TouchableOpacity
-      style={[getContainerStyle(), style]}
+    <Pressable
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isDisabled}
-      activeOpacity={0.75}
     >
-      {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' || variant === 'danger' ? '#101A28' : T.textMuted}
-          style={{ marginRight: 8 }}
-        />
-      ) : null}
-      <Text style={[getTextStyle(), textStyle]}>{label}</Text>
-    </TouchableOpacity>
+      <Animated.View style={[getContainerStyle(), style, animStyle]}>
+        {loading ? (
+          <ActivityIndicator
+            size="small"
+            color={variant === 'primary' || variant === 'danger' ? '#101A28' : T.textMuted}
+            style={{ marginRight: 8 }}
+          />
+        ) : null}
+        <Text style={[getTextStyle(), textStyle]}>{label}</Text>
+      </Animated.View>
+    </Pressable>
   );
 };
 
