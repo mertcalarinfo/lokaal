@@ -7,6 +7,9 @@ const WORDMARK = require('../../assets/branding/wordmark-rezence.png'); // 326 �
 
 const P_RATIO  = 700 / 581;
 const WM_RATIO = 326 / 45;
+// Lage des Schriftzugs relativ zum P (siehe Lockup unten)
+const WM_X = 0.80;
+const WM_Y = 0.40;
 
 interface PrezenceLogoProps {
   /** lockup: P + Wortmarke "REZENCE" (Kopf) · mark: nur das P */
@@ -21,7 +24,7 @@ interface PrezenceLogoProps {
 /**
  * Prezence-Logo (Entwurf 5): das blaue P bleibt unverändert, die echte
  * Wortmarke wird in der Textfarbe des aktiven Modus eingefärbt.
- * Maße laut Vorlage: P 42 × 35, Wortmarke 4 pt rechts daneben, 6 pt tiefer.
+ * Maße laut Vorlage: P 42 × 35; der Schriftzug schließt direkt an den P-Bauch an.
  */
 const PrezenceLogo: React.FC<PrezenceLogoProps> = ({ variant = 'lockup', height, size, style }) => {
   const { T } = useTheme();
@@ -38,17 +41,23 @@ const PrezenceLogo: React.FC<PrezenceLogoProps> = ({ variant = 'lockup', height,
 
   // Versalhöhe ≈ 13-pt-Schrift der Vorlage
   const wmH = Math.round(pH * (10 / 35) * 10) / 10;
+  const wmW = wmH * WM_RATIO;
+  // Zusammenhängendes Logo: Der Schriftzug sitzt in der freien Ecke unter dem
+  // P-Bauch — links bei 80 % der P-Breite (berührt den Bauchbogen fast), oben bei
+  // 40 % der P-Höhe (leicht nach unten versetzt, auf Höhe des unteren Bauch-Endes).
+  const boxH = Math.max(44, pH);
+  const pTop = (boxH - pH) / 2;
   return (
     <View
-      style={[{ flexDirection: 'row', alignItems: 'center', gap: 4, height: Math.max(44, pH) }, style]}
+      style={[{ width: pW * WM_X + wmW, height: boxH }, style]}
       accessible
       accessibilityRole="image"
       accessibilityLabel="Prezence"
     >
-      <Image source={P_LOGO} style={{ width: pW, height: pH }} resizeMode="contain" />
+      <Image source={P_LOGO} style={{ position: 'absolute', left: 0, top: pTop, width: pW, height: pH }} resizeMode="contain" />
       <Image
         source={WORDMARK}
-        style={{ width: wmH * WM_RATIO, height: wmH, marginTop: Math.round(pH * 6 / 35), tintColor: T.text }}
+        style={{ position: 'absolute', left: pW * WM_X, top: pTop + pH * WM_Y, width: wmW, height: wmH, tintColor: T.text }}
         resizeMode="contain"
       />
     </View>
