@@ -1,4 +1,4 @@
-import React, { useMemo, useState, ReactNode } from 'react';
+import React, { useMemo, useState, useRef, useCallback, ReactNode } from 'react';
 import {
   View, Text, StyleSheet, Image, Modal,
   ScrollView, Alert, Platform, Linking,
@@ -16,6 +16,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
 import { changeLanguage } from '../../i18n';
 import { uploadProfilePicture } from '../../services/storage';
+import { deleteAccount, AccountDeletionCancelled } from '../../services/account';
+import RenameModal from '../../components/RenameModal';
 import Pressable3D from '../../components/Pressable3D';
 import AmbientBackground from '../../components/AmbientBackground';
 import Card from '../../components/Card';
@@ -157,6 +159,53 @@ const SettingsScreen: React.FC = () => {
     ]);
   };
 
+  // ── Konto löschen (Apple 5.1.1(v)) ─────────────────────────────────────────
+  const [deleting,   setDeleting]   = useState(false);
+  const [pwVisible,  setPwVisible]  = useState(false);
+  const pwResolver = useRef<((v: string | null) => void) | null>(null);
+
+  // Passwort für die Neuanmeldung abfragen (nur E-Mail-Konten, wenn Firebase
+  // eine frische Anmeldung verlangt). Abbrechen → null.
+  const askPassword = useCallback(() => new Promise<string | null>((resolve) => {
+    pwResolver.current = resolve;
+    setPwVisible(true);
+  }), []);
+  const finishPassword = (value: string | null) => {
+    const resolve = pwResolver.current;
+    pwResolver.current = null;
+    resolve?.(value);
+  };
+
+  const openStoreSubscriptions = () => {
+    const url = Platform.OS === 'ios'
+      ? 'https://apps.apple.com/account/subscriptions'
+      : 'https://play.google.com/store/account/subscriptions';
+    Linking.openURL(url).catch(() => Alert.alert(t('common.error'), t('common.error')));
+  };
+
+  const runDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount(askPassword);
+      // Die App ist jetzt abgemeldet und zeigt den Login.
+      Alert.alert(t('settings.deleteDoneTitle'), t('settings.deleteDoneBody'));
+    } catch (err) {
+      if (!(err instanceof AccountDeletionCancelled)) {
+        Alert.alert(t('common.error'), t('settings.deleteFailed'));
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(t('settings.deleteTitle'), t('settings.deleteBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('settings.deleteManageSub'), onPress: openStoreSubscriptions },
+      { text: t('settings.deleteConfirm'), onPress: runDeleteAccount },
+    ]);
+  };
+
   const handleManageSubscription = () => {
     if (!isSubscribed) {
       navigation.navigate('Paywall');
@@ -281,8 +330,31 @@ const SettingsScreen: React.FC = () => {
             fullWidth
             style={{ marginTop: 8 }}
           />
+
+          {/* Konto löschen — Textfarbe, kein Rot (das Design hat keine zweite Farbe) */}
+          <Pressable3D
+            onPress={handleDeleteAccount}
+            disabled={deleting || signingOut}
+            accessibilityLabel={t('settings.deleteAccount')}
+            style={S.deleteRow}
+          >
+            <Text style={S.deleteTxt}>{deleting ? t('settings.deleting') : t('settings.deleteAccount')}</Text>
+          </Pressable3D>
         </ScrollView>
       </SafeAreaView>
+
+      {/* ── Neuanmeldung per Passwort (für Konto löschen) ── */}
+      <RenameModal
+        visible={pwVisible}
+        initialValue=""
+        secure
+        title={t('settings.reauthTitle')}
+        message={t('settings.reauthBody')}
+        placeholder={t('auth.login.passwordPlaceholder')}
+        confirmLabel={t('settings.reauthConfirm')}
+        onSave={(v) => finishPassword(v || null)}
+        onClose={() => { setPwVisible(false); finishPassword(null); }}
+      />
 
       {/* ── Avatar-ActionSheet (wenn Bild vorhanden) ── */}
       <Modal
@@ -369,6 +441,10 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   rowRight:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rowValue:  { fontFamily: F.semiBold, fontSize: 13 },
   radioEmpty: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: T.textSecondary },
+
+  // Konto löschen
+  deleteRow: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+  deleteTxt: { fontFamily: F.medium, fontSize: 15, color: T.text },
 
   // Avatar-Menü
   sheetOverlay: { flex: 1, backgroundColor: T.scrim, justifyContent: 'flex-end', padding: SP.screen, paddingBottom: 40 },

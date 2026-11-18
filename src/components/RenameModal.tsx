@@ -12,10 +12,16 @@ interface RenameModalProps {
   title: string;
   onClose: () => void;
   onSave: (value: string) => void;
+  /** Verdeckte Eingabe (z. B. Passwort für die Neuanmeldung) */
+  secure?: boolean;
+  /** Beschriftung des Bestätigen-Buttons (Standard: Speichern) */
+  confirmLabel?: string;
+  /** Erklärung unter dem Titel */
+  message?: string;
 }
 
 const RenameModal: React.FC<RenameModalProps> = ({
-  visible, initialValue, placeholder, title, onClose, onSave,
+  visible, initialValue, placeholder, title, onClose, onSave, secure = false, confirmLabel, message,
 }) => {
   const { T } = useTheme();
   const S = useMemo(() => createStyles(T), [T]);
@@ -27,8 +33,8 @@ const RenameModal: React.FC<RenameModalProps> = ({
   }, [visible, initialValue]);
 
   const handleSave = () => {
-    const trimmed = value.trim();
-    onSave(trimmed);
+    // Passwörter nicht kürzen — Leerzeichen können dazugehören
+    onSave(secure ? value : value.trim());
     onClose();
   };
 
@@ -40,6 +46,7 @@ const RenameModal: React.FC<RenameModalProps> = ({
       >
         <View style={S.card}>
           <Text style={S.title}>{title}</Text>
+          {message ? <Text style={S.message}>{message}</Text> : null}
           <TextInput
             style={S.input}
             value={value}
@@ -48,14 +55,18 @@ const RenameModal: React.FC<RenameModalProps> = ({
             placeholderTextColor={T.disabledText}
             selectionColor={T.accent}
             autoFocus
-            maxLength={60}
+            maxLength={secure ? 200 : 60}
+            secureTextEntry={secure}
+            autoCapitalize={secure ? 'none' : 'sentences'}
+            autoCorrect={!secure}
+            textContentType={secure ? 'password' : undefined}
           />
           <View style={S.row}>
             <View style={{ flex: 1 }}>
               <Button label={t('common.cancel')} variant="secondary" size="sm" onPress={onClose} fullWidth />
             </View>
             <View style={{ flex: 1 }}>
-              <Button label={t('common.save')} size="sm" onPress={handleSave} fullWidth />
+              <Button label={confirmLabel ?? t('common.save')} size="sm" onPress={handleSave} fullWidth />
             </View>
           </View>
         </View>
@@ -84,6 +95,7 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
     padding: 18,
   },
   title: { ...TY.label, color: T.textSecondary, marginBottom: 12 },
+  message: { ...TY.bodySm, color: T.text, marginTop: -4, marginBottom: 12 },
   input: {
     fontFamily: F.regular,
     fontSize: 16,

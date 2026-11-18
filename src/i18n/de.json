@@ -378,7 +378,19 @@
     "photoView": "Bild anzeigen",
     "photoChange": "Neues Bild wählen",
     "photoPermission": "Zugriff auf die Mediathek erforderlich.",
-    "photoError": "Profilbild konnte nicht gespeichert werden."
+    "photoError": "Profilbild konnte nicht gespeichert werden.",
+    "deleteAccount": "Konto löschen",
+    "deleting": "Konto wird gelöscht …",
+    "deleteTitle": "Konto endgültig löschen?",
+    "deleteBody": "Dein Konto, alle Analysen, Vergleiche, Videos und dein Profilbild werden endgültig gelöscht. Das lässt sich nicht rückgängig machen.\n\nWichtig: Ein laufendes Abo wird dadurch NICHT gekündigt. Das geht nur in den Einstellungen deiner Apple-ID.",
+    "deleteManageSub": "Abo in der Apple-ID verwalten",
+    "deleteConfirm": "Endgültig löschen",
+    "deleteDoneTitle": "Konto gelöscht",
+    "deleteDoneBody": "Dein Konto und alle Daten wurden gelöscht.",
+    "deleteFailed": "Das Konto konnte nicht gelöscht werden. Bitte versuch es erneut.",
+    "reauthTitle": "Bitte bestätigen",
+    "reauthBody": "Gib zur Sicherheit dein Passwort ein, um das Konto zu löschen.",
+    "reauthConfirm": "Bestätigen"
   },
   "paywall": {
     "title": "Prezence Pro",

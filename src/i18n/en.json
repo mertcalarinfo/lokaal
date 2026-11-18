@@ -378,7 +378,19 @@
     "photoView": "View photo",
     "photoChange": "Choose new photo",
     "photoPermission": "Media library access required.",
-    "photoError": "Couldn't save profile picture."
+    "photoError": "Couldn't save profile picture.",
+    "deleteAccount": "Delete account",
+    "deleting": "Deleting account …",
+    "deleteTitle": "Delete account permanently?",
+    "deleteBody": "Your account, all analyses, comparisons, videos and your profile picture will be deleted permanently. This cannot be undone.\n\nImportant: an active subscription is NOT cancelled by this. You can only cancel it in your Apple ID settings.",
+    "deleteManageSub": "Manage subscription in Apple ID",
+    "deleteConfirm": "Delete permanently",
+    "deleteDoneTitle": "Account deleted",
+    "deleteDoneBody": "Your account and all data have been deleted.",
+    "deleteFailed": "The account could not be deleted. Please try again.",
+    "reauthTitle": "Please confirm",
+    "reauthBody": "For your security, enter your password to delete your account.",
+    "reauthConfirm": "Confirm"
   },
   "paywall": {
     "title": "Prezence Pro",
