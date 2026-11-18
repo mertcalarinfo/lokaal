@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isOwner(uid) { return request.auth != null && request.auth.uid == uid; }
+
+    // Videos — nur der Besitzer liest und schreibt seine Videos.
+    match /videos/{userId}/{allPaths=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Profilbild — nur der Besitzer liest und schreibt es.
+    // (Angezeigt wird es über die Download-URL mit Token; die gilt unabhängig von diesen Regeln.)
+    match /profilePictures/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Alles andere: kein Zugriff.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

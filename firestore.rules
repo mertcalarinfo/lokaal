@@ -5,16 +5,28 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     function isOwner(uid) { return request.auth != null && request.auth.uid == uid; }
 
+    // Datensatz gehört dem Aufrufer (bestehendes Dokument bzw. neue Daten)
+    function ownsExisting() { return isSignedIn() && resource.data.userId == request.auth.uid; }
+    function ownsIncoming() { return isSignedIn() && request.resource.data.userId == request.auth.uid; }
+
     // ── Analyse-Berichte ──────────────────────────────────────────────────────
-    // Angemeldete Nutzer dürfen lesen/schreiben. Berichte tragen ein userId-Feld
-    // und alle Queries filtern danach, sodass nur eigene Berichte sichtbar sind.
+    // Nur eigene Berichte. Lesen und Auflisten nur mit userId == eigene uid —
+    // alle Abfragen der App filtern genau so (where('userId', '==', uid)).
+    // Beim Anlegen muss userId die eigene uid sein, beim Ändern darf sie nicht
+    // wechseln (z. B. Umbenennen über customName).
     match /reports/{reportId} {
-      allow read, write: if isSignedIn();
+      allow read:   if ownsExisting();
+      allow create: if ownsIncoming();
+      allow update: if ownsExisting() && ownsIncoming();
+      allow delete: if ownsExisting();
     }
 
     // ── Video-Vergleiche ──────────────────────────────────────────────────────
     match /comparisons/{comparisonId} {
-      allow read, write: if isSignedIn();
+      allow read:   if ownsExisting();
+      allow create: if ownsIncoming();
+      allow update: if ownsExisting() && ownsIncoming();
+      allow delete: if ownsExisting();
     }
 
     // ── Nutzerprofil ──────────────────────────────────────────────────────────
