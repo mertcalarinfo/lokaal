@@ -74,7 +74,8 @@
         "wrongPassword": "Incorrect password. Please try again.",
         "userNotFound": "No account found with this email.",
         "tooManyRequests": "Too many failed attempts. Please try again later.",
-        "generic": "Sign in failed. Please try again."
+        "generic": "Sign in failed. Please try again.",
+        "invalidCredentials": "Email or password is incorrect."
       }
     },
     "register": {

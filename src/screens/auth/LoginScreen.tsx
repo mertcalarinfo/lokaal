@@ -94,11 +94,12 @@ const LoginScreen: React.FC = () => {
       await signIn(email.trim(), password);
     } catch (err: any) {
       const code = err?.code || '';
-      if (code.includes('wrong-password') || code.includes('invalid-credential'))
-        setPasswordError(t('auth.login.errors.wrongPassword'));
-      else if (code.includes('user-not-found'))
-        setEmailError(t('auth.login.errors.userNotFound'));
-      else if (code.includes('invalid-email'))
+      // Falsches Passwort, unbekannte E-Mail oder ungültige Anmeldedaten: immer
+      // derselbe Text — verrät nicht, ob es zu einer E-Mail ein Konto gibt.
+      if (code.includes('wrong-password') || code.includes('invalid-credential') || code.includes('user-not-found')) {
+        setEmailError('');
+        setPasswordError(t('auth.login.errors.invalidCredentials'));
+      } else if (code.includes('invalid-email'))
         setEmailError(t('auth.login.errors.invalidEmail'));
       else if (code.includes('too-many-requests'))
         Alert.alert(t('common.error'), t('auth.login.errors.tooManyRequests'));

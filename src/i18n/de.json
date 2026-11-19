@@ -74,7 +74,8 @@
         "wrongPassword": "Falsches Passwort. Bitte erneut versuchen.",
         "userNotFound": "Kein Konto mit dieser E-Mail-Adresse gefunden.",
         "tooManyRequests": "Zu viele fehlgeschlagene Versuche. Bitte später erneut versuchen.",
-        "generic": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
+        "generic": "Anmeldung fehlgeschlagen. Bitte erneut versuchen.",
+        "invalidCredentials": "E-Mail oder Passwort ist falsch."
       }
     },
     "register": {
