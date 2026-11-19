@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import {
-  Globe, Pencil, Star, CreditCard, Info, LogOut, ChevronRight, CheckCircle2,
+  Globe, Pencil, Star, CreditCard, Info, LogOut, ChevronRight, CheckCircle2, Monitor, Sun, Moon,
   X, Image as ImageIcon, Camera,
 } from 'lucide-react-native';
 
@@ -75,7 +75,7 @@ function RadioRow({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 const SettingsScreen: React.FC = () => {
-  const { T } = useTheme();
+  const { T, themePreference, setThemePreference } = useTheme();
   const S = useMemo(() => createStyles(T), [T]);
   const { t }      = useTranslation();
   const tabSpace   = useTabBarSpace();
@@ -271,6 +271,27 @@ const SettingsScreen: React.FC = () => {
                 icon={<Globe size={18} color={T.accentText} strokeWidth={1.7} />}
                 onPress={() => handleSelectLanguage('de')}
               />
+            </Card>
+          </View>
+
+          {/* Darstellung — System folgt der iPhone-Einstellung; Wechsel wirkt sofort */}
+          <View style={S.subSection}>
+            <SectionHead title={t('settings.appearance')} />
+            <Card style={S.listCard}>
+              {([
+                { key: 'system' as const, label: t('settings.themeSystem'), Icon: Monitor },
+                { key: 'light'  as const, label: t('settings.themeLight'),  Icon: Sun },
+                { key: 'dark'   as const, label: t('settings.themeDark'),   Icon: Moon },
+              ]).map(({ key, label, Icon }, i) => (
+                <RadioRow
+                  key={key}
+                  isFirst={i === 0}
+                  active={themePreference === key}
+                  label={label}
+                  icon={<Icon size={18} color={T.accentText} strokeWidth={1.7} />}
+                  onPress={() => { if (themePreference !== key) setThemePreference(key); }}
+                />
+              ))}
             </Card>
           </View>
 
