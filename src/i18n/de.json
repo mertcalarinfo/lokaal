@@ -395,7 +395,7 @@
     "title": "Prezence Pro",
     "subtitle": "KI-Analysen und ehrliches Feedback zu jedem Auftritt.",
     "expiredTitle": "Willkommen zurück",
-    "expiredSubtitle": "Dein Pro-Zugang ist ausgelaufen. Abonniere erneut für {{limit}} Analysen pro Monat und vollständiges Coaching-Feedback.",
+    "expiredSubtitle": "Dein Pro-Zugang ist ausgelaufen. Hol ihn dir zurück.",
     "features": {
       "monthly": "{{limit}} Videoanalysen pro Monat",
       "detailed": "Detaillierte KI-Coaching-Reports",

@@ -254,7 +254,7 @@ export const getPaywallOffering = async (): Promise<any | null> => {
   if (!isInitialized || !Purchases) return null;
 
   let current: any = null;
-  let source = 'fresh';
+  let source: 'fresh' | 'cached' = 'fresh';
   try {
     const fresh: any = await withTimeout(Purchases.syncAttributesAndOfferingsIfNeeded(), 8000);
     if (hasPackage(fresh?.current)) current = fresh.current;
@@ -279,7 +279,39 @@ export const getPaywallOffering = async (): Promise<any | null> => {
     console.log('[RevenueCat] paywall offering (' + source + ') storefront:', storefront?.countryCode ?? 'unknown',
       '| product:', product?.identifier, '| currency:', product?.currencyCode, '| price:', product?.priceString);
   } catch { /* nur Diagnose */ }
+  lastPaywallOfferingSource = source;
   return current;
+};
+
+let lastPaywallOfferingSource: 'fresh' | 'cached' | null = null;
+
+/**
+ * VORÜBERGEHENDE Preis-Diagnose für die Paywall — NUR für Sandbox/TestFlight.
+ * Erkennung: das Konto hat mindestens einen Sandbox-Kauf (RevenueCat isSandbox)
+ * oder es läuft ein Entwicklungs-Build. Im App Store gibt es keine Sandbox-Käufe,
+ * dort liefert die Funktion immer null. Enthält keine Schlüssel und keine Nutzerdaten.
+ */
+export const getPaywallDiagnostics = async (offering: any): Promise<string | null> => {
+  if (!isInitialized || !Purchases) return null;
+  try {
+    const info = await Purchases.getCustomerInfo();
+    const entitlements = Object.values(info?.entitlements?.all ?? {}) as any[];
+    const subscriptions = Object.values(info?.subscriptionsByProductIdentifier ?? {}) as any[];
+    const sandbox = entitlements.some((e) => e?.isSandbox === true) || subscriptions.some((x) => x?.isSandbox === true);
+    if (!sandbox && !__DEV__) return null;
+
+    const storefront = await Purchases.getStorefront?.().catch(() => null);
+    const product = (offering?.monthly || offering?.availablePackages?.[0])?.product;
+    return [
+      `Storefront ${storefront?.countryCode ?? '?'}`,
+      `${product?.currencyCode ?? '?'}`,
+      `${product?.priceString ?? '?'}`,
+      `${product?.identifier ?? '?'}`,
+      `${lastPaywallOfferingSource ?? '?'}`,
+    ].join(' · ');
+  } catch {
+    return null;
+  }
 };
 
 export const purchasePackage = async (pkg: any): Promise<boolean> => {

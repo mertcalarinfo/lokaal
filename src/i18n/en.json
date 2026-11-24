@@ -395,7 +395,7 @@
     "title": "Prezence Pro",
     "subtitle": "AI analyses and honest feedback on every performance.",
     "expiredTitle": "Welcome Back",
-    "expiredSubtitle": "Your Pro access has ended. Subscribe again for {{limit}} analyses per month and full coaching feedback.",
+    "expiredSubtitle": "Your Pro access has ended. Get it back.",
     "features": {
       "monthly": "{{limit}} video analyses per month",
       "detailed": "Detailed AI coaching reports",
