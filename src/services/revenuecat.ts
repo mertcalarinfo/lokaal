@@ -230,6 +230,32 @@ export const getOfferings = async (): Promise<any | null> => {
   }
 };
 
+/**
+ * Offering für die Paywall — IMMER frisch: holt Offerings vom RevenueCat-Backend
+ * und die Produkte (Preis, Währung) aktuell von StoreKit, statt einer evtl. aus
+ * einer früheren Sitzung/Storefront zwischengespeicherten Antwort. Fällt bei
+ * Fehlern (z. B. Rate-Limit) auf getOfferings() zurück.
+ * Protokolliert Storefront, Währung und Preis (keine Schlüssel, keine Nutzerdaten).
+ */
+export const getPaywallOffering = async (): Promise<any | null> => {
+  if (!isInitialized || !Purchases) return null;
+  let offerings: any = null;
+  try {
+    offerings = await Purchases.syncAttributesAndOfferingsIfNeeded();
+  } catch (error) {
+    console.warn('[RevenueCat] fresh offerings failed, using cached:', error);
+    try { offerings = await Purchases.getOfferings(); } catch { offerings = null; }
+  }
+  const current = offerings?.current ?? null;
+  try {
+    const storefront = await Purchases.getStorefront?.();
+    const product = (current?.monthly || current?.availablePackages?.[0])?.product;
+    console.log('[RevenueCat] paywall storefront:', storefront?.countryCode ?? 'unknown',
+      '| product:', product?.identifier, '| currency:', product?.currencyCode, '| price:', product?.priceString);
+  } catch { /* nur Diagnose */ }
+  return current;
+};
+
 export const purchasePackage = async (pkg: any): Promise<boolean> => {
   if (!isInitialized || !Purchases) {
     console.error('[RevenueCat] purchasePackage called but SDK is not initialized. isInitialized:', isInitialized, 'Purchases:', !!Purchases);

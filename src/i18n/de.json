@@ -181,8 +181,6 @@
     "videoSelected": "Video ausgewählt",
     "videoInfo": "{{duration}} · Bereit zur Analyse",
     "usageFree": "{{used}}/{{total}} frei",
-    "usageUnlimited": "Unbegrenzte Analysen",
-    "upgradePrompt": "Upgrade auf Premium für unbegrenzte Analysen",
     "upgradeButton": "Auf Premium upgraden",
     "maxDuration": "Videos müssen kürzer als 5 Minuten sein (dieses ist ca. {{minutes}} Min). Bitte wähle ein kürzeres Video.",
     "pickError": "Video konnte nicht geladen werden. Bitte erneut versuchen.",
@@ -397,7 +395,7 @@
     "title": "Prezence Pro",
     "subtitle": "KI-Analysen und ehrliches Feedback zu jedem Auftritt.",
     "expiredTitle": "Willkommen zurück",
-    "expiredSubtitle": "Dein Premium-Zugang ist ausgelaufen. Abonniere erneut, um wieder unbegrenzte Analysen und vollständiges Coaching-Feedback freizuschalten.",
+    "expiredSubtitle": "Dein Pro-Zugang ist ausgelaufen. Abonniere erneut für {{limit}} Analysen pro Monat und vollständiges Coaching-Feedback.",
     "features": {
       "monthly": "{{limit}} Videoanalysen pro Monat",
       "detailed": "Detaillierte KI-Coaching-Reports",
@@ -405,7 +403,6 @@
       "compare": "Vergleich mit früheren Auftritten",
       "exercises": "Wochenübungen zu jeder Analyse"
     },
-    "price": "9,99 € / Monat",
     "trialButton": "Gratis testen",
     "subscribeButton": "Jetzt abonnieren",
     "restore": "Käufe wiederherstellen",

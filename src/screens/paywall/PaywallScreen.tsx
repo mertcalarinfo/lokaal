@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Alert, Pressable, Linking, Platform,
+  View, Text, StyleSheet, ScrollView, Alert, Pressable, Linking, Platform, useWindowDimensions,
 } from 'react-native';
 import Pressable3D from '../../components/Pressable3D';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
-import { getOfferings, purchasePackage, restorePurchases } from '../../services/revenuecat';
+import { getOfferings, getPaywallOffering, purchasePackage, restorePurchases } from '../../services/revenuecat';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription, PRO_MONTHLY_LIMIT } from '../../hooks/useSubscription';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -33,7 +33,13 @@ const PaywallScreen: React.FC = () => {
   const { T }             = useTheme();
   const { user, showProNotice } = useAuth();
   const { proState }      = useSubscription(user?.uid || null);
-  const styles            = useMemo(() => createStyles(T), [T]);
+  // Kleine iPhones (SE, mini): Logo, Titel und Zeilen etwas kompakter
+  const { height: windowHeight } = useWindowDimensions();
+  const compact = windowHeight < 750;
+  const { width: windowWidth } = useWindowDimensions();
+  // Schmale iPhones (SE, mini): Links etwas kleiner, damit alle drei in eine Zeile passen
+  const narrow = windowWidth < 390;
+  const styles            = useMemo(() => createStyles(T, compact, narrow), [T, compact, narrow]);
 
   const [loading,   setLoading]   = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -45,8 +51,10 @@ const PaywallScreen: React.FC = () => {
   const titleKey    = proState === 'expired' ? 'paywall.expiredTitle'    : 'paywall.title';
   const subtitleKey = proState === 'expired' ? 'paywall.expiredSubtitle' : 'paywall.subtitle';
 
+  // Beim Öffnen frisch laden (RevenueCat-Backend + StoreKit), nicht aus dem Cache —
+  // der angezeigte Preis muss dem aktuellen Store-Produkt entsprechen.
   useEffect(() => {
-    getOfferings().then(setOffering).catch(() => {});
+    getPaywallOffering().then(setOffering).catch(() => {});
   }, []);
 
   // Preis aus dem Store-Produkt, nie fest im Text
@@ -103,17 +111,21 @@ const PaywallScreen: React.FC = () => {
   return (
     <View style={styles.root}>
       <AmbientBackground animated variant="paywall" />
-      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right', 'bottom']}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Schließen */}
           <View style={styles.closeRow}>
             <GlassIconButton icon="close" onPress={() => navigation.goBack()} accessibilityLabel={t('common.close')} />
           </View>
 
           {/* Kopf */}
-          <PrezenceLogo variant="mark" height={96} style={{ marginTop: -2 }} />
+          <PrezenceLogo variant="mark" height={compact ? 68 : 96} style={{ marginTop: -2 }} />
           <Text style={styles.title} accessibilityRole="header">{t(titleKey)}</Text>
-          <Text style={styles.subtitle}>{t(subtitleKey)}</Text>
+          <Text style={styles.subtitle}>{t(subtitleKey, { limit: PRO_MONTHLY_LIMIT })}</Text>
 
           {/* Features */}
           <Card style={styles.features}>
@@ -128,7 +140,7 @@ const PaywallScreen: React.FC = () => {
             ))}
           </Card>
 
-          {/* Preis */}
+          {/* Preis — immer aus dem aktuellen Store-Produkt */}
           <View style={styles.priceCard}>
             <View style={{ gap: 2 }}>
               <Text style={styles.planName}>{t('paywall.monthly')}</Text>
@@ -139,14 +151,17 @@ const PaywallScreen: React.FC = () => {
               <Text style={styles.perMonth}>{t('paywall.perMonth')}</Text>
             </View>
           </View>
+        </ScrollView>
 
+        {/* Fester Fuß: Button, Verlängerungshinweis und Links sind IMMER vollständig
+            sichtbar (Apple 3.1.2) — unabhängig von Textlänge und Bildschirmgröße. */}
+        <SafeAreaView edges={['bottom']} style={styles.footer}>
           <Button
             label={hasFreeTrial ? t('paywall.trialButton') : t('paywall.unlockButton')}
             onPress={handleSubscribe}
             loading={loading}
             fullWidth
             prominent
-            style={{ marginTop: 6 }}
           />
 
           {/* Automatische Verlängerung (Apple 3.1.2) */}
@@ -166,7 +181,7 @@ const PaywallScreen: React.FC = () => {
               <Text style={styles.linkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('paywall.privacy')}</Text>
             </Pressable3D>
           </View>
-        </ScrollView>
+        </SafeAreaView>
       </SafeAreaView>
     </View>
   );
@@ -174,13 +189,14 @@ const PaywallScreen: React.FC = () => {
 
 export default PaywallScreen;
 
-const createStyles = (T: ThemeColors) => StyleSheet.create({
+const createStyles = (T: ThemeColors, compact: boolean, narrow: boolean) => StyleSheet.create({
   root:   { flex: 1, backgroundColor: T.bg },
-  scroll: { paddingHorizontal: SP.screen, paddingTop: SP.top, paddingBottom: 24, alignItems: 'center', gap: 6 },
+  scroll: { paddingHorizontal: SP.screen, paddingTop: SP.top, paddingBottom: 16, alignItems: 'center', gap: 6 },
+  footer: { paddingHorizontal: SP.screen, paddingTop: 10, paddingBottom: 4, alignItems: 'center', gap: 4 },
   closeRow: { alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'flex-end', height: 44 },
 
   title: {
-    marginTop: 8, fontFamily: F.medium, fontSize: 36, lineHeight: 42, letterSpacing: -0.9,
+    marginTop: compact ? 4 : 8, fontFamily: F.medium, fontSize: compact ? 30 : 36, lineHeight: compact ? 36 : 42, letterSpacing: -0.9,
     color: T.text, textAlign: 'center',
   },
   subtitle: {
@@ -188,8 +204,8 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
     color: T.textSecondary, textAlign: 'center',
   },
 
-  features:    { alignSelf: 'stretch', marginTop: 14, paddingVertical: 4, paddingHorizontal: 20 },
-  featureRow:  { flexDirection: 'row', alignItems: 'center', gap: 14, height: 42 },
+  features:    { alignSelf: 'stretch', marginTop: compact ? 10 : 14, paddingVertical: 4, paddingHorizontal: 20 },
+  featureRow:  { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: compact ? 38 : 42, paddingVertical: 2 },
   featureText: { flex: 1, fontFamily: F.medium, fontSize: 15, color: T.text },
   divider:     { height: 1, backgroundColor: T.hairline },
 
@@ -209,13 +225,13 @@ const createStyles = (T: ThemeColors) => StyleSheet.create({
   perMonth: { fontFamily: F.medium, fontSize: 13, color: T.textSecondary },
 
   renew: {
-    marginTop: 4, maxWidth: 330, fontFamily: F.regular, fontSize: 11.5, lineHeight: 16,
+    marginTop: 2, maxWidth: 330, fontFamily: F.regular, fontSize: 11.5, lineHeight: 16,
     color: T.textSecondary, textAlign: 'center',
   },
 
   // Etwas breiter als der Seitenrand, damit alle drei Links in eine Zeile passen
   links:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: -14, alignSelf: 'stretch' },
-  link:       { height: 44, justifyContent: 'center', paddingHorizontal: 5, flexShrink: 1 },
-  linkText:   { fontFamily: F.medium, fontSize: 12, color: T.textSecondary },
+  link:       { height: 44, justifyContent: 'center', paddingHorizontal: narrow ? 3 : 5, flexShrink: 1 },
+  linkText:   { fontFamily: F.medium, fontSize: narrow ? 11 : 12, color: T.textSecondary },
   linkRestore:{ fontFamily: F.semiBold, color: T.accentText },
 });

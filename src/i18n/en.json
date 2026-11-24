@@ -181,8 +181,6 @@
     "videoSelected": "Video selected",
     "videoInfo": "{{duration}} · Ready to analyze",
     "usageFree": "{{used}}/{{total}} free",
-    "usageUnlimited": "Unlimited analyses",
-    "upgradePrompt": "Upgrade to Premium for unlimited analyses",
     "upgradeButton": "Upgrade to Premium",
     "maxDuration": "Videos must be under 5 minutes (this one is about {{minutes}} min). Please choose a shorter video.",
     "pickError": "Could not load video. Please try again.",
@@ -397,7 +395,7 @@
     "title": "Prezence Pro",
     "subtitle": "AI analyses and honest feedback on every performance.",
     "expiredTitle": "Welcome Back",
-    "expiredSubtitle": "Your Premium access has ended. Resubscribe to keep unlocking unlimited analyses and full coaching feedback.",
+    "expiredSubtitle": "Your Pro access has ended. Subscribe again for {{limit}} analyses per month and full coaching feedback.",
     "features": {
       "monthly": "{{limit}} video analyses per month",
       "detailed": "Detailed AI coaching reports",
@@ -405,7 +403,6 @@
       "compare": "Compare with past performances",
       "exercises": "Weekly exercises for every analysis"
     },
-    "price": "$9.99 / month",
     "trialButton": "Start Free Trial",
     "subscribeButton": "Subscribe Now",
     "restore": "Restore Purchases",
