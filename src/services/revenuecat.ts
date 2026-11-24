@@ -230,27 +230,53 @@ export const getOfferings = async (): Promise<any | null> => {
   }
 };
 
+/** Hat das Offering ein kaufbares Paket? */
+const hasPackage = (offering: any): boolean =>
+  !!(offering?.monthly || offering?.availablePackages?.length);
+
+/** Promise mit Zeitgrenze — liefert null, wenn sie überschritten wird. */
+const withTimeout = <V,>(p: Promise<V>, ms: number): Promise<V | null> =>
+  Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
+
 /**
- * Offering für die Paywall — IMMER frisch: holt Offerings vom RevenueCat-Backend
- * und die Produkte (Preis, Währung) aktuell von StoreKit, statt einer evtl. aus
- * einer früheren Sitzung/Storefront zwischengespeicherten Antwort. Fällt bei
- * Fehlern (z. B. Rate-Limit) auf getOfferings() zurück.
+ * Offering für die Paywall — möglichst frisch: holt Offerings vom RevenueCat-
+ * Backend und die Produkte (Preis, Währung) aktuell von StoreKit, statt einer evtl.
+ * aus einer früheren Sitzung/Storefront zwischengespeicherten Antwort.
+ *
+ * Fällt auf das normale getOfferings() zurück, wenn der frische Abruf
+ *  - einen Fehler wirft,
+ *  - wegen Ratenlimit (max. 5 Aufrufe/Minute) nichts Brauchbares liefert
+ *    (kein Offering bzw. kein kaufbares Paket),
+ *  - oder länger als 8 s braucht.
  * Protokolliert Storefront, Währung und Preis (keine Schlüssel, keine Nutzerdaten).
  */
 export const getPaywallOffering = async (): Promise<any | null> => {
   if (!isInitialized || !Purchases) return null;
-  let offerings: any = null;
+
+  let current: any = null;
+  let source = 'fresh';
   try {
-    offerings = await Purchases.syncAttributesAndOfferingsIfNeeded();
+    const fresh: any = await withTimeout(Purchases.syncAttributesAndOfferingsIfNeeded(), 8000);
+    if (hasPackage(fresh?.current)) current = fresh.current;
   } catch (error) {
-    console.warn('[RevenueCat] fresh offerings failed, using cached:', error);
-    try { offerings = await Purchases.getOfferings(); } catch { offerings = null; }
+    console.warn('[RevenueCat] fresh offerings failed:', error);
   }
-  const current = offerings?.current ?? null;
+
+  if (!current) {
+    source = 'cached';
+    try {
+      const cached: any = await Purchases.getOfferings();
+      current = cached?.current ?? null;
+    } catch (error) {
+      console.warn('[RevenueCat] getOfferings failed:', error);
+      current = null;
+    }
+  }
+
   try {
     const storefront = await Purchases.getStorefront?.();
     const product = (current?.monthly || current?.availablePackages?.[0])?.product;
-    console.log('[RevenueCat] paywall storefront:', storefront?.countryCode ?? 'unknown',
+    console.log('[RevenueCat] paywall offering (' + source + ') storefront:', storefront?.countryCode ?? 'unknown',
       '| product:', product?.identifier, '| currency:', product?.currencyCode, '| price:', product?.priceString);
   } catch { /* nur Diagnose */ }
   return current;
