@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
-import { getOfferings, getPaywallOffering, getPaywallDiagnostics, purchasePackage, restorePurchases } from '../../services/revenuecat';
+import { getOfferings, getPaywallOffering, purchasePackage, restorePurchases } from '../../services/revenuecat';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription, PRO_MONTHLY_LIMIT } from '../../hooks/useSubscription';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -34,9 +34,11 @@ const PaywallScreen: React.FC = () => {
   const { user, showProNotice } = useAuth();
   const { proState }      = useSubscription(user?.uid || null);
   // Schmale iPhones (SE, mini): Links etwas kleiner, damit alle drei in eine Zeile passen
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const narrow = windowWidth < 390;
-  const styles            = useMemo(() => createStyles(T, narrow), [T, narrow]);
+  // Kurze Geräte (iPhone SE): Logo 56 und kein eigener Bereich für das X, damit alles ohne Scrollen passt
+  const compact = windowHeight < 750;
+  const styles            = useMemo(() => createStyles(T, narrow, compact), [T, narrow, compact]);
 
   const [loading,   setLoading]   = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -50,15 +52,8 @@ const PaywallScreen: React.FC = () => {
 
   // Beim Öffnen frisch laden (RevenueCat-Backend + StoreKit), nicht aus dem Cache —
   // der angezeigte Preis muss dem aktuellen Store-Produkt entsprechen.
-  const [diagnostics, setDiagnostics] = useState<string | null>(null);
   useEffect(() => {
-    getPaywallOffering()
-      .then((o) => {
-        setOffering(o);
-        // VORÜBERGEHEND: Preis-Diagnose, nur bei Sandbox-Konten (TestFlight) — nie im App Store
-        getPaywallDiagnostics(o).then(setDiagnostics).catch(() => {});
-      })
-      .catch(() => {});
+    getPaywallOffering().then(setOffering).catch(() => {});
   }, []);
 
   // Preis aus dem Store-Produkt, nie fest im Text
@@ -116,14 +111,14 @@ const PaywallScreen: React.FC = () => {
     <View style={styles.root}>
       <AmbientBackground animated variant="paywall" />
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
-        {/* Oberer Teil: passt auf 390 × 844 ohne Scrollen; scrollt nur auf sehr kleinen Geräten */}
+        {/* Oberer Block (Logo bis Preiskarte): vertikal mittig zwischen X und Fuß; scrollt nur, wenn er nicht passt */}
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={styles.top}
           showsVerticalScrollIndicator={false}
           alwaysBounceVertical={false}
         >
-          <PrezenceLogo variant="mark" height={56} />
+          <PrezenceLogo variant="mark" height={compact ? 56 : 72} />
           <Text style={styles.title} accessibilityRole="header">{t(titleKey)}</Text>
           <Text style={styles.subtitle} numberOfLines={2}>{t(subtitleKey, { limit: PRO_MONTHLY_LIMIT })}</Text>
 
@@ -138,11 +133,8 @@ const PaywallScreen: React.FC = () => {
               </React.Fragment>
             ))}
           </Card>
-        </ScrollView>
 
-        {/* Fester Fuß: Preiskarte, Button, Verlängerungshinweis und Links sind IMMER
-            vollständig sichtbar (Apple 3.1.2) — auch auf dem iPhone SE. */}
-        <SafeAreaView edges={['bottom']} style={styles.footer}>
+          {/* Preis — immer aus dem aktuellen Store-Produkt */}
           <View style={styles.priceCard}>
             <View style={{ gap: 2 }}>
               <Text style={styles.planName}>{t('paywall.monthly')}</Text>
@@ -153,17 +145,17 @@ const PaywallScreen: React.FC = () => {
               <Text style={styles.perMonth}>{t('paywall.perMonth')}</Text>
             </View>
           </View>
+        </ScrollView>
 
-          {/* VORÜBERGEHEND: Diagnose nur für Sandbox/TestFlight (nie im App Store) */}
-          {diagnostics ? <Text style={styles.diag} selectable>{diagnostics}</Text> : null}
-
+        {/* Fester Fuß: Button, Verlängerungshinweis und Links sind IMMER
+            vollständig sichtbar (Apple 3.1.2) — auch auf dem iPhone SE. */}
+        <SafeAreaView edges={['bottom']} style={styles.footer}>
           <Button
             label={hasFreeTrial ? t('paywall.trialButton') : t('paywall.unlockButton')}
             onPress={handleSubscribe}
             loading={loading}
             fullWidth
             prominent
-            style={{ marginTop: 2 }}
           />
 
           {/* Automatische Verlängerung (Apple 3.1.2) */}
@@ -198,15 +190,19 @@ const PaywallScreen: React.FC = () => {
 
 export default PaywallScreen;
 
-const createStyles = (T: ThemeColors, narrow: boolean) => StyleSheet.create({
+const createStyles = (T: ThemeColors, narrow: boolean, compact: boolean) => StyleSheet.create({
   root: { flex: 1, backgroundColor: T.bg },
 
   closeLayer: { position: 'absolute', top: 0, left: 0, right: 0 },
   closeRow:   { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: SP.screen, paddingTop: SP.top },
 
   // Oberer Teil — Abstände zwischen Blöcken 8–10
-  // flexGrow + center: auf großen Geräten sitzt der Block mittig über dem Fuß statt mit Lücke darunter
-  top: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: SP.screen, paddingTop: SP.top + 6, paddingBottom: 8, alignItems: 'center' },
+  // Mittig zwischen X und Fuß: oben ist der Bereich des X (12 + 44) reserviert, damit der
+  // Leerraum gleichmäßig über und unter dem Block liegt. Auf kurzen Geräten entfällt die Reserve.
+  top: {
+    flexGrow: 1, justifyContent: 'center', alignItems: 'center',
+    paddingHorizontal: SP.screen, paddingTop: compact ? SP.top + 6 : SP.top + 44 + 8, paddingBottom: 8,
+  },
   title: {
     marginTop: 8, fontFamily: F.medium, fontSize: 30, lineHeight: 36, letterSpacing: -0.75,
     color: T.text, textAlign: 'center',
@@ -220,9 +216,10 @@ const createStyles = (T: ThemeColors, narrow: boolean) => StyleSheet.create({
   featureText: { flex: 1, fontFamily: F.medium, fontSize: 14.5, color: T.text },
   divider:     { height: 1, backgroundColor: T.hairline },
 
-  // Fester Fuß
+  // Fester Fuß: Button, Hinweis, Links
   footer: { paddingHorizontal: SP.screen, paddingTop: 8, paddingBottom: 2, gap: 8 },
   priceCard: {
+    alignSelf: 'stretch', marginTop: 10,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: 12, paddingHorizontal: 18, borderRadius: R.card,
     backgroundColor: T.card, borderWidth: 1.5, borderColor: T.accent, boxShadow: T.shadowPrice,
@@ -235,7 +232,6 @@ const createStyles = (T: ThemeColors, narrow: boolean) => StyleSheet.create({
     color: T.text, fontVariant: ['tabular-nums'],
   },
   perMonth: { fontFamily: F.medium, fontSize: 13, color: T.textSecondary },
-  diag:     { fontFamily: F.regular, fontSize: 10.5, color: T.textSecondary, textAlign: 'center', fontVariant: ['tabular-nums'] },
 
   renew: {
     alignSelf: 'center', maxWidth: 330, fontFamily: F.regular, fontSize: 11.5, lineHeight: 16,
